@@ -1,0 +1,115 @@
+# 依赖文件
+node_modules/
+vendor/
+
+# 构建输出
+dist/
+build/
+unpackage/
+runtime/
+
+# 日志文件
+*.log
+logs/
+
+# 环境配置文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE 和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp
+
+# 缓存文件
+.cache/
+.npm/
+.yarn/
+
+# 测试覆盖率报告
+coverage/
+*.lcov
+
+# 压缩文件
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+# 数据库文件
+*.sqlite
+*.db
+
+# 上传文件目录
+uploads/
+static/uploads/
+
+# 嵌入的git仓库
+api1/
+customer/
+
+# ThinkPHP 特定文件
+app/runtime/
+runtime/
+vendor/
+composer.lock
+
+# API 目录中的忽略文件
+api/vendor/
+api/composer.lock
+api/runtime/
+api/app/runtime/
+api/public/static/uploads/
+api/public/install/
+api/public/npm-install-test/
+api/.env
+api/web/node_modules/
+api/web/dist/
+api/web/package-lock.json
+
+# uni-app 特定文件
+unpackage/
+.hbuilderx/
+
+# 微信小程序
+project.config.json
+project.private.config.json
+
+# 支付宝小程序
+mini.project.json
+
+# 百度小程序
+project.swan.json
+
+# 字节跳动小程序
+project.config.json
+
+# QQ小程序
+project.config.json
+
+# 快手小程序
+project.ks.json
+
+# 钉钉小程序
+project.dd.json
+
+# 飞书小程序
+project.lark.json

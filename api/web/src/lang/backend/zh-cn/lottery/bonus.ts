@@ -1,0 +1,18 @@
+export default {
+    'lottery.bonus.id': 'ID',
+    'lottery.bonus.type': '类型',
+    'lottery.bonus.name': '名称',
+    'lottery.bonus.key': '键值',
+    'lottery.bonus.price': '最低/单注购买价格',
+    'lottery.bonus.bonus': '赔率',
+    'lottery.bonus.bonus_json': '赔率配置',
+    'lottery.bonus.bonus_type': '赔率类型',
+    'lottery.bonus.single_bonus': '单个赔率',
+    'lottery.bonus.multiple_bonus': '多个赔率',
+    'lottery.bonus.bonus_key': '赔率名称',
+    'lottery.bonus.bonus_value': '赔率值',
+    'lottery.bonus.add_bonus': '添加赔率项',
+    'lottery.bonus.Add': '添加游戏赔率',
+    'lottery.bonus.Edit': '编辑游戏赔率',
+    'lottery.bonus.quick Search Fields': '类型、名称、键值',
+}

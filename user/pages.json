@@ -1,0 +1,143 @@
+{
+	"pages": [ 
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "购彩大厅"
+			}
+		},
+		{
+			"path": "pages/profile/profile",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/users/login",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/order/order",
+			"style": {
+				"navigationBarTitleText": "我的订单",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/other/kaijiang",
+			"style": {
+				"navigationBarTitleText": "开奖公告",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/users/settings/settings",
+			"style": {
+				"navigationBarTitleText": "编辑资料"
+			}
+		},
+		{
+			"path": "pages/lottery/quickGame",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "快开彩"
+			}
+		},
+		{
+			"path": "pages/lottery/welfare",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "彩票"
+			}
+		},
+		{
+			"path": "pages/users/charge",
+			"style": {
+				"navigationBarTitleText": "我要充值"
+			}
+		},
+		{
+			"path": "pages/users/withdraw",
+			"style": {
+				"navigationBarTitleText": "我要提现"
+			}
+		},
+		{
+			"path": "pages/users/redpacket",
+			"style": {
+				"navigationBarTitleText": "我的红包",
+				"navigationBarBackgroundColor": "#ff3434",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/users/moneylog",
+			"style": {
+				"navigationBarTitleText": "资金变动"
+			}
+		},
+		{
+			"path": "pages/users/share",
+			"style": {
+				"navigationBarTitleText": "邀请分享"
+			}
+		},
+		{
+			"path": "pages/other/dano",
+			"style": {
+				"navigationBarTitleText": "平台公告"
+			}
+		},
+		{
+			"path": "pages/other/history",
+			"style": {
+				"navigationBarTitleText": "开奖历史",
+				"enablePullDownRefresh": true,
+				"onReachBottomDistance": 50
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "myApp",
+		"navigationBarBackgroundColor": "#252525",
+		"backgroundColor": "#252525"
+	},
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#fea61c",
+		"backgroundColor": "#1a1a1a",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/icon/home.png",
+				"selectedIconPath": "static/icon/home_1.png"
+			},
+			{
+				"pagePath": "pages/other/kaijiang",
+				"text": "开奖公告",
+				"iconPath": "static/icon/3.png",
+				"selectedIconPath": "static/icon/3_3.png"
+			},
+			{
+				"pagePath": "pages/order/order",
+				"text": "订单",
+				"iconPath": "static/icon/1.png",
+				"selectedIconPath": "static/icon/1_1.png"
+			},
+			{
+				"pagePath": "pages/profile/profile",
+				"text": "我的",
+				"iconPath": "static/icon/4.png",
+				"selectedIconPath": "static/icon/4_4.png"
+			}
+		]
+	},
+	"uniIdRouter": {}
+}

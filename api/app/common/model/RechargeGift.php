@@ -1,0 +1,74 @@
+<?php
+
+namespace app\common\model;
+
+use think\Model;
+
+class RechargeGift extends Model
+{
+    protected $name = 'recharge_gift';
+    
+    // 设置字段信息
+    protected $schema = [
+        'id'            => 'int',
+        'agent_id'      => 'int',
+        'charge_amount' => 'int',
+        'bonus_amount'  => 'int',
+        'status'        => 'int',
+        'create_time'   => 'int',
+        'update_time'   => 'int',
+    ];
+    
+    // 自动时间戳
+    protected $autoWriteTimestamp = true;
+    
+    // 定义时间戳字段名
+    protected $createTime = 'create_time';
+    protected $updateTime = 'update_time';
+    
+    // 状态常量
+    const STATUS_DISABLED = 0; // 禁用
+    const STATUS_ENABLED = 1;  // 启用
+    
+    /**
+     * 状态文本访问器
+     */
+    public function getStatusTextAttr($value, $data)
+    {
+        $statusMap = [
+            self::STATUS_DISABLED => '禁用',
+            self::STATUS_ENABLED => '启用',
+        ];
+        return $statusMap[$data['status']] ?? '未知';
+    }
+    
+    /**
+     * 关联代理商
+     */
+    public function agent()
+    {
+        return $this->belongsTo(User::class, 'agent_id', 'id');
+    }
+    
+    /**
+     * 获取代理商的充值赠送配置
+     */
+    public static function getAgentConfigs($agentId)
+    {
+        return self::where('agent_id', $agentId)
+            ->order('charge_amount', 'asc')
+            ->select();
+    }
+    
+    /**
+     * 根据充值金额获取赠送配置
+     */
+    public static function getGiftByAmount($agentId, $chargeAmount)
+    {
+        return self::where('agent_id', $agentId)
+            ->where('status', self::STATUS_ENABLED)
+            ->where('charge_amount', '<=', $chargeAmount)
+            ->order('charge_amount', 'desc')
+            ->find();
+    }
+}

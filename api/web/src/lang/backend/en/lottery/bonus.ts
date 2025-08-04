@@ -1,0 +1,18 @@
+export default {
+    'lottery.bonus.id': 'ID',
+    'lottery.bonus.type': 'Type',
+    'lottery.bonus.name': 'Name',
+    'lottery.bonus.key': 'Key',
+    'lottery.bonus.price': 'Min/Single Bet Price',
+    'lottery.bonus.bonus': 'Odds',
+    'lottery.bonus.bonus_json': 'Odds Config',
+    'lottery.bonus.bonus_type': 'Odds Type',
+    'lottery.bonus.single_bonus': 'Single Odds',
+    'lottery.bonus.multiple_bonus': 'Multiple Odds',
+    'lottery.bonus.bonus_key': 'Odds Name',
+    'lottery.bonus.bonus_value': 'Odds Value',
+    'lottery.bonus.add_bonus': 'Add Odds Item',
+    'lottery.bonus.Add': 'Add Game Odds',
+    'lottery.bonus.Edit': 'Edit Game Odds',
+    'lottery.bonus.quick Search Fields': 'Type, Name, Key',
+}

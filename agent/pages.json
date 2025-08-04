@@ -1,0 +1,163 @@
+{
+	"pages": [ 
+		{
+			"path": "pages/profile/profile",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/users/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/order/order",
+			"style": {
+				"navigationBarTitleText": "会员订单",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/user/user",
+			"style": {
+				"navigationBarTitleText": "我的会员"
+			}
+		},
+		{
+			"path": "pages/user/moneylog",
+			"style": {
+				"navigationBarTitleText": "会员资金变动"
+			}
+		},
+		{
+			"path": "pages/other/dano",
+			"style": {
+				"navigationBarTitleText": "平台公告"
+			}
+		},
+		{
+			"path": "pages/user/detail",
+			"style": {
+				"navigationBarTitleText": "会员详情",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/statistics/statistics",
+			"style": {
+				"navigationBarTitleText": "数据统计",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/users/settings/settings",
+			"style": {
+				"navigationBarTitleText": "编辑资料"
+			}
+		},
+		{
+			"path": "pages/users/register",
+			"style": {
+				"navigationBarTitleText": "注册"
+			}
+		},
+		{
+			"path": "pages/redpacket/index",
+			"style": {
+				"navigationBarTitleText": "红包管理",
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/redpacket/create",
+			"style": {
+				"navigationBarTitleText": "发放红包"
+			}
+		},
+		{
+			"path": "pages/redpacket/detail",
+			"style": {
+				"navigationBarTitleText": "红包详情",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/users/share",
+			"style": {
+				"navigationBarTitleText": "邀请代理商"
+			}
+		},
+		{
+			"path": "pages/users/moneylog",
+			"style": {
+				"navigationBarTitleText": "资金变动"
+			}
+		},
+		{
+			"path": "pages/other/dano",
+			"style": {
+				"navigationBarTitleText": "公告"
+			}
+		},
+		{
+			"path": "pages/users/charge",
+			"style": {
+				"navigationBarTitleText": "我要充值"
+			}
+		},
+		{
+			"path": "pages/users/withdraw",
+			"style": {
+				"navigationBarTitleText": "我要提现"
+			}
+		},
+		{
+			"path": "pages/activity/charge",
+			"style": {
+				"navigationBarTitleText": "充值送金活动"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "myApp",
+		"navigationBarBackgroundColor": "#252525",
+		"backgroundColor": "#252525"
+	},
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#fea61c",
+		"backgroundColor": "#1a1a1a",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/order/order",
+				"text": "订单",
+				"iconPath": "static/icon/1.png",
+				"selectedIconPath": "static/icon/1_1.png"
+			},
+			{
+				"pagePath": "pages/user/user",
+				"text": "用户",
+				"iconPath": "static/icon/2.png",
+				"selectedIconPath": "static/icon/2_2.png"
+			},
+			{
+				"pagePath": "pages/statistics/statistics",
+				"text": "统计",
+				"iconPath": "static/icon/3.png",
+				"selectedIconPath": "static/icon/3_3.png"
+			},
+			{
+				"pagePath": "pages/profile/profile",
+				"text": "我的",
+				"iconPath": "static/icon/4.png",
+				"selectedIconPath": "static/icon/4_4.png"
+			}
+		]
+	},
+	"uniIdRouter": {}
+}

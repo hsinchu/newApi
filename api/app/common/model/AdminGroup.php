@@ -1,0 +1,13 @@
+<?php
+
+namespace app\common\model;
+
+use think\Model;
+
+/**
+ * AdminGroup模型
+ */
+class AdminGroup extends Model
+{
+    protected $autoWriteTimestamp = true;
+}

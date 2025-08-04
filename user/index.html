@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- 初始 viewport 设置 -->
+    <meta id="viewport-meta" name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0" />
+    
+    <script>
+      // 检测浏览器对 viewport-fit=cover 的支持
+      var coverSupport = 'CSS' in window && 
+        typeof CSS.supports === 'function' && 
+        (CSS.supports('top: env(a)') || CSS.supports('top: constant(a)'));
+      
+      // 如果支持，则更新 viewport 内容
+      if (coverSupport) {
+        const viewportMeta = document.getElementById('viewport-meta');
+        viewportMeta.content += ', viewport-fit=cover';
+      }
+    </script>
+    
+    <title></title>
+    <!-- 字体预加载 -->
+    <link rel="preload" href="/uni_modules/uv-icon/components/uv-icon/uvicons.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+    <!--preload-links-->
+    <!--app-context-->
+  </head>
+  <body>
+    <div id="app"><!--app-html--></div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
