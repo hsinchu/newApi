@@ -35,10 +35,10 @@ class FinanceService
             throw new ValidateException('用户余额不足');
         }
 
-        // 根据操作类型确定是否需要调整冻结金额
+        // 根据操作类型确定是否需要调整不可提现金额
         $frozenAmount = 0;
         
-        // 增加冻结余额的操作类型
+        // 增加不可提现余额的操作类型
         $freezeIncreaseTypes = [
             'COMMISSION_ADD',        // 佣金收入
             'ADMIN_ADD',             // 管理员充值
@@ -46,11 +46,12 @@ class FinanceService
             'RECHARGE_GIFT_ADD',     // 充值赠送
             'BET_REFUND_ADD',        // 用户投注退款
             'ACTIVITY_REWARD_ADD',   // 活动奖励
+            'PROMOTION_INCOME',      // 推广收入
             'RED_PACKET_CANCEL',     // 代理商撤销红包
             'RED_PACKET_RECEIVE'     // 用户领取红包
         ];
         
-        // 减少冻结余额的操作类型
+        // 减少不可提现余额的操作类型
         $freezeDecreaseTypes = [
             'ADMIN_DEDUCT',          // 管理员扣款
             'BET_DEDUCT',            // 用户投注
@@ -58,22 +59,22 @@ class FinanceService
             'RECHARGE_GIFT_DEDUCT'   // 充值赠送扣款
         ];
         
-        // 不影响冻结余额的操作类型（返佣等直接可用余额）
+        // 不影响不可提现余额的操作类型（返佣等直接可用余额）
         $noFreezeTypes = [
             'PRIZE_ADD',             // 中奖奖金
             'AGENT_ADD_TO_USER',     // 代理商给用户加款
             'AGENT_DEDUCT_FROM_USER' // 代理商给用户扣款
         ];
         
-        // 计算冻结金额变动
+        // 计算不可提现金额变动
         if (in_array($type, $freezeIncreaseTypes)) {
-            $frozenAmount = abs($amount); // 冻结金额增加
+            $frozenAmount = abs($amount); // 不可提现金额增加
         } elseif (in_array($type, $freezeDecreaseTypes)) {
-            $frozenAmount = -abs($amount); // 冻结金额减少
+            $frozenAmount = -abs($amount); // 不可提现金额减少
         } elseif (in_array($type, $noFreezeTypes)) {
-            $frozenAmount = 0; // 不影响冻结金额，直接可用
+            $frozenAmount = 0; // 不影响不可提现金额，直接可用
         }
-        // 其他类型不影响冻结金额
+        // 其他类型不影响不可提现金额
         
         // 如果需要更新gift_money字段
         if ($updateGiftMoney && $amount != 0) {
@@ -92,8 +93,9 @@ class FinanceService
                 'type' => $type,
                 'operator_type' => 'system'
             ];
-            // 只有当冻结金额有变动时才设置frozen_money字段
+            // 只有当不可提现金额有变动时才设置frozen_money字段
             if ($frozenAmount != 0) {
+                $saveData['unwith_money'] = $frozenAmount;
                 $saveData['frozen_change'] = $frozenAmount;
             }
             
@@ -281,7 +283,7 @@ class FinanceService
                 'memo' => $remark ?: '投注扣款',
                 'type' => 'BET_DEDUCT',
                 'order_no' => $orderNo,
-                'frozen_money' => -$amountInYuan // 减少冻结金额
+                'unwith_money' => -$amountInYuan // 减少不可提现金额
             ]);
             
             User::commit();
@@ -322,7 +324,7 @@ class FinanceService
                 'memo' => $remark ?: '投注中奖',
                 'type' => 'BET_WIN_ADD',
                 'order_no' => $orderNo,
-                'frozen_money' => $amountInYuan // 增加冻结金额
+                'unwith_money' => $amountInYuan // 增加不可提现金额
             ]);
             
             User::commit();
@@ -363,7 +365,7 @@ class FinanceService
                 'memo' => $remark ?: '投注退款',
                 'type' => 'BET_REFUND_ADD',
                 'order_no' => $orderNo,
-                'frozen_money' => $amountInYuan // 增加冻结金额
+                'unwith_money' => $amountInYuan // 增加不可提现金额
             ]);
             
             User::commit();

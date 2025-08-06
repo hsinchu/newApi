@@ -38,7 +38,7 @@ class Info extends Frontend
                 'is_agent' => $userInfo['is_agent'],
                 'is_verified' => $userInfo['is_verified'],
                 'money' => $userInfo['money'], 
-                'frozen_money' => $userInfo['frozen_money'],
+                'unwith_money' => $userInfo['unwith_money'],
                 'gift_money' => $userInfo['gift_money'],
                 'score' => $userInfo['score'],
                 'invite_code' => $userInfo['invite_code'],
@@ -47,7 +47,8 @@ class Info extends Frontend
                 'nowin_rate' => $userInfo['nowin_rate'],
                 'rebate_rate' => $userInfo['rebate_rate'],
                 'default_rebate_rate' => $userInfo['default_rebate_rate'],
-                'status' => $userInfo['status']
+                'status' => $userInfo['status'],
+                'has_pay_password' => !empty($userInfo['pay_password'])
             ];
 
             if($userInfo['is_agent'] == 0 && $userInfo['parent_id'] > 0){
@@ -81,21 +82,26 @@ class Info extends Frontend
 			$allowedFields = ['nickname', 'mobile', 'default_rebate_rate', 'default_nowin_rate', 'nowin_rate', 'rebate_rate', 'realName', 'idCard'];
 			$updateData = [];
 			
-			// 处理支付密码修改
-			if (isset($data['oldPayPassword']) && isset($data['newPayPassword'])) {
+			// 处理支付密码修改或设置
+			if (isset($data['newPayPassword'])) {
 				$user = User::find($userId);
 				if (!$user) {
-					$this->error('用户不存在');
-				}
-				
-				// 验证原支付密码
-				if (!verify_password($data['oldPayPassword'], $user->pay_password, $user->salt)) {
-					$this->error('原支付密码错误');
+					throw new \Exception('用户不存在');
 				}
 				
 				// 验证新支付密码格式
 				if (!preg_match('/^\d{6}$/', $data['newPayPassword'])) {
-					$this->error('支付密码必须是6位数字');
+					throw new \Exception('支付密码必须是6位数字');
+				}
+				
+				// 如果用户已有支付密码，需要验证原密码
+				if (!empty($user->pay_password)) {
+					if (!isset($data['oldPayPassword'])) {
+						throw new \Exception('请输入原支付密码');
+					}
+					if (!verify_password($data['oldPayPassword'], $user->pay_password, $user->salt)) {
+						throw new \Exception('原支付密码错误');
+					}
 				}
 				
 				// 加密新支付密码
@@ -109,7 +115,7 @@ class Info extends Frontend
             }
             
             if (empty($updateData)) {
-                $this->error('没有需要更新的数据');
+                throw new \Exception('没有需要更新的数据');
             }
             
             // 验证昵称是否已存在
@@ -118,14 +124,14 @@ class Info extends Frontend
                     ->where('id', '<>', $userId)
                     ->find();
                 if ($existingUser) {
-                    $this->error('该昵称已被使用，请选择其他昵称');
+                    throw new \Exception('该昵称已被使用，请选择其他昵称');
                 }
             }
             
             // 验证手机号格式
             if (isset($updateData['mobile'])) {
                 if (!preg_match('/^1[3-9]\d{9}$/', $updateData['mobile'])) {
-                    $this->error('手机号格式不正确');
+                    throw new \Exception('手机号格式不正确');
                 }
             }
             
@@ -133,12 +139,12 @@ class Info extends Frontend
             if (isset($updateData['default_rebate_rate'])) {
                 $default_rebate_rate = floatval($updateData['default_rebate_rate']);
                 if ($default_rebate_rate < 0) {
-                    $this->error('返佣比例不能小于0');
+                    throw new \Exception('返佣比例不能小于0');
                 }
                 // 验证不能超过当前用户的返佣比例
                 $currentUser = User::find($userId);
                 if ($default_rebate_rate > $currentUser->rebate_rate) {
-                    $this->error('默认返佣比例不能超过您的返佣比例' . $currentUser->rebate_rate . '%');
+                    throw new \Exception('默认返佣比例不能超过您的返佣比例' . $currentUser->rebate_rate . '%');
                 }
                 $updateData['default_rebate_rate'] = $default_rebate_rate;
             }
@@ -147,14 +153,14 @@ class Info extends Frontend
             if (isset($updateData['default_nowin_rate'])) {
                 $default_nowin_rate = floatval($updateData['default_nowin_rate']);
                 if ($default_nowin_rate < 0 || $default_nowin_rate > 50) {
-                    $this->error('未中奖返佣比例必须在0-50之间');
+                    throw new \Exception('未中奖返佣比例必须在0-50之间');
                 }
                 // 验证不能超过当前用户的未中奖返佣比例
                 if (!isset($currentUser)) {
                     $currentUser = User::find($userId);
                 }
                 if ($default_nowin_rate > $currentUser->nowin_rate) {
-                    $this->error('默认未中奖返佣比例不能超过您的未中奖返佣比例' . $currentUser->nowin_rate . '%');
+                    throw new \Exception('默认未中奖返佣比例不能超过您的未中奖返佣比例' . $currentUser->nowin_rate . '%');
                 }
                 $updateData['default_nowin_rate'] = $default_nowin_rate;
             }
@@ -162,12 +168,12 @@ class Info extends Frontend
             // 验证实名认证信息
             if (isset($updateData['realName']) || isset($updateData['idCard'])) {
                 if (empty($updateData['realName']) || empty($updateData['idCard'])) {
-                    $this->error('真实姓名和身份证号码不能为空');
+                    throw new \Exception('真实姓名和身份证号码不能为空');
                 }
                 
                 // 验证身份证号码格式
                 if (!preg_match('/(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/', $updateData['idCard'])) {
-                    $this->error('身份证号码格式不正确');
+                    throw new \Exception('身份证号码格式不正确');
                 }
                 
                 // 检查身份证号码是否已被使用
@@ -175,11 +181,11 @@ class Info extends Frontend
                     ->where('id', '<>', $userId)
                     ->find();
                 if ($existingIdCard) {
-                    $this->error('该身份证号码已被使用');
+                    throw new \Exception('该身份证号码已被使用');
                 }
                 
                 // 设置实名认证状态为审核中
-                $updateData['real_name_certified'] = 2; // 2=审核中
+                $updateData['is_verified'] = 2; // 2=审核中
                 $updateData['real_name'] = $updateData['realName'];
                 $updateData['id_card'] = $updateData['idCard'];
                 
@@ -190,7 +196,7 @@ class Info extends Frontend
             // 更新用户信息
             $user = User::find($userId);
             if (!$user) {
-                $this->error('用户不存在');
+                throw new \Exception('用户不存在');
             }
             
             $user->save($updateData);

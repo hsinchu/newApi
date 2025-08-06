@@ -123,7 +123,7 @@ class User extends Backend
                             'username' => $user->username,
                             'nickname' => $user->nickname,
                             'money' => $user->money,
-                            'frozen_money' => $user->frozen_money
+                            'unwith_money' => $user->unwith_money
                         ]
                     ]);
                 }

@@ -2,15 +2,12 @@
 	<view class="container">
 		<!-- 状态栏占位 -->
 		<view class="status-bar"></view>
-		
-
-		
 		<!-- Logo区域 -->
 		<view class="logo-section">
 			<view class="logo">
-				<image src="/static/images/logo.svg" mode="aspectFit" class="logo-img"></image>
+				<image src="/static/images/logo.jpg" mode="aspectFit" class="logo-img"></image>
 			</view>
-			<text class="welcome-text">代理商注册</text>
+			<text class="welcome-text">{{ registrationType === 'agent' ? '代理注册' : '用户注册' }}</text>
 		</view>
 		
 		<!-- 注册表单 -->
@@ -27,6 +24,40 @@
 						class="input-field"
 						maxlength="20"
 					/>
+				</view>
+			</view>
+			
+			<!-- 电子邮箱输入 -->
+			<view class="input-group">
+				<view class="input-wrapper">
+					<uv-icon name="email-fill" size="20" color="#e1e1e1"></uv-icon>
+					<input 
+						v-model="formData.email" 
+						type="text"
+						placeholder="请输入电子邮箱" 
+						placeholder-style="color: #b9b9b9;"
+						class="input-field"
+					/>
+				</view>
+			</view>
+			
+			<!-- 邮箱验证码输入 -->
+			<view class="input-group">
+				<view class="input-wrapper">
+					<uv-icon name="eye" size="20" color="#e1e1e1"></uv-icon>
+					<input 
+						v-model="formData.emailCode" 
+						type="text"
+						placeholder="请输入邮箱验证码" 
+						placeholder-style="color: #b9b9b9;"
+						class="input-field code-input"
+						maxlength="6"
+					/>
+					<view class="code-btn" @tap="sendEmailCode">
+						<text class="code-btn-text" :class="{disabled: emailCodeSending || emailCountdown > 0}">
+							{{ emailCountdown > 0 ? `${emailCountdown}s后重发` : (emailCodeSending ? '发送中...' : '发送验证码') }}
+						</text>
+					</view>
 				</view>
 			</view>
 			
@@ -61,6 +92,22 @@
 					<view class="eye-icon" @tap="toggleConfirmPassword">
 						<uv-icon :name="showConfirmPassword ? 'eye-fill' : 'eye-off'" size="20" color="#b9b9b9"></uv-icon>
 					</view>
+				</view>
+			</view>
+			
+			<!-- 邀请码输入 -->
+			<view class="input-group">
+				<view class="input-wrapper">
+					<uv-icon name="attach" size="20" color="#e1e1e1"></uv-icon>
+					<input 
+						v-model="formData.inviteCode" 
+						type="text"
+						placeholder="请输入邀请码" 
+						placeholder-style="color: #b9b9b9;"
+						class="input-field"
+						maxlength="20"
+						:disabled="!!formData.inviteCode"
+					/>
 				</view>
 			</view>
 			
@@ -175,22 +222,45 @@
 </template>
 
 <script>
-import { register } from '@/api/user.js';
-import request from '@/utils/request.js';
+import { register, sendEmailCode } from '@/api/user.js';
 
 export default {
 	data() {
 		return {
-				formData: {
-				username: '',
-				password: '',
-				confirmPassword: ''
-			},
-				showPassword: false,
-				showConfirmPassword: false,
-				agreed: false,
-				loading: false
-			}
+			formData: {
+			username: '',
+			password: '',
+			confirmPassword: '',
+			email: '',
+			emailCode: '',
+			inviteCode: ''
+		},
+			showPassword: false,
+			showConfirmPassword: false,
+			agreed: false,
+			loading: false,
+			emailCodeSending: false,
+			emailCountdown: 0,
+			countdownTimer: null,
+			registrationType: 'user' // 注册类型，默认为用户注册
+		}
+	},
+	onLoad(options) {
+		// 获取URL参数中的type
+		if (options.type) {
+			this.registrationType = options.type;
+		}
+		
+		// 获取URL参数中的邀请码
+		if (options.code) {
+			this.formData.inviteCode = options.code;
+		}
+		
+		// 根据type设置页面标题
+		const title = this.registrationType === 'agent' ? '代理注册' : '用户注册';
+		uni.setNavigationBarTitle({
+			title: title
+		});
 	},
 	methods: {
 
@@ -203,6 +273,72 @@ export default {
 		// 切换确认密码显示
 		toggleConfirmPassword() {
 			this.showConfirmPassword = !this.showConfirmPassword;
+		},
+		
+		// 发送邮箱验证码
+		async sendEmailCode() {
+			if (this.emailCodeSending || this.emailCountdown > 0) {
+				return;
+			}
+			
+			if (!this.formData.email) {
+				uni.showToast({
+					title: '请输入邮箱地址',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			// 验证邮箱格式
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(this.formData.email)) {
+				uni.showToast({
+					title: '邮箱格式不正确',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			this.emailCodeSending = true;
+			
+			try {
+				// 发送注册类型的验证码
+				const result = await sendEmailCode(this.formData.email, 'register');
+				if (result.code === 1) {
+					uni.showToast({
+						title: result.msg || '验证码发送成功',
+						icon: 'success'
+					});
+					
+					// 自动填充验证码
+					if (result.data && result.data.code) {
+						this.formData.emailCode = result.data.code;
+					}
+					
+					// 开始倒计时
+					this.emailCountdown = 60;
+					this.countdownTimer = setInterval(() => {
+						this.emailCountdown--;
+						if (this.emailCountdown <= 0) {
+							clearInterval(this.countdownTimer);
+							this.countdownTimer = null;
+						}
+					}, 1000);
+				} else {
+					uni.showToast({
+						title: result.msg || '发送失败',
+						icon: 'none'
+					});
+				}
+			} catch (error) {
+				console.error('发送验证码失败:', error);
+				uni.showToast({
+					title: '发送失败，请重试',
+					icon: 'none'
+				});
+			} finally {
+				this.emailCodeSending = false;
+			}
 		},
 		
 		// 切换协议同意状态
@@ -234,7 +370,11 @@ export default {
 				const response = await register({
 					username: this.formData.username,
 					password: this.formData.password,
-					confirmPassword: this.formData.confirmPassword
+					confirmPassword: this.formData.confirmPassword,
+					email: this.formData.email,
+					emailCode: this.formData.emailCode,
+					registerType: 'email',
+					inviteCode: this.formData.inviteCode
 				});
 				
 				if (response.code === 1) {
@@ -324,6 +464,50 @@ export default {
 				return false;
 			}
 			
+			// 验证邮箱
+			if (!this.formData.email.trim()) {
+				uni.showToast({
+					title: '请输入邮箱地址',
+					icon: 'none'
+				});
+				return false;
+			}
+			
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(this.formData.email)) {
+				uni.showToast({
+					title: '邮箱格式不正确',
+					icon: 'none'
+				});
+				return false;
+			}
+			
+			// 验证邮箱验证码
+			if (!this.formData.emailCode.trim()) {
+				uni.showToast({
+					title: '请输入邮箱验证码',
+					icon: 'none'
+				});
+				return false;
+			}
+			
+			if (this.formData.emailCode.length !== 6) {
+				uni.showToast({
+					title: '验证码应为6位数字',
+					icon: 'none'
+				});
+				return false;
+			}
+			
+			// 验证邀请码
+			if (!this.formData.inviteCode.trim()) {
+				uni.showToast({
+					title: '请输入邀请码',
+					icon: 'none'
+				});
+				return false;
+			}
+			
 			return true;
 		},
 		
@@ -354,6 +538,14 @@ export default {
 			uni.navigateTo({
 				url: '/pages/users/login'
 			});
+		}
+	},
+	
+	// 页面销毁时清理定时器
+	beforeDestroy() {
+		if (this.countdownTimer) {
+			clearInterval(this.countdownTimer);
+			this.countdownTimer = null;
 		}
 	}
 }
@@ -436,6 +628,31 @@ export default {
 	color: #e1e1e1;
 	height: 100%;
 	background-color: transparent;
+}
+
+.code-input {
+	flex: 1;
+	margin-right: 20rpx;
+}
+
+.code-btn {
+	padding: 10rpx 20rpx;
+	border-radius: 8rpx;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	min-width: 160rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.code-btn-text {
+	font-size: 24rpx;
+	color: #fff;
+	font-weight: 500;
+}
+
+.code-btn-text.disabled {
+	color: #ccc;
 }
 
 .eye-icon {

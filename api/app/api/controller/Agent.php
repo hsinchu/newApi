@@ -158,7 +158,7 @@ class Agent extends Frontend
             $list = $members->toArray();
             foreach ($list as &$item) {
                 $item['money'] = $item['money'];
-                $item['frozen_money'] = bcdiv($item['frozen_money'], 100, 2);
+                $item['unwith_money'] = bcdiv($item['unwith_money'], 100, 2);
                 $item['agent_favorite'] = (int)$item['agent_favorite'];
                 
                 // 获取会员最近投注时间
@@ -216,7 +216,7 @@ class Agent extends Frontend
         }
         
         $subAgents = User::where($where)
-            ->field('id,username,nickname,avatar,email,mobile,money,frozen_money,default_rebate_rate,default_nowin_rate,rebate_rate,nowin_rate,is_verified,last_login_time,join_time,status')
+            ->field('id,username,nickname,avatar,email,mobile,money,unwith_money,default_rebate_rate,default_nowin_rate,rebate_rate,nowin_rate,is_verified,last_login_time,join_time,status')
             ->order('create_time', 'desc')
             ->paginate([
                 'list_rows' => $limit,
@@ -227,7 +227,7 @@ class Agent extends Frontend
         $list = $subAgents->items();
         foreach ($list as &$item) {
             $item['money'] = bcdiv($item['money'], 100, 2);
-            $item['frozen_money'] = bcdiv($item['frozen_money'], 100, 2);
+            $item['unwith_money'] = bcdiv($item['unwith_money'], 100, 2);
             
             // 获取该代理商的下级会员数
             $item['member_count'] = User::where('parent_id', $item['id'])
@@ -313,7 +313,7 @@ class Agent extends Frontend
             
             // 转换金额单位
             $member->money = $member->money;
-            $member->frozen_money = $member->frozen_money;
+            $member->unwith_money = $member->unwith_money;
             
             // 获取统计数据
             $stats = [];
@@ -762,10 +762,15 @@ class Agent extends Frontend
                 throw new Exception('操作类型参数错误');
             }
             
+            if (empty($data['pay_password'])) {
+                throw new Exception('支付密码不能为空');
+            }
+            
             $memberId = (int)$data['member_id'];
             $amount = (float)$data['amount'];
             $type = $data['type'];
             $remark = $data['remark'] ?? '';
+            $payPassword = $data['pay_password'];
             
             // 验证金额
             if ($amount <= 0) {
@@ -782,8 +787,18 @@ class Agent extends Frontend
                 throw new Exception('会员不存在或不属于您的下级');
             }
             
-            // 计算会员可用余额（总余额 - 冻结金额）
-            $memberAvailableBalance = $member->money - $member->frozen_money;
+            // 验证支付密码
+            $agent = User::where('id', $agentId)->find();
+            if (empty($agent->pay_password)) {
+                throw new Exception('您尚未设置支付密码，请先设置支付密码');
+            }
+            
+            if (!password_verify($payPassword, $agent->pay_password)) {
+                throw new Exception('支付密码错误');
+            }
+            
+            // 计算会员可用余额（总余额 - 不可提现金额）
+            $memberAvailableBalance = $member->money - $member->unwith_money;
             
             // 验证余额
             if ($type === 'add') {
@@ -1125,6 +1140,42 @@ class Agent extends Frontend
         }
         
         $this->success('删除配置成功');
+    }
+    
+    /**
+     * 验证支付密码
+     */
+    public function verifyPayPassword(): void
+    {
+        try {
+            $agentId = $this->auth->id;
+            $password = $this->request->post('password');
+            
+            if (empty($password)) {
+                throw new Exception('支付密码不能为空');
+            }
+            
+            // 获取代理商信息
+            $agent = User::where('id', $agentId)->find();
+            
+            if (!$agent) {
+                throw new Exception('代理商不存在');
+            }
+            
+            // 验证支付密码
+            if (empty($agent->pay_password)) {
+                throw new Exception('您尚未设置支付密码，请先设置支付密码');
+            }
+            
+            if (!password_verify($password, $agent->pay_password)) {
+                throw new Exception('支付密码错误');
+            }
+            
+        } catch (Exception $e) {
+            $this->error('验证失败：' . $e->getMessage());
+        }
+        
+        $this->success('验证成功');
     }
 
     /**

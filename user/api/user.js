@@ -127,3 +127,21 @@ export function getUserStatistics(params) {
 export function getMoneyLog(params = {}) {
 	return request.get('/user/moneyLog', params);
 }
+
+//发送电子邮箱验证码
+export function sendEmailCode(email, type) {
+	return request.post('/user/sendEmailCode', {
+		email: email,
+		type: type
+	});
+}
+
+//找回密码
+export function resetPassword(data) {
+	return request.post('/user/resetPassword', data);
+}
+
+//找回支付密码
+export function resetPayPassword(data) {
+	return request.post('/user/resetPayPassword', data);
+}

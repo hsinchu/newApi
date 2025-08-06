@@ -51,11 +51,13 @@ class Lottery extends Api
         try {
             // 获取彩种名称参数，默认为ff3d
             $lotteryName = $this->request->param('type', 'ff3d');
+
+            $lotteryType = LotteryType::where('type_code', $lotteryName)->find();
             
             // 调用LotteryService获取期号信息
             $lotteryService = new LotteryService();
 
-            if(in_array($lotteryName,['ff3d','5f3d'])){
+            if($lotteryType['category'] == 'QUICK'){
                 $result = $lotteryService->getCurrentPeriod($lotteryName);
             }else{
                 $result = $lotteryService->getCurrentPeriodOther($lotteryName);

@@ -214,7 +214,7 @@ class LotteryService
     
     /**
      * 获取当前期号信息
-     * @param string $lotteryName 彩种名称【ff3d,5f3d】
+     * @param string $lotteryName 彩种名称
      * @return array
      */
     public function getCurrentPeriod(string $lotteryName = 'ff3d'): array
@@ -371,7 +371,8 @@ class LotteryService
      */
     public function validatePeriod(string $periodNumber, string $lotteryName = 'ff3d'): array
     {
-        if(in_array($lotteryName, ['ff3d','5f3d'])){
+        $lotteryTypeCategory = LotteryType::where('type_code', $lotteryName)->value('category');
+        if($lotteryTypeCategory == 'QUICK'){
             $currentPeriodResult = $this->getCurrentPeriod($lotteryName);
         }else{
             $currentPeriodResult = $this->getCurrentPeriodOther($lotteryName);
@@ -422,6 +423,9 @@ class LotteryService
         $padLengthMap = [
             'ff3d' => 4,
             '5f3d' => 3,
+            '30f3d' => 2,
+            '2s3d' => 2,
+            '12s3d' => 1,
         ];
         
         return $padLengthMap[$lotteryName] ?? 4;

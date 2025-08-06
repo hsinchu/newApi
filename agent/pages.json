@@ -59,9 +59,15 @@
 			}
 		},
 		{
-			"path": "pages/users/register",
+			"path": "pages/users/findpass",
 			"style": {
-				"navigationBarTitleText": "注册"
+				"navigationBarTitleText": "找回密码"
+			}
+		},
+		{
+			"path": "pages/users/findpaypass",
+			"style": {
+				"navigationBarTitleText": "找回支付密码"
 			}
 		},
 		{
@@ -112,6 +118,13 @@
 			"path": "pages/users/withdraw",
 			"style": {
 				"navigationBarTitleText": "我要提现"
+			}
+		},
+		{
+			"path": "pages/users/withdrawlog",
+			"style": {
+				"navigationBarTitleText": "提现记录",
+				"enablePullDownRefresh": true
 			}
 		},
 		{

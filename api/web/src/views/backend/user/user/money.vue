@@ -35,8 +35,8 @@
                     <el-form-item label="当前余额">
                         <el-input v-model="state.userInfo.money" disabled type="number"></el-input>
                     </el-form-item>
-                    <el-form-item label="冻结金额">
-                        <el-input v-model="state.userInfo.frozen_money" disabled type="number"></el-input>
+                    <el-form-item label="不可提现金额">
+                        <el-input v-model="state.userInfo.unwith_money" disabled type="number"></el-input>
                     </el-form-item>
                     <el-form-item label="可提现余额">
                         <el-input v-model="state.availableMoney" disabled type="number"></el-input>
@@ -135,7 +135,7 @@ const getAdd = () => {
      }).then((res) => {
         state.userInfo = res.data.user
         state.after = res.data.user.money
-        state.availableMoney = parseFloat((parseFloat(res.data.user.money) - parseFloat(res.data.user.frozen_money || 0)).toFixed(2))
+        state.availableMoney = parseFloat((parseFloat(res.data.user.money) - parseFloat(res.data.user.unwith_money || 0)).toFixed(2))
     })
 }
 

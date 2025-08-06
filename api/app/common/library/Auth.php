@@ -90,7 +90,7 @@ class Auth extends \ba\Auth
      * 允许输出的字段
      * @var array
      */
-    protected array $allowFields = ['id', 'username', 'nickname', 'email', 'mobile', 'parent_id', 'avatar', 'gender', 'birthday', 'money', 'frozen_money', 'gift_money', 'score', 'join_time', 'motto', 'last_login_time', 'last_login_ip', 'is_agent', 'is_verified', 'default_rebate_rate', 'default_nowin_rate', 'nowin_rate', 'rebate_rate', 'invite_code', 'status'];
+    protected array $allowFields = ['id', 'username', 'nickname', 'email', 'mobile', 'parent_id', 'avatar', 'gender', 'birthday', 'money', 'unwith_money', 'gift_money', 'score', 'join_time', 'motto', 'last_login_time', 'last_login_ip', 'is_agent', 'is_verified', 'default_rebate_rate', 'default_nowin_rate', 'nowin_rate', 'rebate_rate', 'pay_password', 'invite_code', 'status'];
 
     public function __construct(array $config = [])
     {
@@ -173,11 +173,12 @@ class Auth extends \ba\Auth
      * @param string $password
      * @param string $mobile
      * @param string $email
+     * @param int|null $inviterUserId 邀请人用户ID
      * @param int    $group  会员分组 ID 号
      * @param array  $extend 扩展数据，如 ['status' => 'disable']
      * @return bool
      */
-    public function register(string $username, string $password = '', string $mobile = '', string $email = '', int $group = 1, array $extend = []): bool
+    public function register(string $username, string $password = '', string $mobile = '', string $email = '', ?int $inviterUserId = null, int $group = 1, array $extend = []): bool
     {
         $validate = Validate::rule([
             'email|' . __('Email')       => 'email|unique:user',
@@ -218,7 +219,14 @@ class Auth extends \ba\Auth
             'last_login_ip'   => $ip,
             'last_login_time' => $time,
             'status'          => 1, // 状态:0=审核中,1=启用,2=禁用
+            'invite_code'     => User::generateInviteCode(), // 生成邀请码
         ];
+        
+        // 如果有邀请人，设置parent_id
+        if ($inviterUserId) {
+            $data['parent_id'] = $inviterUserId;
+        }
+        
         $data = array_merge($params, $data);
         $data = array_merge($data, $extend);
 

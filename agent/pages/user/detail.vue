@@ -31,7 +31,7 @@
 				</view>
 				<view class="info-item">
 					<text class="info-label">不可提现金额</text>
-					<text class="info-value frozen">¥{{memberInfo.frozen_money}}</text>
+					<text class="info-value frozen">¥{{memberInfo.unwith_money}}</text>
 				</view>
 				<view class="info-item">
 					<text class="info-label">总投注</text>
@@ -123,7 +123,7 @@
 						v-model="editData.rebate_rate" 
 						:min="0"
 						:max="Number(memberInfo.agent_rebate_rate) || 50"
-						:step="0.2"
+						:step="0.1"
 						activeColor="#ff934a"
 						inactiveColor="#333"
 						blockColor="#ffffff"
@@ -151,7 +151,7 @@
 						v-model="editData.nowin_rate" 
 						:min="0"
 						:max="Number(memberInfo.agent_nowin_rate) || 50"
-						:step="0.2"
+						:step="0.1"
 						activeColor="#ff934a"
 						inactiveColor="#333"
 						blockColor="#ffffff"
@@ -321,12 +321,70 @@
 				</view>
 			</view>
 		</uv-popup>
+		
+		<!-- 支付密码验证弹窗 -->
+		<uv-popup 
+			ref="payPasswordPopup" 
+			mode="center" 
+			border-radius="20"
+			:custom-style="{ backgroundColor: '#2a2a2a' }"
+			@close="closePayPasswordPopup"
+		>
+			<view class="popup-container pay-password-container">
+				<view class="popup-header">
+					<text class="popup-title">验证支付密码</text>
+					<view class="close-btn" @tap="closePayPasswordPopup">
+						<uv-icon name="close" size="20" color="#d8d8d8"></uv-icon>
+					</view>
+				</view>
+				
+				<view class="form-content">
+					<view class="pay-password-tip">
+						<uv-icon name="lock" color="#ff934a" size="24"></uv-icon>
+						<text class="tip-text">请输入您的支付密码以确认操作</text>
+					</view>
+					
+					<view class="form-item">
+						<text class="item-label">支付密码</text>
+						<view class="input-wrapper">
+							<input 
+								v-model="payPasswordForm.password" 
+								class="form-input" 
+								type="password"
+								placeholder="请输入支付密码"
+								placeholder-style="color: #666;"
+								maxlength="6"
+							/>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 操作按钮 -->
+				<view class="popup-actions">
+					<uv-button 
+						type="info" 
+						@click="closePayPasswordPopup"
+						class="action-btn cancel-btn"
+					>
+						取消
+					</uv-button>
+					<uv-button 
+						type="primary" 
+						@click="confirmPayPassword"
+						class="action-btn save-btn"
+						:disabled="!payPasswordForm.password"
+					>
+						确认
+					</uv-button>
+				</view>
+			</view>
+		</uv-popup>
 	</view>
 </template>
 
 <script>
 import authMixin from '@/mixins/auth.js';
-import { getMemberDetail, toggleMemberFavorite, setMemberRebate, setUserMoney } from '@/api/agent.js';
+import { getMemberDetail, toggleMemberFavorite, setMemberRebate, setUserMoney, verifyPayPassword } from '@/api/agent.js';
 import { getUserInfo } from '@/api/user.js';
 
 export default {
@@ -346,7 +404,12 @@ export default {
 				},
 				moneyType: '', // 'add' 或 'reduce'
 				agentBalance: '0.00',
-				memberAvailableBalance: '0.00'
+				memberAvailableBalance: '0.00',
+				payPasswordForm: {
+					password: ''
+				},
+				showPayPasswordModal: false,
+				pendingMoneyOperation: null // 存储待执行的资金操作
 			}
 		},
 	
@@ -622,7 +685,7 @@ export default {
 				if (response.code === 1) {
 					const userInfo = response.data;
 					const agentMoney = parseFloat(userInfo.money || 0);
-					const agentFrozenMoney = parseFloat(userInfo.frozen_money || 0);
+					const agentFrozenMoney = parseFloat(userInfo.unwith_money || 0);
 					this.agentBalance = (agentMoney - agentFrozenMoney).toFixed(2);
 					
 					// 同时更新本地存储的用户信息
@@ -635,13 +698,13 @@ export default {
 				// 如果API调用失败，降级使用本地存储
 				const userInfo = uni.getStorageSync('userInfo');
 				const agentMoney = parseFloat(userInfo?.money || 0);
-				const agentFrozenMoney = parseFloat(userInfo?.frozen_money || 0);
+				const agentFrozenMoney = parseFloat(userInfo?.unwith_money || 0);
 				this.agentBalance = (agentMoney - agentFrozenMoney).toFixed(2);
 			}
 			
-			// 更新会员可用余额（总余额减去冻结金额）
+			// 更新会员可用余额（总余额减去不可提现金额）
 			const memberMoney = parseFloat(this.memberInfo?.money || 0);
-			const frozenMoney = parseFloat(this.memberInfo?.frozen_money || 0);
+			const frozenMoney = parseFloat(this.memberInfo?.unwith_money || 0);
 			this.memberAvailableBalance = (memberMoney - frozenMoney).toFixed(2);
 		},
 		
@@ -675,6 +738,20 @@ export default {
 				return;
 			}
 			
+			// 存储待执行的操作并显示支付密码验证弹窗
+			this.pendingMoneyOperation = {
+				type: 'add',
+				amount: amount,
+				remark: this.moneyForm.remark
+			};
+			this.showPayPasswordModal = true;
+			this.$refs.payPasswordPopup.open();
+		},
+		
+		// 执行加款操作
+		async executeAddMoney() {
+			const { amount, remark } = this.pendingMoneyOperation;
+			
 			try {
 				uni.showLoading({
 					title: '处理中...'
@@ -684,8 +761,9 @@ export default {
 				const response = await setUserMoney({
 					member_id: this.memberId,
 					amount: amount,
-					remark: this.moneyForm.remark,
-					type: 'add'
+					remark: remark,
+					type: 'add',
+					pay_password: this.payPasswordForm.password
 				});
 				
 				uni.hideLoading();
@@ -737,7 +815,7 @@ export default {
 			}
 			
 			const memberMoney = parseFloat(this.memberInfo.money || 0);
-			const frozenMoney = parseFloat(this.memberInfo.frozen_money || 0);
+			const frozenMoney = parseFloat(this.memberInfo.unwith_money || 0);
 			const availableBalance = memberMoney - frozenMoney;
 			
 			if (amount > availableBalance) {
@@ -756,6 +834,20 @@ export default {
 				return;
 			}
 			
+			// 存储待执行的操作并显示支付密码验证弹窗
+			this.pendingMoneyOperation = {
+				type: 'reduce',
+				amount: amount,
+				remark: this.moneyForm.remark
+			};
+			this.showPayPasswordModal = true;
+			this.$refs.payPasswordPopup.open();
+		},
+		
+		// 执行减款操作
+		async executeReduceMoney() {
+			const { amount, remark } = this.pendingMoneyOperation;
+			
 			try {
 				uni.showLoading({
 					title: '处理中...'
@@ -765,8 +857,9 @@ export default {
 				const response = await setUserMoney({
 					member_id: this.memberId,
 					amount: amount,
-					remark: this.moneyForm.remark,
-					type: 'reduce'
+					remark: remark,
+					type: 'reduce',
+					pay_password: this.payPasswordForm.password
 				});
 				
 				uni.hideLoading();
@@ -845,6 +938,40 @@ export default {
 				return `${date.getMonth() + 1}月${date.getDate()}日`;
 			}
 			// #endif
+		},
+		
+		// 关闭支付密码弹窗
+		closePayPasswordPopup() {
+			this.$refs.payPasswordPopup?.close();
+			this.payPasswordForm.password = '';
+			this.showPayPasswordModal = false;
+			this.pendingMoneyOperation = null;
+		},
+		
+		// 确认支付密码
+		async confirmPayPassword() {
+			if (!this.payPasswordForm.password) {
+				uni.showToast({
+					title: '请输入支付密码',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			// 先关闭弹窗但不清空密码
+			this.$refs.payPasswordPopup?.close();
+			this.showPayPasswordModal = false;
+			
+			// 执行对应的资金操作
+			if (this.pendingMoneyOperation?.type === 'add') {
+				await this.executeAddMoney();
+			} else if (this.pendingMoneyOperation?.type === 'reduce') {
+				await this.executeReduceMoney();
+			}
+			
+			// 操作完成后清空密码和待执行操作
+			this.payPasswordForm.password = '';
+			this.pendingMoneyOperation = null;
 		}
 	}
 }
@@ -1305,6 +1432,28 @@ export default {
 		
 		.text-red {
 			color: #ff4d4f;
+		}
+	}
+}
+
+// 支付密码弹窗样式
+.pay-password-container {
+	width: 600rpx;
+	
+	.pay-password-tip {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+		margin-bottom: 40rpx;
+		padding: 24rpx;
+		background-color: rgba(255, 147, 74, 0.1);
+		border-radius: 12rpx;
+		border: 1px solid rgba(255, 147, 74, 0.3);
+		
+		.tip-text {
+			color: #e1e1e1;
+			font-size: 26rpx;
+			line-height: 1.4;
 		}
 	}
 }

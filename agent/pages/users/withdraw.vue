@@ -24,6 +24,9 @@
 									<view class="refresh-btn" @tap="refreshBalance">
 										<uv-icon name="reload" size="16" color="#e1e1e1" :class="{ 'rotating': refreshing }"></uv-icon>
 									</view>
+									<view class="moneylog-btn" @tap="goToWithdrawLog">
+										<uv-icon name="list" size="16" color="#e1e1e1"></uv-icon>
+									</view>
 								</view>
 								<text class="balance-amount">¥{{ balance }}</text>
 								<view class="non-withdrawable-section">
@@ -54,15 +57,20 @@
 										<view class="account-type">
 											<uv-icon :name="getAccountIcon(account.type)" size="20" color="#007AFF"></uv-icon>
 											<text class="type-name">{{ account.typeName }}</text>
+											<text v-if="account.isDefault" class="default-tag">默认</text>
 										</view>
 										<text class="account-number">{{ account.accountNumber }}</text>
 										<text class="account-name">{{ account.accountName }}</text>
+										<text v-if="account.bankName" class="bank-name">{{ account.bankName }}</text>
 									</view>
 									<view class="account-actions">
-										<view class="edit-btn" @tap.stop="editAccount(account)">
-											<uv-icon name="edit-pen" size="16" color="#666"></uv-icon>
-										</view>
+									<view class="edit-btn" @tap.stop="editAccount(account)">
+										<uv-icon name="edit-pen" size="16" color="#666"></uv-icon>
 									</view>
+									<view class="delete-btn" @tap.stop="deleteAccount(account)">
+										<uv-icon name="trash" size="16" color="#ff4757"></uv-icon>
+									</view>
+								</view>
 								</view>
 								
 								<!-- 添加新账号 -->
@@ -131,7 +139,7 @@
 							<text class="section-title">提现说明</text>
 							<view class="notice-content">
 								<view class="notice-item">
-									<text class="notice-text">• 提现申请提交后，将在1-3个工作日内到账</text>
+									<text class="notice-text">• 提现申请提交后，将在1个工作日内到账</text>
 								</view>
 								<view class="notice-item">
 									<text class="notice-text">• 请确保账号信息准确无误，错误信息可能导致提现失败</text>
@@ -140,7 +148,7 @@
 									<text class="notice-text">• 提现手续费将从提现金额中扣除</text>
 								</view>
 								<view class="notice-item">
-									<text class="notice-text">• 提现记录可在个人中心查看</text>
+									<text class="notice-text">• 提现记录可点击上方提现按钮查看</text>
 								</view>
 							</view>
 						</view>
@@ -305,6 +313,7 @@
 
 <script>
 import { getUserInfo } from '@/api/user.js';
+import { getWithdrawAccountList, deleteWithdrawAccount, submitWithdrawApply, addWithdrawAccount, updateWithdrawAccount } from '@/api/charge.js';
 export default {
 	data() {
 		return {
@@ -323,57 +332,7 @@ export default {
 			currentPaymentIndex: 0,
 			
 			// 绑定账号
-			boundAccounts: [
-				{
-					id: 'alipay_001',
-					type: 'alipay',
-					typeName: '支付宝',
-					accountNumber: '138****8888',
-					accountName: '张三'
-				},
-				{
-					id: 'alipay_002',
-					type: 'alipay',
-					typeName: '支付宝',
-					accountNumber: '159****6666',
-					accountName: '李四'
-				},
-				{
-					id: 'wechat_001',
-					type: 'wechat',
-					typeName: '微信支付',
-					accountNumber: 'wx_zhangsan',
-					accountName: '张三'
-				},
-				{
-					id: 'wechat_002',
-					type: 'wechat',
-					typeName: '微信支付',
-					accountNumber: '186****9999',
-					accountName: '王五'
-				},
-				{
-					id: 'bank_001',
-					type: 'bank',
-					typeName: '工商银行',
-					accountNumber: '6222****1234',
-					accountName: '张三'
-				},
-				{
-					id: 'bank_002',
-					type: 'bank',
-					typeName: '建设银行',
-					accountNumber: '6217****5678',
-					accountName: '李四'
-				},
-				{
-					id: 'bank_003',
-					type: 'bank',
-					typeName: '农业银行',
-					accountNumber: '6228****9012',
-					accountName: '王五'
-				}
-			],
+			boundAccounts: [],
 			selectedAccount: '',
 			barItemStyle: {
 				backgroundColor: '#333',
@@ -463,12 +422,12 @@ export default {
 		canSaveAccount() {
 			const accountType = this.getCurrentAccountType();
 			if (accountType === 'alipay') {
-				return this.formData.alipayAccount && this.formData.realName && this.formData.alipayQrCode;
+				return this.formData.alipayAccount && this.formData.realName;
 			} else if (accountType === 'wechat') {
-				return this.formData.wechatAccount && this.formData.realName && this.formData.phoneNumber && this.formData.wechatQrCode;
+				return this.formData.wechatAccount && this.formData.realName;
 			} else if (accountType === 'bank') {
 				return this.formData.bankName && this.formData.bankCardNumber && 
-					   this.formData.cardHolderName && this.formData.bankBranch;
+					   this.formData.cardHolderName;
 			}
 			return false;
 		},
@@ -484,6 +443,7 @@ export default {
 	
 	onLoad() {
 			this.loadUserBalance();
+			this.loadWithdrawAccounts();
 			this.initPaymentMethod();
 		},
 	
@@ -493,17 +453,98 @@ export default {
 			uni.navigateBack();
 		},
 		
+		// 跳转到提现记录页面
+		goToWithdrawLog() {
+			uni.navigateTo({
+				url: '/pages/users/withdrawlog'
+			});
+		},
+		
 		// 加载用户余额
 		async loadUserBalance() {
 			try {
 				const response = await getUserInfo();
 				if (response.code === 1 && response.data) {
-					this.nonWithdrawableAmount = parseFloat(response.data.frozen_money || 0).toFixed(2);
+					this.nonWithdrawableAmount = parseFloat(response.data.unwith_money || 0).toFixed(2);
 					this.balance = parseFloat(response.data.money-this.nonWithdrawableAmount || 0).toFixed(2);
 				}
 			} catch (error) {
 				console.error('获取余额失败:', error);
 			}
+		},
+		
+		// 加载提现账户列表
+		async loadWithdrawAccounts() {
+			try {
+				const response = await getWithdrawAccountList();
+				if (response.code === 1 && response.data) {
+					// 处理账户数据，添加类型名称
+					this.boundAccounts = response.data.map(account => {
+						let typeName = '';
+						switch(account.type) {
+							case 'alipay':
+								typeName = '支付宝';
+								break;
+							case 'wechat':
+								typeName = '微信支付';
+								break;
+							case 'bank':
+								typeName = account.bank_name || '银行卡';
+								break;
+							default:
+								typeName = account.type;
+						}
+						return {
+							id: account.id,
+							type: account.type,
+							typeName: typeName,
+							accountNumber: account.account_number,
+							accountName: account.account_name,
+							bankName: account.bank_name
+						};
+					});
+				}
+			} catch (error) {
+				console.error('获取提现账户失败:', error);
+			}
+		},
+		
+		// 删除账户
+		async deleteAccount(account) {
+			uni.showModal({
+				title: '确认删除',
+				content: `确定要删除${account.typeName}账户 ${account.accountNumber} 吗？`,
+				success: async (res) => {
+					if (res.confirm) {
+						try {
+							const response = await deleteWithdrawAccount(account.id);
+							if (response.code === 1) {
+								uni.showToast({
+									title: '删除成功',
+									icon: 'success'
+								});
+								// 重新加载账户列表
+								await this.loadWithdrawAccounts();
+								// 如果删除的是当前选中的账户，清空选择
+								if (this.selectedAccount === account.id) {
+									this.selectedAccount = '';
+								}
+							} else {
+								uni.showToast({
+									title: response.msg || '删除失败',
+									icon: 'none'
+								});
+							}
+						} catch (error) {
+							console.error('删除账户失败:', error);
+							uni.showToast({
+								title: error.msg || '删除失败，请重试',
+								icon: 'none'
+							});
+						}
+					}
+				}
+			});
 		},
 		
 		// 刷新余额
@@ -553,22 +594,32 @@ export default {
 			this.isEditMode = true;
 			this.editingAccountId = account.id;
 			
+			// 设置当前编辑的账户类型
+			const typeIndex = this.paymentMethods.findIndex(method => method.id === account.type);
+			if (typeIndex !== -1) {
+				this.currentPaymentIndex = typeIndex;
+				this.selectedPaymentMethod = account.type;
+			}
+			
 			// 根据账号类型填充表单数据
 			this.resetFormData();
 			if (account.type === 'alipay') {
-				this.formData.alipayAccount = account.originalAccount || account.accountNumber;
+				// 支付宝账户，需要从后端获取完整信息
+				this.formData.alipayAccount = account.accountNumber; // 后端返回的是脱敏后的账号
 				this.formData.realName = account.accountName;
-				this.formData.alipayQrCode = account.qrCode || '';
+				this.formData.alipayQrCode = '';
 			} else if (account.type === 'wechat') {
-				this.formData.wechatAccount = account.originalAccount || account.accountNumber;
+				// 微信账户
+				this.formData.wechatAccount = account.accountNumber;
 				this.formData.realName = account.accountName;
-				this.formData.phoneNumber = account.phoneNumber || '';
-				this.formData.wechatQrCode = account.qrCode || '';
+				this.formData.phoneNumber = '';
+				this.formData.wechatQrCode = '';
 			} else if (account.type === 'bank') {
+				// 银行卡账户
 				this.formData.bankName = account.bankName || '';
-				this.formData.bankCardNumber = account.originalCardNumber || account.accountNumber;
+				this.formData.bankCardNumber = account.accountNumber;
 				this.formData.cardHolderName = account.accountName;
-				this.formData.bankBranch = account.bankBranch || '';
+				this.formData.bankBranch = '';
 			}
 			
 			this.$refs.addAccountPopup.open();
@@ -668,41 +719,48 @@ export default {
 				const accountType = this.getCurrentAccountType();
 				// 构建账号数据
 				const accountData = {
-					id: `${accountType}_${Date.now()}`,
 					type: accountType,
-					typeName: this.getCurrentTypeName(),
-					accountNumber: this.getAccountNumber(),
-					accountName: this.formData.realName || this.formData.cardHolderName,
-					// 保存原始数据用于编辑
-					originalAccount: accountType === 'alipay' ? this.formData.alipayAccount : 
-									 accountType === 'wechat' ? this.formData.wechatAccount : '',
-					originalCardNumber: accountType === 'bank' ? this.formData.bankCardNumber : '',
-					phoneNumber: this.formData.phoneNumber,
-					bankName: this.formData.bankName,
-					bankBranch: this.formData.bankBranch,
-					qrCode: accountType === 'alipay' ? this.formData.alipayQrCode : 
-							accountType === 'wechat' ? this.formData.wechatQrCode : ''
+					accountName: this.formData.realName || this.formData.cardHolderName
 				};
 				
-				// 添加到账号列表
-				this.boundAccounts.push(accountData);
-				
-				// 如果是第一个账号，自动选中
-				if (this.boundAccounts.length === 1) {
-					this.selectedAccount = accountData.id;
+				// 根据类型设置不同字段
+				if (accountType === 'alipay') {
+					accountData.alipayAccount = this.formData.alipayAccount;
+					accountData.alipayQrCode = this.formData.alipayQrCode;
+				} else if (accountType === 'wechat') {
+					accountData.wechatAccount = this.formData.wechatAccount;
+					accountData.phoneNumber = this.formData.phoneNumber;
+					accountData.wechatQrCode = this.formData.wechatQrCode;
+				} else if (accountType === 'bank') {
+					accountData.bankCardNumber = this.formData.bankCardNumber;
+					accountData.bankName = this.formData.bankName;
+					accountData.bankBranch = this.formData.bankBranch;
 				}
 				
-				uni.showToast({
-					title: '账号添加成功',
-					icon: 'success'
-				});
+				// 调用API添加账户
+				const response = await addWithdrawAccount(accountData);
 				
-				this.closeAddPopup();
+				if (response.code === 1) {
+					uni.showToast({
+						title: '账号添加成功',
+						icon: 'success'
+					});
+					
+					// 重新加载账户列表
+					await this.loadWithdrawAccounts();
+					
+					this.closeAddPopup();
+				} else {
+					uni.showToast({
+						title: response.msg || '添加失败',
+						icon: 'none'
+					});
+				}
 				
 			} catch (error) {
 				console.error('保存账号失败:', error);
 				uni.showToast({
-					title: '保存失败，请重试',
+					title: error.msg || '保存失败，请重试',
 					icon: 'none'
 				});
 			}
@@ -720,38 +778,58 @@ export default {
 			
 			try {
 				const accountType = this.getCurrentAccountType();
-				const accountIndex = this.boundAccounts.findIndex(acc => acc.id === this.editingAccountId);
+				// 构建更新数据
+				const updateData = {
+					id: this.editingAccountId,
+					accountName: this.formData.realName || this.formData.cardHolderName
+				};
 				
-				if (accountIndex !== -1) {
-					// 更新账号数据
-					const updatedAccount = {
-						...this.boundAccounts[accountIndex],
-						accountNumber: this.getAccountNumber(),
-						accountName: this.formData.realName || this.formData.cardHolderName,
-						originalAccount: accountType === 'alipay' ? this.formData.alipayAccount : 
-										 accountType === 'wechat' ? this.formData.wechatAccount : '',
-						originalCardNumber: accountType === 'bank' ? this.formData.bankCardNumber : '',
-						phoneNumber: this.formData.phoneNumber,
-						bankName: this.formData.bankName,
-						bankBranch: this.formData.bankBranch,
-						qrCode: accountType === 'alipay' ? this.formData.alipayQrCode : 
-								accountType === 'wechat' ? this.formData.wechatQrCode : ''
-					};
-					
-					this.boundAccounts.splice(accountIndex, 1, updatedAccount);
-					
+				// 根据类型设置不同字段
+				if (accountType === 'alipay') {
+					updateData.alipayAccount = this.formData.alipayAccount;
+					if (this.formData.alipayQrCode) {
+						updateData.alipayQrCode = this.formData.alipayQrCode;
+					}
+				} else if (accountType === 'wechat') {
+					updateData.wechatAccount = this.formData.wechatAccount;
+					if (this.formData.phoneNumber) {
+						updateData.phoneNumber = this.formData.phoneNumber;
+					}
+					if (this.formData.wechatQrCode) {
+						updateData.wechatQrCode = this.formData.wechatQrCode;
+					}
+				} else if (accountType === 'bank') {
+					updateData.bankCardNumber = this.formData.bankCardNumber;
+					updateData.bankName = this.formData.bankName;
+					if (this.formData.bankBranch) {
+						updateData.bankBranch = this.formData.bankBranch;
+					}
+				}
+				
+				// 调用API更新账户
+				const response = await updateWithdrawAccount(updateData);
+				
+				if (response.code === 1) {
 					uni.showToast({
 						title: '账号更新成功',
 						icon: 'success'
 					});
 					
+					// 重新加载账户列表
+					await this.loadWithdrawAccounts();
+					
 					this.closeAddPopup();
+				} else {
+					uni.showToast({
+						title: response.msg || '更新失败',
+						icon: 'none'
+					});
 				}
 				
 			} catch (error) {
 				console.error('更新账号失败:', error);
 				uni.showToast({
-					title: '更新失败，请重试',
+					title: error.msg || '更新失败，请重试',
 					icon: 'none'
 				});
 			}
@@ -823,32 +901,34 @@ export default {
 				// 构建提现参数
 				const withdrawData = {
 					amount: this.finalAmount,
-					accountId: this.selectedAccount,
-					fee: this.withdrawFee,
-					actualAmount: this.actualAmount
+					accountId: this.selectedAccount
 				};
 				
-				// 这里应该调用实际的提现API
-				// const response = await withdrawAPI(withdrawData);
+				// 调用提现API
+				const response = await submitWithdrawApply(withdrawData);
 				
-				// 模拟API调用
-				await new Promise(resolve => setTimeout(resolve, 2000));
-				
-				uni.showToast({
-					title: '提现申请已提交',
-					icon: 'success'
-				});
-				
-				// 刷新余额
-				await this.loadUserBalance();
-				
-				// 重置表单
-				this.resetForm();
+				if (response.code === 1) {
+					uni.showToast({
+						title: '提现申请已提交',
+						icon: 'success'
+					});
+					
+					// 刷新余额
+					await this.loadUserBalance();
+					
+					// 重置表单
+					this.resetForm();
+				} else {
+					uni.showToast({
+						title: response.msg || '提现失败',
+						icon: 'none'
+					});
+				}
 				
 			} catch (error) {
 				console.error('提现失败:', error);
 				uni.showToast({
-					title: '提现失败，请重试',
+					title: error.msg || '提现失败，请重试',
 					icon: 'none'
 				});
 			} finally {
@@ -931,7 +1011,7 @@ export default {
 	color: #d8d8d8;
 }
 
-.refresh-btn {
+.refresh-btn, .moneylog-btn {
 	width: 60rpx;
 	height: 60rpx;
 	display: flex;
@@ -939,6 +1019,12 @@ export default {
 	justify-content: center;
 	border-radius: 50%;
 	background-color: rgba(255, 255, 255, 0.1);
+	transition: all 0.3s ease;
+
+	&:active {
+		background-color: rgba(255, 255, 255, 0.2);
+		transform: scale(0.95);
+	}
 }
 
 .rotating {
@@ -1071,10 +1157,10 @@ export default {
 .account-actions {
 	display: flex;
 	align-items: center;
-	gap: 16rpx;
+	gap: 10rpx;
 }
 
-.edit-btn {
+.edit-btn, .delete-btn {
 	width: 60rpx;
 	height: 60rpx;
 	display: flex;
@@ -1082,11 +1168,34 @@ export default {
 	justify-content: center;
 	border-radius: 50%;
 	background-color: rgba(255, 255, 255, 0.1);
-	transition: all 0.3s ease;
+	transition: background-color 0.3s ease;
 
 	&:active {
 		background-color: rgba(255, 255, 255, 0.2);
 	}
+}
+
+.delete-btn {
+	background-color: rgba(255, 71, 87, 0.1);
+
+	&:active {
+		background-color: rgba(255, 71, 87, 0.2);
+	}
+}
+
+.default-tag {
+	font-size: 20rpx;
+	color: #007AFF;
+	background-color: rgba(0, 122, 255, 0.1);
+	padding: 4rpx 8rpx;
+	border-radius: 8rpx;
+	margin-left: 10rpx;
+}
+
+.bank-name {
+	font-size: 24rpx;
+	color: #999;
+	margin-top: 8rpx;
 }
 
 .add-account-item {

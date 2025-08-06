@@ -436,8 +436,9 @@ class AutoDraw extends Command
      */
     private function generateDrawNumbers(string $lotteryCode, string $periodNo = ''): string
     {
+        $lotteryTypeCategory = LotteryType::where('type_code', $lotteryCode)->value('category');
         // 对于快彩（ff3d, 5f3d），使用智能开奖号码生成
-        if (in_array($lotteryCode, ['ff3d', '5f3d']) && !empty($periodNo)) {
+        if ($lotteryTypeCategory == 'QUICK' && !empty($periodNo)) {
             $smartNumbers = $this->generateSmartDrawNumbers($lotteryCode, $periodNo);
             if ($smartNumbers) {
                 return $smartNumbers;
@@ -514,7 +515,6 @@ class AutoDraw extends Command
             $defaultPool = floatval($lotteryType->default_pool ?? 10000);
             $bonusPool = floatval($lotteryType->bonus_pool ?? 0);
             $bonusSystem = floatval($lotteryType->bonus_system ?? 0);
-            $actualBonusPool = $defaultPool + $bonusPool - $bonusSystem;
             
             // 计算各玩法的投注和潜在赔付
             $totalBetAmount = 0;
@@ -540,17 +540,18 @@ class AutoDraw extends Command
             
             foreach (['da', 'xiao', 'he'] as $resultType) {
                 $winningPayout = $potentialPayouts[$resultType];
-                // 计算开奖后奖金池余额：bonus_pool - 中奖金额 - bonus_system
+                
+                // 计算开奖后的奖金池余额（bonus_system保持不变）
                 $remainingPool = $bonusPool - $winningPayout - $bonusSystem;
                 
                 $poolAnalysis[$resultType] = [
                     'winning_payout' => $winningPayout,
                     'remaining_pool' => $remainingPool,
-                    'is_valid' => $remainingPool > 0
+                    'is_valid' => $remainingPool >= 0
                 ];
                 
-                // 记录满足奖金池余额大于0的开奖结果
-                if ($remainingPool > 0) {
+                // 记录满足奖金池余额大于等于0的开奖结果
+                if ($remainingPool >= 0) {
                     $validResults[] = $resultType;
                 }
                 
@@ -562,7 +563,7 @@ class AutoDraw extends Command
                     'bonus_system' => $bonusSystem,
                     'winning_payout' => $winningPayout,
                     'remaining_pool' => $remainingPool,
-                    'is_valid' => $remainingPool > 0
+                    'is_valid' => $remainingPool >= 0
                 ]);
             }
             
@@ -696,27 +697,17 @@ class AutoDraw extends Command
             }
             
             // 根据彩种使用专业的中奖判断服务
-            switch ($order->lottery_code) {
-                case '3d':
-                    // 福彩3D需要解析JSON格式的bet_content
+            if(in_array($order->lottery_code, ['3d', 'pl3'])){
+                    // 3D需要解析JSON格式的bet_content
                     $betContent = is_array($order->bet_content) ? $order->bet_content : json_decode($order->bet_content, true);
                     if (!$betContent) {
                         Log::warning("订单 {$order->order_no} 的bet_content JSON解析失败: " . $order->bet_content);
                         return false;
                     }
                     return $this->checkFc3dWinning($order, $betContent, $drawNumbers);
-                case 'ff3d':
-                case '5f3d':
+            }else{
                     // 快彩使用简单字符串格式的bet_content
                     return $this->checkQuickLotteryWinning($order->bet_content, $drawNumbers);
-                default:
-                    // 其他彩种使用简化的中奖判断逻辑
-                    $betContent = is_array($order->bet_content) ? $order->bet_content : json_decode($order->bet_content, true);
-                    if (!$betContent) {
-                        Log::warning("订单 {$order->order_no} 的bet_content JSON解析失败: " . $order->bet_content);
-                        return false;
-                    }
-                    return $this->checkDefaultWinning($betContent, $drawNumbers);
             }
             
         } catch (Exception $e) {

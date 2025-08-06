@@ -46,16 +46,32 @@ class Bet extends Frontend
             
             // 获取请求参数
             $params = Request::param();
+
+            $lotteryType = LotteryType::where('type_code', $params['lottery_code'])->find();
             
             // 参数验证（包含期号验证、余额检查等）
             $validateResult = $this->validateBetParams($params, $user);
             if ($validateResult['code'] != 1) {
-                throw new ValidateException($validateResult['msg']);
+                if(isset($validateResult['maxBetAmount']) && $lotteryType['category'] == 'QUICK'){  
+                    $params['total_amount'] = $validateResult['maxBetAmount'];
+                    $params['bet_data'][0]['money'] = $validateResult['maxBetAmount'];
+                    $validateResult = $this->validateBetParams($params, $user);
+                }else{
+                    throw new ValidateException($validateResult['msg']);
+                }
             }
-
-            $lotteryType = LotteryType::where('type_code', $params['lottery_code'])->find();
             
             $validatedData = $validateResult['data'];
+            
+            // 确保验证数据包含必要字段
+            if (!isset($validatedData['total_amount'])) {
+                throw new ValidateException('投注数据验证失败，缺少总金额信息');
+            }
+            
+            if (!isset($validatedData['bet_data']) || !is_array($validatedData['bet_data'])) {
+                throw new ValidateException('投注数据验证失败，缺少投注项信息');
+            }
+            
             $totalAmount = $validatedData['total_amount'];
             
             // 开启事务
@@ -171,8 +187,8 @@ class Bet extends Frontend
         $this->success('投注成功', [
             'order_nos' => $orderNos,
             'order_ids' => $orderIds,
-            'total_amount' => number_format($totalAmount / 100, 2),
-            'remaining_balance' => number_format(($user->money - $totalAmount) / 100, 2),
+            'total_amount' => $totalAmount,
+            'remaining_balance' => $user->money - $totalAmount,
             'period_no' => $validatedData['period_no']
         ]);
     }
@@ -245,7 +261,6 @@ class Bet extends Frontend
     {
         // 获取彩种代码
         $lotteryCode = $params['lottery_code'] ?? '';
-        
         // 尝试获取彩种专用验证器
         $validator = BetValidate::getLotteryValidator($lotteryCode);
         
@@ -278,6 +293,10 @@ class Bet extends Frontend
         }
         
         // 余额检查
+        if (!isset($validatedData['total_amount'])) {
+            return ['code' => 0, 'msg' => '投注数据验证失败，缺少总金额信息'];
+        }
+        
         $totalAmount = $validatedData['total_amount'];
         if ($user->money < $totalAmount) {
             return [
@@ -286,12 +305,113 @@ class Bet extends Frontend
             ];
         }
         
+        // 快彩最大投注额验证
+        $lotteryType = LotteryType::where('type_code', $validatedData['lottery_code'])->find();
+        if ($lotteryType && $lotteryType->category === 'QUICK') {
+            $maxBetValidation = $this->validateQuickLotteryMaxBet($validatedData, $user->id);
+            if ($maxBetValidation['code'] != 1) {
+                if(isset($maxBetValidation['data']['maxBetAmount'])){
+                    $maxBetValidation['data']['maxBetAmount'] = $maxBetValidation['data']['maxBetAmount'] / 100;
+                }
+                return $maxBetValidation;
+            }
+        }
+        
         // 添加用户信息到验证结果
         $validatedData['user_balance'] = $user->money;
         
         return ['code' => 1, 'msg' => '验证通过', 'data' => $validatedData];
     }
-    
+
+    /**
+     * 验证快彩最大投注额
+     * @param array $validatedData 验证后的数据
+     * @param int $userId 用户ID
+     * @return array
+     */
+    private function validateQuickLotteryMaxBet(array $validatedData, int $userId): array
+    {
+        try {
+            // 检查必要的数据字段
+            if (!isset($validatedData['bet_data']) || !is_array($validatedData['bet_data'])) {
+                return ['code' => 0, 'msg' => '投注数据格式错误'];
+            }
+            
+            if (!isset($validatedData['lottery_code']) || empty($validatedData['lottery_code'])) {
+                return ['code' => 0, 'msg' => '彩种代码缺失'];
+            }
+            
+            if (!isset($validatedData['period_no']) || empty($validatedData['period_no'])) {
+                return ['code' => 0, 'msg' => '期号缺失'];
+            }
+            
+            $lotteryBetService = new LotteryBetService();
+            
+            // 遍历每个投注项进行验证
+            foreach ($validatedData['bet_data'] as $index => $betItem) {
+                $playType = $betItem['type_key'] ?? '';
+                $betAmount = $betItem['money'] ?? 0;
+                $multiplier = $betItem['multiplier'] ?? 1;
+                $note = $betItem['note'] ?? 1;
+                $totalBetAmount = $betAmount * $multiplier * $note;
+                
+                // 获取赔率
+                $odds = $this->getOddsFromBetItem($betItem, $validatedData['lottery_code']);
+                if ($odds <= 0) {
+                    return ['code' => 0, 'msg' => "投注项" . ($index + 1) . "赔率获取失败"];
+                }
+                
+                // 计算最大投注额
+                $maxBetResult = $lotteryBetService->calculateMaxBetAmount(
+                    $validatedData['lottery_code'],
+                    $validatedData['period_no'],
+                    $playType,
+                    $odds,
+                    $userId
+                );
+                
+                if ($maxBetResult['status'] === 'error') {
+                    return ['code' => 0, 'msg' => "投注项" . ($index + 1) . "最大投注额计算失败：" . $maxBetResult['message']];
+                }
+                
+                $maxBetAmount = floor($maxBetResult['system_max_bet']);
+                $lotteryLimits = $maxBetResult['lottery_limits'] ?? [];
+                $minBetAmount = $lotteryLimits['effective_min_bet'] ?? 0;
+                
+                // 验证投注额是否低于最小限制
+                if ($totalBetAmount < $minBetAmount) {
+                    return [
+                        'code' => 0,
+                        'msg' => "投注项" . ($index + 1) . "投注额低于最小限制，当前投注：{$totalBetAmount}元，最小要求：{$minBetAmount}元",
+                        'minBetAmount' => $minBetAmount,
+                    ];
+                }
+                
+                // 验证投注额是否超过最大限制
+                if ($totalBetAmount > $maxBetAmount) {
+                    $limitInfo = [];
+                    if (isset($lotteryLimits['daily_remaining']) && $lotteryLimits['daily_remaining'] > 0 && $lotteryLimits['daily_remaining'] < $maxBetAmount) {
+                        $limitInfo[] = "日限额剩余：{$lotteryLimits['daily_remaining']}元";
+                    }
+                    $limitMsg = !empty($limitInfo) ? '（' . implode('，', $limitInfo) . '）' : '';
+                    
+                    return [
+                        'code' => 0,
+                        'msg' => "投注项" . ($index + 1) . "投注额超过限制，当前投注：{$totalBetAmount}元，最大允许：{$maxBetAmount}元{$limitMsg}",
+                        'maxBetAmount' => $maxBetAmount,
+                        'lotteryLimits' => $lotteryLimits,
+                    ];
+                }
+            }
+            
+            return ['code' => 1, 'msg' => '最大投注额验证通过'];
+            
+        } catch (\Exception $e) {
+            Log::error('快彩最大投注额验证失败: ' . $e->getMessage());
+            return ['code' => 0, 'msg' => '最大投注额验证失败：' . $e->getMessage()];
+        }
+    }
+
     /**
      * 获取最大投注额
      * @return \think\response\Json
@@ -344,10 +464,10 @@ class Bet extends Frontend
             
             // 准备返回数据
             $responseData = [
-                'max_bet_amount' => $result['max_bet_amount'],
-                'system_max_bet' => $result['system_max_bet'],
-                'user_max_bet' => $result['user_max_bet'],
-                'current_bonus_pool' => $result['current_bonus_pool'],
+                'max_bet_amount' => floor($result['max_bet_amount']),
+                'system_max_bet' => floor($result['system_max_bet']),
+                'user_max_bet' => floor($result['user_max_bet']),
+                // 'current_bonus_pool' => $result['current_bonus_pool'],
                 'user_total_bet' => $result['user_total_bet'],
                 'odds' => $result['odds'],
                 'lottery_code' => $lotteryCode,

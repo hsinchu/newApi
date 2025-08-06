@@ -64,25 +64,25 @@ class UserMoneyLog extends model
             throw new Exception("Change note cannot be blank");
         }
         
-        // 记录变动前的余额和冻结金额
+        // 记录变动前的余额和不可提现金额
         $model->before = $user->money;
-        $model->frozen_before = $user->frozen_money;
+        $model->frozen_before = $user->unwith_money;
         
         // 更新用户余额
         $user->money += $model->money;
         
-        // 更新冻结金额（如果有变动）
+        // 更新不可提现金额（如果有变动）
         if (isset($model->frozen_change) && $model->frozen_change != 0) {
-            $user->frozen_money = max(0, $user->frozen_money + $model->frozen_change);
+            $user->unwith_money = max(0, $user->unwith_money + $model->frozen_change);
         } else {
             $model->frozen_change = 0;
         }
         
         $user->save();
         
-        // 记录变动后的余额和冻结金额
+        // 记录变动后的余额和不可提现金额
         $model->after = $user->money;
-        $model->frozen_after = $user->frozen_money;
+        $model->frozen_after = $user->unwith_money;
     }
 
     public static function onBeforeDelete(): bool

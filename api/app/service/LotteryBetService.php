@@ -41,6 +41,14 @@ class LotteryBetService
             $bonusSystem = floatval($lotteryType->bonus_system ?? 0);
             $actualBonusPool = $defaultPool + $bonusPool - $bonusSystem;
             
+            // 调试信息
+            Log::info('奖金池计算', [
+                'default_pool' => $defaultPool,
+                'bonus_pool' => $bonusPool, 
+                'bonus_system' => $bonusSystem,
+                'actual_bonus_pool' => $actualBonusPool
+            ]);
+            
             // 获取当期所有玩法的投注统计
             $currentPeriodStats = $this->getCurrentPeriodStats($lottery_code, $period_no);
             
@@ -53,11 +61,41 @@ class LotteryBetService
             // 计算用户最大投注额（确保用户中奖不超过其净投注额）
             $userMaxBet = $this->calculateUserMaxBet($userPeriodStats, $bet_type, $odds);
             
-            // 取较小值作为最终限制
-            $finalMaxBet = min($systemMaxBet, $userMaxBet);
+            // 获取彩种配置的投注限制
+            $lotteryMinBet = $lotteryType->min_bet_amount ?? 200; // 转换为元
+            $lotteryMaxBet = $lotteryType->max_bet_amount ?? 1000000; // 转换为元
+            $lotteryDailyLimit = $lotteryType->daily_limit ?? 0; // 转换为元
+            
+            // 获取用户今日已投注金额
+            $userDailyBet = $this->getUserDailyBetAmount($lottery_code, $user_id);
+            
+            // 计算日限额剩余额度
+            $dailyRemaining = $lotteryDailyLimit > 0 ? max(0, $lotteryDailyLimit - $userDailyBet) : PHP_FLOAT_MAX;
+            
+            // 应用彩种限制：小取小，大取大的原则
+            // 最小投注额：取较大值（更严格的限制）
+            $effectiveMinBet = $lotteryMinBet;
+            
+            // 最大投注额：取较小值（更严格的限制）
+            $effectiveMaxBet = min($systemMaxBet, $userMaxBet, $lotteryMaxBet, $dailyRemaining);
+            
+            // 确保最大投注额不小于最小投注额
+            $finalMaxBet = max($effectiveMinBet, $effectiveMaxBet);
+            
+            // 如果计算结果小于最小投注额，则返回0（不允许投注）
+            if ($finalMaxBet < $effectiveMinBet) {
+                $finalMaxBet = 0;
+            }
             
             // 确保不为负数
             $finalMaxBet = max(0, $finalMaxBet);
+
+            if($lotteryType['max_pool_rate'] > 0){
+                $finalMaxBet = $finalMaxBet * $lotteryType['max_pool_rate'] / 100;
+                $systemMaxBet = $systemMaxBet * $lotteryType['max_pool_rate'] / 100;
+                $userMaxBet = $userMaxBet * $lotteryType['max_pool_rate'] / 100;
+                $actualBonusPool = $actualBonusPool * $lotteryType['max_pool_rate'] / 100;
+            }
             
             return [
                  'status' => 'success',
@@ -67,7 +105,16 @@ class LotteryBetService
                  'current_bonus_pool' => round($actualBonusPool, 2),
                  'user_total_bet' => round($userPeriodStats['total_bet'], 2),
                  'odds' => $odds,
-                 'period_stats' => $currentPeriodStats
+                 'period_stats' => $currentPeriodStats,
+                 'lottery_limits' => [
+                     'min_bet_amount' => round($lotteryMinBet, 2),
+                     'max_bet_amount' => round($lotteryMaxBet, 2),
+                     'daily_limit' => round($lotteryDailyLimit, 2),
+                     'user_daily_bet' => round($userDailyBet, 2),
+                     'daily_remaining' => round($dailyRemaining == PHP_FLOAT_MAX ? 0 : $dailyRemaining, 2),
+                     'effective_min_bet' => round($effectiveMinBet, 2),
+                     'effective_max_bet' => round($effectiveMaxBet, 2)
+                 ]
              ];
             
         } catch (\Exception $e) {
@@ -250,6 +297,17 @@ class LotteryBetService
             $totalWinAmounts[$playType] = floatval($currentPeriodStats[$playType]['total_potential_win']);
         }
         
+        // 调试信息
+        Log::info('系统最大投注额计算', [
+            'actual_bonus_pool' => $actualBonusPool,
+            'available_pool' => $availablePool,
+            'new_bet_type' => $newBetType,
+            'odds' => $odds,
+            'basic_max_bet' => $basicMaxBet,
+            'total_bet_amount' => $totalBetAmount,
+            'total_win_amounts' => $totalWinAmounts
+        ]);
+        
         // 使用二分查找法找到满足条件的最大投注额
         $minBet = 0;
         $maxBet = $basicMaxBet;
@@ -271,7 +329,6 @@ class LotteryBetService
                 $platformPayout = $newTotalWinAmounts[$resultType];
                 $platformProfit = $platformIncome - $platformPayout;
                 $profitRate = $platformIncome > 0 ? $platformProfit / $platformIncome : 0;
-                
                 if ($profitRate >= 0.2) {
                     $hasValidResult = true;
                     break; // 找到一个满足条件的结果就足够了
@@ -304,11 +361,10 @@ class LotteryBetService
                 $userTotalBet += $userPeriodStats[$playType]['total_bet'];
             }
         }
-        
         // 如果用户没有投注历史，允许基础投注额
         if ($userTotalBet <= 0) {
             // 设置基础投注限额
-            return 999999;
+            return 9999;
         }
         
         // 计算用户在新投注类型上的当前投注额
@@ -334,12 +390,47 @@ class LotteryBetService
         
         if ($coefficient <= 0) {
             // 如果系数小于等于0，说明赔率过低或其他异常情况
-            return 999999;
+            return 9999;
         }
         
         $maxBet = $rightSide / $coefficient;
         
         return max(0, $maxBet);
+    }
+    
+    /**
+     * 获取用户今日已投注金额
+     * @param string $lottery_code 彩种代码
+     * @param int $user_id 用户ID
+     * @return float
+     */
+    protected function getUserDailyBetAmount($lottery_code, $user_id)
+    {
+        try {
+            // 获取今日开始和结束时间戳
+            $todayStart = strtotime(date('Y-m-d 00:00:00'));
+            $todayEnd = strtotime(date('Y-m-d 23:59:59'));
+            
+            // 获取彩种信息
+            $lotteryType = LotteryType::where('type_code', $lottery_code)->find();
+            if (!$lotteryType) {
+                return 0;
+            }
+            
+            // 查询用户今日在该彩种的投注总额
+            $dailyBetAmount = BetOrder::where('user_id', $user_id)
+                ->where('lottery_type_id', $lotteryType->id)
+                ->where('create_time', 'between', [$todayStart, $todayEnd])
+                ->where('status', 'in', ['pending', 'won', 'lost']) // 排除已取消的订单
+                ->sum('total_amount');
+            
+            // 转换为元（数据库存储为分）
+            return floatval($dailyBetAmount) / 100;
+            
+        } catch (\Exception $e) {
+            Log::error('获取用户今日投注金额失败: ' . $e->getMessage());
+            return 0;
+        }
     }
     
     /**
@@ -359,11 +450,12 @@ class LotteryBetService
             
             $pool_amount = $bet_amount;
             $current_bonus_pool = floatval($lotteryType->bonus_pool ?? 0);
+            $current_bonus_system = floatval($lotteryType->bonus_system ?? 0);
             $new_bonus_pool = $current_bonus_pool + $pool_amount;
             
             // 更新彩种表的bonus_pool字段
             $lotteryType->bonus_pool = $new_bonus_pool;
-            $lotteryType->bonus_system = $new_bonus_pool * $this->service_fee_rate;  // 计算平台服务费率
+            $lotteryType->bonus_system = $current_bonus_system + ($bet_amount * $this->service_fee_rate);  // 累加投注额的服务费
             $lotteryType->save();
             
             return true;

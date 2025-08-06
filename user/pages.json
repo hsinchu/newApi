@@ -21,6 +21,24 @@
 			}
 		},
 		{
+			"path": "pages/users/register",
+			"style": {
+				"navigationBarTitleText": "注册"
+			}
+		},
+		{
+			"path": "pages/users/findpass",
+			"style": {
+				"navigationBarTitleText": "找回密码"
+			}
+		},
+		{
+			"path": "pages/users/findpaypass",
+			"style": {
+				"navigationBarTitleText": "找回支付密码"
+			}
+		},
+		{
 			"path": "pages/order/order",
 			"style": {
 				"navigationBarTitleText": "我的订单",
@@ -78,6 +96,13 @@
 			"path": "pages/users/moneylog",
 			"style": {
 				"navigationBarTitleText": "资金变动"
+			}
+		},
+		{
+			"path": "pages/users/withdrawlog",
+			"style": {
+				"navigationBarTitleText": "提现记录",
+				"enablePullDownRefresh": true
 			}
 		},
 		{

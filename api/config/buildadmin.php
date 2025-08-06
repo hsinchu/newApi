@@ -5,7 +5,7 @@
 
 return [
     // 允许跨域访问的域名
-    'cors_request_domain'   => 'localhost,127.0.0.1,test1.chuanshiyinyuan.cn',
+    'cors_request_domain'   => 'localhost,127.0.0.1,106.52.162.167:1001,106.52.162.167:1002',
     // 是否开启会员登录验证码
     'user_login_captcha'    => false,
     // 是否开启管理员登录验证码

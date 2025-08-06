@@ -88,8 +88,8 @@
 							<view v-if="selectedBonusIndex >= 0 && currentBetLimits.min > 0" class="bet-limits-info">
 								<text class="limits-text">限额: {{currentBetLimits.min}}元 - {{currentBetLimits.max > 0 ? currentBetLimits.max + '元' : ''}}</text>
 							</view>
-							<view v-if="winningAmount > 0" class="bonus-info">
-								<text class="bonus-text">中奖金额: {{winningAmount}}元</text>
+							<view v-if="selectedBonusIndex >= 0 && bonusOptions.length > 0" class="bonus-info">
+								<text class="bonus-text">赔率1：{{currentOdds}}</text>
 							</view>
 						</view>
 					</view>
@@ -1169,14 +1169,21 @@ export default {
 					duration: 2000
 				});
 				
-				// 更新用户余额
-				this.userInfo.balance -= betAmount;
+				// 使用服务器返回的实际投注金额和余额
+				const actualAmount = response.data.total_amount || betAmount;
+				if (response.data.remaining_balance !== undefined) {
+					// 直接使用服务器返回的剩余余额
+					this.userInfo.balance = response.data.remaining_balance;
+				} else {
+					// 如果没有返回剩余余额，则使用实际投注金额计算
+					this.userInfo.balance -= actualAmount;
+				}
 				
 				// 添加新订单到列表顶部
 				const newOrder = {
 					period: this.designatedTime,
 					betType: `${this.selectedOption}`,
-					amount: betAmount,
+					amount: actualAmount,
 					typename: this.gameInfo.type_name,
 					createTime: new Date().getTime()
 				};
@@ -2173,7 +2180,7 @@ export default {
 }
 
 .result-tag {
-	padding: 8rpx 16rpx;
+	padding: 3rpx 16rpx 8rpx;
 	border-radius: 20rpx;
 	font-size: 22rpx;
 	font-weight: bold;

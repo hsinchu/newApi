@@ -1,6 +1,26 @@
 <template>
 	<view class="share-container">
 		<view class="content-wrapper">
+			<!-- Tab切换区域 -->
+			<view class="tab-section">
+				<view class="tab-container">
+					<view 
+						class="tab-item" 
+						:class="{ active: currentTab === 'agent' }"
+						@click="switchTab('agent')"
+					>
+						<text class="tab-text">邀请代理商</text>
+					</view>
+					<view 
+						class="tab-item" 
+						:class="{ active: currentTab === 'user' }"
+						@click="switchTab('user')"
+					>
+						<text class="tab-text">邀请用户</text>
+					</view>
+				</view>
+			</view>
+			
 			<!-- 主要内容区域 -->
 			<view class="main-content">
 				<!-- 左侧二维码区域 -->
@@ -20,8 +40,8 @@
 				<!-- 右侧信息区域 -->
 				<view class="info-section">
 					<view class="invite-title">
-						<text class="title-text">邀请好友</text>
-						<text class="subtitle-text">一起享受精彩</text>
+						<text class="title-text">{{ currentTab === 'agent' ? '邀请代理商' : '邀请用户' }}</text>
+						<text class="subtitle-text">{{ currentTab === 'agent' ? '共享收益机会' : '一起享受精彩' }}</text>
 					</view>
 					
 					<!-- 邀请码 -->
@@ -63,15 +83,17 @@
 
 <script>
 import { getUserInfo } from '@/api/user.js';
+import config from '@/utils/config.js';
 
 export default {
 	data() {
 		return {
+			currentTab: 'agent', // 当前选中的tab，默认为代理商
 			userInfo: {
 				invite_code: ''
 			},
 			inviteUrl: '',
-			baseUrl: 'https://test.example.cn/register?invite=', // 邀请注册链接
+			baseUrl: '', // 邀请注册链接
 			qrcodeOptions: {
 				size: 200,
 				margin: 8,
@@ -82,6 +104,25 @@ export default {
 		}
 	},
 	methods: {
+		// 切换tab
+		switchTab(tab) {
+			this.currentTab = tab;
+			this.updateInviteUrl();
+		},
+		
+		// 更新邀请链接
+		updateInviteUrl() {
+			if (this.userInfo.invite_code) {
+				const type = this.currentTab; // 'agent' 或 'user'
+				const appConfig = config.getConfig();
+				// 从API地址提取域名，构建注册链接
+				const apiUrl = appConfig.baseURL;
+				const baseHost = apiUrl.replace('/api', ''); // 移除/api后缀
+				this.baseUrl = `${baseHost}/register?type=${type}&code=`;
+				this.inviteUrl = this.baseUrl + this.userInfo.invite_code;
+			}
+		},
+		
 		// 获取用户信息
 		async fetchUserInfo() {
 			try {
@@ -89,7 +130,7 @@ export default {
 				if (response.code === 1) {
 					this.userInfo = response.data;
 					// 生成邀请链接
-					this.inviteUrl = this.baseUrl + this.userInfo.invite_code;
+					this.updateInviteUrl();
 				} else {
 					uni.showToast({
 						title: '获取用户信息失败',
@@ -233,6 +274,51 @@ export default {
 
 <style scoped lang="scss">
 .content-wrapper{background:#252525;padding:25rpx;}
+
+.tab-section {
+	margin-bottom: 20rpx;
+	
+	.tab-container {
+		display: flex;
+		background-color: #3d3d3d;
+		border-radius: 25rpx;
+		padding: 6rpx;
+		gap: 6rpx;
+		
+		.tab-item {
+			flex: 1;
+			height: 60rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 20rpx;
+			transition: all 0.3s ease;
+			cursor: pointer;
+			
+			.tab-text {
+				font-size: 26rpx;
+				font-weight: 500;
+				color: #999;
+				transition: color 0.3s ease;
+			}
+			
+			&.active {
+				background: linear-gradient(135deg, #ff7c4d, #ff5722);
+				box-shadow: 0 2rpx 8rpx rgba(255, 124, 77, 0.3);
+				
+				.tab-text {
+					color: #ffffff;
+					font-weight: 600;
+				}
+			}
+			
+			&:active {
+				transform: scale(0.95);
+			}
+		}
+	}
+}
+
 .main-content {
 	display: flex;
 	align-items: flex-start;
@@ -347,6 +433,7 @@ export default {
 	border: 1rpx solid #ff7c4d;
 	border-radius: 12rpx;
 	width:65rpx;
+	color:#ff7c4d;
 	text-align:center;
 	padding: 8rpx 12rpx;
 	transition: all 0.3s ease;

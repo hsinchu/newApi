@@ -199,6 +199,7 @@ const baTable = new baTableClass(
       { label: '投注金额', prop: 'bet_amount', align: 'center', operator: false },
       { label: '倍数', prop: 'multiple', align: 'center', operator: 'RANGE', width: 80 },
       { label: '总金额', prop: 'total_amount', align: 'center', operator: false },
+      { label: '赔率', prop: 'odds', align: 'center', operator: false },
       { label: '中奖金额', prop: 'win_amount', align: 'center', operator: false },
       { label: '代理商ID', prop: 'agent_id', align: 'center', operator: 'eq', width: 100 },
       { label: '状态', prop: 'status', align: 'center', operator: 'eq', replaceValue: {

@@ -301,4 +301,191 @@ class Charge extends Frontend
         
         $this->success('充值成功', $result);
     }
+
+    /**
+     * 获取提现账户列表
+     */
+    public function withdrawAccountList() {
+        try {
+            $type = $this->request->get('type', '');
+            
+            $query = \app\common\model\WithdrawAccount::where('user_id', $this->auth->id)
+                ->where('status', 1)
+                ->order('is_default desc, create_time desc');
+            
+            if ($type) {
+                $query->where('type', $type);
+            }
+            
+            $accounts = $query->select();
+            
+            $list = [];
+            foreach ($accounts as $account) {
+                $list[] = [
+                    'id' => $account->id,
+                    'type' => $account->type,
+                    'typeName' => $account->type_name,
+                    'account_name' => $account->account_name,
+                    'account_number' => $account->masked_account,
+                    'bank_name' => $account->bank_name,
+                    'isDefault' => $account->is_default,
+                    'createTime' => date('Y-m-d H:i:s', $account->create_time)
+                ];
+            }
+        } catch (\Throwable $e) {
+            $this->error('获取提现账户失败：' . $e->getMessage());
+        }
+            
+        $this->success('获取成功', $list);
+    }
+    
+    /**
+     * 删除提现账户
+     */
+    public function deleteWithdrawAccount() {
+        try {
+            $id = $this->request->post('id');
+            
+            if (!$id) {
+                throw new \Exception('账户ID不能为空');
+            }
+            
+            $account = \app\common\model\WithdrawAccount::where('user_id', $this->auth->id)
+                ->where('id', $id)
+                ->find();
+            
+            if (!$account) {
+                throw new \Exception('账户不存在或不属于当前用户');
+            }
+            
+            // 软删除：设置状态为禁用
+            $account->save([
+                'status' => 0,
+                'update_time' => time()
+            ]);
+            
+            // 如果删除的是默认账户，需要设置新的默认账户
+            if ($account->is_default) {
+                $newDefault = \app\common\model\WithdrawAccount::where('user_id', $this->auth->id)
+                    ->where('status', 1)
+                    ->where('id', '<>', $id)
+                    ->order('create_time desc')
+                    ->find();
+                
+                if ($newDefault) {
+                    $newDefault->save([
+                        'is_default' => 1,
+                        'update_time' => time()
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->error('删除失败：' . $e->getMessage());
+        }
+            
+        $this->success('删除成功');
+    }
+    
+    /**
+     * 提交提现申请
+     */
+    public function submitWithdrawApply() {
+        try {
+            $accountId = $this->request->post('accountId');
+            $amount = floatval($this->request->post('amount'));
+            $remark = $this->request->post('remark', '');
+            
+            if (!$accountId) {
+                throw new \Exception('请选择提现账户');
+            }
+            
+            if ($amount <= 0) {
+                throw new \Exception('提现金额必须大于0');
+            }
+            
+            // 获取系统配置
+            $minAmount = 50; // 最小提现金额
+            $maxAmount = 10000; // 最大提现金额
+            $feeRate = 0; // 手续费率
+            
+            if ($amount < $minAmount) {
+                throw new \Exception('提现金额不能少于' . $minAmount . '元');
+            }
+            
+            if ($amount > $maxAmount) {
+                throw new \Exception('提现金额不能超过' . $maxAmount . '元');
+            }
+            
+            // 验证账户
+            $account = \app\common\model\WithdrawAccount::where('user_id', $this->auth->id)
+                ->where('id', $accountId)
+                ->where('status', 1)
+                ->find();
+            
+            if (!$account) {
+                throw new \Exception('提现账户不存在或已禁用');
+            }
+            
+            // 检查余额
+            $user = $this->auth->getUser();
+            if ($user->money < $amount) {
+                throw new \Exception('余额不足');
+            }
+            
+            // 计算手续费
+            $fee = $amount * ($feeRate / 100);
+            $actualAmount = $amount - $fee;
+            
+            // 创建提现记录
+            $orderNo = 'WD' . date('YmdHis') . rand(1000, 9999);
+            $recordData = [
+                'order_no' => $orderNo,
+                'user_id' => $this->auth->id,
+                'account_id' => $accountId,
+                'account_type' => $account->type,
+                'account_name' => $account->account_name,
+                'account_number' => $account->masked_account,
+                'bank_name' => $account->bank_name ?: '',
+                'amount' => $amount,
+                'fee' => $fee,
+                'actual_amount' => $actualAmount,
+                'status' => 0, // 待审核
+                'remark' => $remark,
+                'create_time' => time(),
+                'update_time' => time()
+            ];
+            
+            $record = \app\common\model\WithdrawRecord::create($recordData);
+            
+            if (!$record) {
+                throw new \Exception('创建提现申请失败');
+            }
+            
+            // 不可提现用户资金
+            $financeService = new \app\service\FinanceService();
+            $financeService->adjustUserBalance(
+                $this->auth->id,
+                -$amount,
+                '提现申请，订单号：' . $orderNo,
+                'WITHDRAW_DEDUCT'
+            );
+            
+            $result = [
+                'orderNo' => $orderNo,
+                'amount' => $amount,
+                'fee' => $fee,
+                'actualAmount' => $actualAmount,
+                'accountInfo' => [
+                    'type' => $account->type,
+                    'typeName' => $account->type_name,
+                    'accountName' => $account->account_name,
+                    'accountNumber' => $account->masked_account
+                ]
+            ];
+        } catch (\Throwable $e) {
+            $this->error('提现申请失败：' . $e->getMessage());
+        }
+            
+        $this->success('提现申请提交成功', $result);
+    }
 }

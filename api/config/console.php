@@ -8,7 +8,6 @@ return [
         'autobet' => 'app\command\AutoBet',   //自动投注
         'autodraw' => 'app\command\AutoDraw', //自动开奖，把待派奖的订单加入redis队列，把未中奖的订单执行未中奖佣金处理
         'autopaid' => 'app\command\AutoPaid', //自动派奖，从redis队列中取出待派奖订单，查询订单状态，更新订单状态为已派奖（同时使用adjustUserBalance方法更新用户余额）
-        'test:xingtai' => 'app\command\TestXingtai', //测试和值大小、和值单双
     ],
     
     // 命令执行配置

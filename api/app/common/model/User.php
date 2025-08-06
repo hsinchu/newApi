@@ -37,7 +37,7 @@ class User extends Model
         'gender'               => 'int',
         'birthday'             => 'date',
         'money'                => 'int',
-        'frozen_money'         => 'int',
+        'unwith_money'         => 'int',
         'gift_money'           => 'int',
         'score'                => 'int',
         'last_login_time'      => 'int',
@@ -112,6 +112,16 @@ class User extends Model
         return bcmul($value, 100, 2);
     }
 
+    public function getUnwithMoneyAttr($value): string
+    {
+        return bcdiv($value, 100, 2);
+    }
+
+    public function setUnwithMoneyAttr($value): string
+    {
+        return bcmul($value, 100, 2);
+    }
+
     public function getGiftMoneyAttr($value): string
     {
         return bcdiv($value, 100, 2);
@@ -149,17 +159,18 @@ class User extends Model
             1 => '男',
             2 => '女',
         ];
-        return $genderMap[$row['gender']] ?? '未知';
+        $gender = isset($row['gender']) ? $row['gender'] : 0;
+        return $genderMap[$gender] ?? '未知';
     }
 
     public function getIsAgentTextAttr($value, $row): string
     {
-        return $row['is_agent'] ? '是' : '否';
+        return isset($row['is_agent']) && $row['is_agent'] == 1 ? '是' : '否';
     }
 
     public function getIsVerifiedTextAttr($value, $row): string
     {
-        return $row['is_verified'] ? '已认证' : '未认证';
+        return isset($row['is_verified']) && $row['is_verified'] == 1 ? '已认证' : '未认证';
     }
 
     public function userGroup(): BelongsTo
@@ -277,11 +288,11 @@ class User extends Model
     }
     
     /**
-     * 获取用户总余额（可用+冻结）
+     * 获取用户总余额（可用+不可提现）
      */
     public function getTotalBalanceAttr($value, $data): string
     {
-        $total = $data['money'] + $data['frozen_money'];
+        $total = $data['money'] + $data['unwith_money'];
         return bcdiv($total, 100, 2);
     }
     
@@ -307,114 +318,6 @@ class User extends Model
     public function getUserLevelTextAttr($value, $data): string
     {
         return $this->userGroup ? $this->userGroup->name : '普通用户';
-    }
-    
-    /**
-     * 更新用户余额
-     */
-    public function updateBalance(string $amount, string $type = 'add', string $memo = ''): bool
-    {
-        $amountCents = bcmul($amount, 100, 0);
-        $beforeMoney = $this->getData('money');
-        
-        if ($type === 'add') {
-            $afterMoney = bcadd($beforeMoney, $amountCents, 0);
-        } else {
-            $afterMoney = bcsub($beforeMoney, $amountCents, 0);
-            if ($afterMoney < 0) {
-                return false; // 余额不足
-            }
-        }
-        
-        // 更新用户余额
-        $this->money = $afterMoney;
-        $result = $this->save();
-        
-        if ($result) {
-            // 记录资金变动
-            UserMoneyLog::create([
-                'user_id' => $this->id,
-                'type' => $type === 'add' ? UserMoneyLog::TYPE_RECHARGE : UserMoneyLog::TYPE_WITHDRAW,
-                'money' => $amountCents,
-                'before' => $beforeMoney,
-                'after' => $afterMoney,
-                'memo' => $memo
-            ]);
-        }
-        
-        return $result;
-    }
-    
-    /**
-     * 冻结用户余额
-     */
-    public function freezeBalance(string $amount, string $memo = ''): bool
-    {
-        $amountCents = bcmul($amount, 100, 0);
-        $currentMoney = $this->getData('money');
-        $currentFrozen = $this->getData('frozen_money');
-        
-        if ($currentMoney < $amountCents) {
-            return false; // 余额不足
-        }
-        
-        $this->money = bcsub($currentMoney, $amountCents, 0);
-        $this->frozen_money = bcadd($currentFrozen, $amountCents, 0);
-        
-        $result = $this->save();
-        
-        if ($result) {
-            // 记录资金变动
-            UserMoneyLog::create([
-                'user_id' => $this->id,
-                'type' => UserMoneyLog::TYPE_FREEZE,
-                'money' => 0,
-                'before' => $currentMoney,
-                'after' => $this->money,
-                'frozen_change' => $amountCents,
-                'frozen_before' => $currentFrozen,
-                'frozen_after' => $this->frozen_money,
-                'memo' => $memo
-            ]);
-        }
-        
-        return $result;
-    }
-    
-    /**
-     * 解冻用户余额
-     */
-    public function unfreezeBalance(string $amount, string $memo = ''): bool
-    {
-        $amountCents = bcmul($amount, 100, 0);
-        $currentMoney = $this->getData('money');
-        $currentFrozen = $this->getData('frozen_money');
-        
-        if ($currentFrozen < $amountCents) {
-            return false; // 冻结余额不足
-        }
-        
-        $this->money = bcadd($currentMoney, $amountCents, 0);
-        $this->frozen_money = bcsub($currentFrozen, $amountCents, 0);
-        
-        $result = $this->save();
-        
-        if ($result) {
-            // 记录资金变动
-            UserMoneyLog::create([
-                'user_id' => $this->id,
-                'type' => UserMoneyLog::TYPE_UNFREEZE,
-                'money' => 0,
-                'before' => $currentMoney,
-                'after' => $this->money,
-                'frozen_change' => -$amountCents,
-                'frozen_before' => $currentFrozen,
-                'frozen_after' => $this->frozen_money,
-                'memo' => $memo
-            ]);
-        }
-        
-        return $result;
     }
     
     /**

@@ -114,7 +114,7 @@ const baTable = new baTableClass(
                 sortable: false,
             },
             { label: '余额', prop: 'money', align: 'center', operator: false, sortable: 'custom', width: 100 },
-            { label: '冻结余额', prop: 'frozen_money', align: 'center', sortable: 'custom', operator: false, width: 100 },
+            { label: '不可提现余额', prop: 'unwith_money', align: 'center', sortable: 'custom', operator: false, width: 100 },
             { label: '积分', prop: 'score', align: 'center', sortable: 'custom', operator: false, width: 100 },
             { label: '邀请码', prop: 'invite_code', align: 'center', operator: 'eq', operatorPlaceholder: '精确查询', width: 120 },
             { label: '真实姓名', prop: 'real_name', align: 'center', width: 100, operator: 'LIKE', operatorPlaceholder: '模糊查询' },

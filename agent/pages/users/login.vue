@@ -77,10 +77,9 @@
 				</text>
 			</view>
 			
-			<!-- 注册链接 -->
 			<view class="register-section">
-				<text class="register-text">还没有账号？</text>
-				<text class="register-link" @tap="goToRegister">立即注册</text>
+				<text class="register-text">忘记密码？</text>
+				<text class="register-link" @tap="goToFindPass">立即找回</text>
 			</view>
 		</view>
 		
@@ -177,6 +176,11 @@ export default {
 			this.checkLoginStatus();
 		},
 		methods: {
+			goToFindPass() {
+				uni.navigateTo({
+					url: '/pages/users/findpass'
+				});
+			},
 			// 检查登录状态
 			checkLoginStatus() {
 				const token = uni.getStorageSync('ba-user-token');

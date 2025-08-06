@@ -11,10 +11,14 @@ class User extends Validate
 
     protected $rule = [
         'username'     => 'require|regex:^[a-zA-Z][a-zA-Z0-9_]{2,15}$|unique:user',
-        'password'     => 'require|regex:^(?!.*[&<>"\'\n\r]).{6,32}$',
-        'registerType' => 'require|in:email,mobile',
-        'email'        => 'email|unique:user|requireIf:registerType,email',
-        'mobile'       => 'mobile|unique:user|requireIf:registerType,mobile',
+        'password'     => 'require|regex:^(?!.*[&<>"\'
+
+]).{6,32}$',
+        'registerType' => 'in:email,mobile',
+        'email'        => 'email|unique:user',
+        'mobile'       => 'mobile|unique:user',
+        'emailCode'    => 'length:6',
+        'inviteCode'   => 'require',
         // 注册邮箱或手机验证码
         'captcha'      => 'require',
         // 登录点选验证码
@@ -26,7 +30,7 @@ class User extends Validate
      * 验证场景
      */
     protected $scene = [
-        'register' => ['username', 'password', 'registerType', 'email', 'mobile', 'captcha'],
+        'register' => ['username', 'password', 'email', 'emailCode', 'inviteCode'],
     ];
 
     /**
@@ -53,6 +57,8 @@ class User extends Validate
             'email'        => __('Email'),
             'mobile'       => __('Mobile'),
             'password'     => __('Password'),
+            'emailCode'    => __('Email verification code'),
+            'inviteCode'   => __('Invitation code'),
             'captcha'      => __('captcha'),
             'captchaId'    => __('captchaId'),
             'captchaInfo'  => __('captcha'),

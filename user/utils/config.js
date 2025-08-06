@@ -19,7 +19,7 @@ const ENV_CONFIG = {
 	// 生产环境
 	production: {
 		// API基础地址（请根据实际生产环境地址修改）
-		baseURL: 'https://test.chuanshiyinyuan.cn/api',
+		baseURL: 'http://106.52.162.167/api',
 		// 关闭调试模式
 		debug: false,
 		// 请求超时时间
@@ -30,7 +30,7 @@ const ENV_CONFIG = {
 	// 测试环境
 	test: {
 		// API基础地址
-		baseURL: 'https://test.chuanshiyinyuan.cn/api',
+		baseURL: 'http://106.52.162.167/api',
 		// 开启调试模式
 		debug: true,
 		// 请求超时时间

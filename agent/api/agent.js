@@ -171,3 +171,8 @@ export function deleteAgentRecharge(id){
 export function toggleAgentRechargeStatus(id){
 	return request.post('/agent/toggleAgentRechargeStatus', {id});
 }
+
+//支付密码验证
+export function verifyPayPassword(password){
+	return request.post('/agent/verifyPayPassword', {password: password});
+}

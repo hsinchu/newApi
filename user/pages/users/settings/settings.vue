@@ -42,15 +42,13 @@
 				</view>
 				
 				<!-- 绑定手机 -->
-				<view class="setting-item" @tap="editPhone">
+				<!-- <view class="setting-item" @tap="editPhone">
 					<text class="item-label">{{userInfo.mobile ? '更换手机' : '绑定手机'}}</text>
 					<view class="item-content">
 						<text class="item-value">{{userInfo.mobile || '未绑定'}}</text>
 						<uv-icon name="arrow-right" size="16" color="#999"></uv-icon>
 					</view>
-				</view>
-				
-
+				</view> -->	
 				
 				<!-- 修改密码 -->
 				<view class="setting-item" @tap="editPassword">
@@ -63,9 +61,18 @@
 				
 				<!-- 修改支付密码 -->
 				<view class="setting-item" @tap="editPayPassword">
-					<text class="item-label">修改支付密码</text>
+					<text class="item-label">{{userInfo.has_pay_password ? '修改支付密码' : '设置支付密码'}}</text>
 					<view class="item-content">
-						<text class="item-value">修改支付密码</text>
+						<text class="item-value">{{userInfo.has_pay_password ? '修改支付密码' : '设置支付密码'}}</text>
+						<uv-icon name="arrow-right" size="16" color="#999"></uv-icon>
+					</view>
+				</view>
+				
+				<!-- 找回支付密码 -->
+				<view class="setting-item" v-if="userInfo.has_pay_password" @tap="findPayPassword">
+					<text class="item-label">找回支付密码</text>
+					<view class="item-content">
+						<text class="item-value">忘记支付密码</text>
 						<uv-icon name="arrow-right" size="16" color="#999"></uv-icon>
 					</view>
 				</view>
@@ -191,8 +198,9 @@
 		<!-- 修改支付密码弹窗 -->
 		<uv-popup ref="payPasswordPopup" mode="center" :round="20">
 			<view class="popup-content">
-				<view class="popup-title">修改支付密码</view>
+				<view class="popup-title">{{userInfo.has_pay_password ? '修改支付密码' : '设置支付密码'}}</view>
 				<uv-input 
+					v-if="userInfo.has_pay_password"
 					v-model="editData.oldPayPassword" 
 					type="password"
 					placeholder="请输入原支付密码"
@@ -203,7 +211,7 @@
 				<uv-input 
 					v-model="editData.newPayPassword" 
 					type="password"
-					placeholder="请输入新支付密码"
+					:placeholder="userInfo.has_pay_password ? '请输入新支付密码' : '请输入支付密码'"
 					color="#e0e0e0"
 					placeholderStyle="color: #757575;"
 					customStyle="margin-bottom: 20rpx;"
@@ -211,7 +219,7 @@
 				<uv-input 
 					v-model="editData.confirmPayPassword" 
 					type="password"
-					placeholder="请确认新支付密码"
+					:placeholder="userInfo.has_pay_password ? '请确认新支付密码' : '请确认支付密码'"
 					color="#e0e0e0"
 					placeholderStyle="color: #757575;"
 				></uv-input>
@@ -231,12 +239,13 @@ export default {
 	data() {
 			return {
 				userInfo: {
-					username: '',
-					avatar: '/static/images/avatar.png',
-					nickname: '',
-					is_verified: 0, // 0=未实名, 1=已认证, 2=审核中
-					mobile: ''
-				},
+			username: '',
+			avatar: '/static/images/avatar.png',
+			nickname: '',
+			is_verified: 0, // 0=未实名, 1=已认证, 2=审核中
+			mobile: '',
+			has_pay_password: false
+		},
 				editData: {
 					nickname: '',
 					mobile: '',
@@ -269,7 +278,8 @@ export default {
 				is_verified: res.data.is_verified || 0, // 0=未实名, 1=已认证, 2=审核中
 				rebate_rate: res.data.rebate_rate, 
 				nowin_rate: res.data.nowin_rate, 
-				mobile: res.data.mobile || ''
+				mobile: res.data.mobile || '',
+				has_pay_password: res.data.has_pay_password || false
 			};
 				} else {
 					uni.showToast({
@@ -280,7 +290,7 @@ export default {
 			} catch (error) {
 				console.error('获取用户信息失败:', error);
 				uni.showToast({
-					title: '网络错误，请重试',
+					title: error.msg || '网络错误，请重试',
 					icon: 'none'
 				});
 			} finally {
@@ -316,11 +326,11 @@ export default {
 							});
 						}
 					} catch (error) {
-						console.error('头像上传失败:', error);
-						uni.showToast({
-							title: '头像上传失败',
-							icon: 'none'
-						});
+					console.error('头像上传失败:', error);
+					uni.showToast({
+						title: error.msg || '头像上传失败',
+						icon: 'none'
+					});
 					} finally {
 						uni.hideLoading();
 					}
@@ -383,6 +393,13 @@ export default {
 			this.$refs.payPasswordPopup.open();
 		},
 		
+		// 找回支付密码
+		findPayPassword() {
+			uni.navigateTo({
+				url: '/pages/users/findpaypass'
+			});
+		},
+		
 		// 关闭弹窗
 		closePopup() {
 			this.$refs.nicknamePopup?.close();
@@ -435,7 +452,7 @@ export default {
 			} catch (error) {
 				console.error('昵称更新失败:', error);
 				uni.showToast({
-					title: '网络错误，请重试',
+					title: error.msg || '网络错误，请重试',
 					icon: 'none'
 				});
 			} finally {
@@ -502,7 +519,7 @@ export default {
 						} catch (error) {
 							console.error('实名认证提交失败:', error);
 							uni.showToast({
-								title: '网络错误，请重试',
+								title: error.msg || '网络错误，请重试',
 								icon: 'none'
 							});
 						} finally {
@@ -555,7 +572,7 @@ export default {
 			} catch (error) {
 				console.error('手机号更新失败:', error);
 				uni.showToast({
-					title: '网络错误，请重试',
+					title: error.msg || '网络错误，请重试',
 					icon: 'none'
 				});
 			} finally {
@@ -608,31 +625,31 @@ export default {
 				newPassword: this.editData.newPassword
 			});
 				
-				if (res.data.code === 1) {
-					this.closePopup();
-					uni.showToast({
-						title: '密码修改成功，请重新登录',
-						icon: 'success'
+				if (res.code === 1) {
+				this.closePopup();
+				uni.showToast({
+					title: '密码修改成功，请重新登录',
+					icon: 'success'
+				});
+				
+				// 清除本地存储并跳转到登录页
+				setTimeout(() => {
+					uni.removeStorageSync('ba-user-token');
+					uni.removeStorageSync('userInfo');
+					uni.reLaunch({
+						url: '/pages/users/login'
 					});
-					
-					// 清除本地存储并跳转到登录页
-					setTimeout(() => {
-						uni.removeStorageSync('ba-user-token');
-						uni.removeStorageSync('userInfo');
-						uni.reLaunch({
-							url: '/pages/users/login'
-						});
-					}, 1500);
-				} else {
-					uni.showToast({
-						title: res.data.msg || '密码修改失败',
-						icon: 'none'
-					});
-				}
+				}, 1500);
+			} else {
+				uni.showToast({
+					title: res.msg || '密码修改失败',
+					icon: 'none'
+				});
+			}
 			} catch (error) {
 				console.error('密码修改失败:', error);
 				uni.showToast({
-					title: '网络错误，请重试',
+					title: error.msg || '网络错误，请重试',
 					icon: 'none'
 				});
 			} finally {
@@ -642,7 +659,8 @@ export default {
 		
 		// 保存支付密码
 		async savePayPassword() {
-			if (!this.editData.oldPayPassword.trim()) {
+			// 如果用户已有支付密码，需要验证原密码
+			if (this.userInfo.has_pay_password && !this.editData.oldPayPassword.trim()) {
 				uni.showToast({
 					title: '请输入原支付密码',
 					icon: 'none'
@@ -651,7 +669,7 @@ export default {
 			}
 			if (!this.editData.newPayPassword.trim()) {
 				uni.showToast({
-					title: '请输入新支付密码',
+					title: this.userInfo.has_pay_password ? '请输入新支付密码' : '请输入支付密码',
 					icon: 'none'
 				});
 				return;
@@ -673,30 +691,40 @@ export default {
 			
 			try {
 				uni.showLoading({
-					title: '修改中...'
+					title: this.userInfo.has_pay_password ? '修改中...' : '设置中...'
 				});
 				
-				const res = await changePayPassword({
-				oldPayPassword: this.editData.oldPayPassword,
-				newPayPassword: this.editData.newPayPassword
-			});
+				const data = {
+					newPayPassword: this.editData.newPayPassword
+				};
 				
-				if (res.data.code === 1) {
-					this.closePopup();
-					uni.showToast({
-						title: '支付密码修改成功',
-						icon: 'success'
-					});
+				// 如果用户已有支付密码，需要传递原密码
+				if (this.userInfo.has_pay_password) {
+					data.oldPayPassword = this.editData.oldPayPassword;
+				}
+				
+				const res = await updateUserProfile(data);
+				
+				if (res.code === 1) {
+				// 保存操作前的状态用于显示提示
+				const wasPasswordSet = this.userInfo.has_pay_password;
+				// 更新用户信息，标记已有支付密码
+				this.userInfo.has_pay_password = true;
+				this.closePopup();
+				uni.showToast({
+					title: wasPasswordSet ? '支付密码修改成功' : '支付密码设置成功',
+					icon: 'success'
+				});
 				} else {
 					uni.showToast({
-						title: res.data.msg || '支付密码修改失败',
+						title: res.msg || '操作失败',
 						icon: 'none'
 					});
 				}
 			} catch (error) {
-				console.error('支付密码修改失败:', error);
+				console.error('支付密码操作失败:', error);
 				uni.showToast({
-					title: '网络错误，请重试',
+					title: error.msg || '网络错误，请重试',
 					icon: 'none'
 				});
 			} finally {
@@ -740,7 +768,7 @@ export default {
 
 .section {
 	margin: 20rpx;
-	background-color: #252525;
+	background-color: #1f1f1f;
 	border-radius: 35rpx 35rpx 0 0;
 	padding: 30rpx;
 	border: 1px solid #333;

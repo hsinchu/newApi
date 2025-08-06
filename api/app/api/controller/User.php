@@ -15,6 +15,8 @@ use think\facade\Db;
 use app\common\model\PaymentMethod;
 use app\common\model\PaymentChannel;
 use app\common\model\RechargeGift;
+use app\common\model\VerificationCode;
+use app\common\model\User as UserModel;
 use app\common\library\MoneyLogTypeHelper;
 use app\common\model\RedPacket;
 use app\common\model\RedPacketRecord;
@@ -22,7 +24,7 @@ use app\common\model\BetOrder;
 
 class User extends Frontend
 {
-    protected array $noNeedLogin = ['checkIn', 'logout'];
+    protected array $noNeedLogin = ['checkIn', 'logout', 'sendEmailCode', 'resetPassword'];
 
     public function initialize(): void
     {
@@ -50,7 +52,7 @@ class User extends Frontend
         $userLoginCaptchaSwitch = Config::get('buildadmin.user_login_captcha');
 
         if ($this->request->isPost()) {
-            $params = $this->request->post(['tab', 'email', 'mobile', 'username', 'password', 'keep', 'captcha', 'captchaId', 'captchaInfo', 'registerType', 'type']);
+            $params = $this->request->post(['tab', 'email', 'mobile', 'username', 'password', 'keep', 'captcha', 'captchaId', 'captchaInfo', 'registerType', 'type', 'emailCode', 'inviteCode']);
 
             // 提前检查 tab ，然后将以 tab 值作为数据验证场景
             if (!in_array($params['tab'] ?? '', ['login', 'register'])) {
@@ -73,11 +75,30 @@ class User extends Frontend
                 }
                 $res = $this->auth->login($params['username'], $params['password'], !empty($params['keep']));
             } elseif ($params['tab'] == 'register') {
-                $captchaObj = new Captcha();
-                if (!$captchaObj->check($params['captcha'], $params[$params['registerType']] . 'user_register')) {
-                    $this->error(__('Please enter the correct verification code'));
+                // 验证邮箱验证码
+                if (!empty($params['emailCode'])) {
+                    if (!\app\common\model\VerificationCode::verifyCode($params['email'], $params['emailCode'], 'register')) {
+                        $this->error('邮箱验证码错误或已过期');
+                    }
+                } else {
+                    $captchaObj = new Captcha();
+                    if (!$captchaObj->check($params['captcha'], $params[$params['registerType']] . 'user_register')) {
+                        $this->error(__('Please enter the correct verification code'));
+                    }
                 }
-                $res = $this->auth->register($params['username'], $params['password'], $params['mobile'], $params['email']);
+                
+                // 验证邀请码（如果提供）
+                $inviterUserId = null;
+                if (!empty($params['inviteCode'])) {
+                    $inviter = \app\common\model\User::where('invite_code', $params['inviteCode'])->find();
+                    if (!$inviter) {
+                        $this->error('邀请码不存在');
+                    }
+                    $inviterUserId = $inviter->id;
+                }
+                
+                $mobile = $params['registerType'] == 'mobile' ? $params['mobile'] : '';
+                $res = $this->auth->register($params['username'], $params['password'], $mobile, $params['email'], $inviterUserId);
             }
 
             if (isset($res) && $res === true) {
@@ -121,81 +142,6 @@ class User extends Frontend
             $this->auth->logout();
             $this->success();
         }
-    }
-
-    /**
-     * 获取用户统计数据
-     */
-    public function statistics(): void
-    {
-        $params = $this->request->get(['start_date', 'end_date']);
-        $userId = $this->auth->id;
-        
-        if (!$userId) {
-            $this->error('请先登录');
-        }
-        
-        // 设置默认时间范围（最近30天）
-        $startDate = $params['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
-        $endDate = $params['end_date'] ?? date('Y-m-d');
-        
-        try {
-            // 获取用户基本信息
-            $userInfo = $this->auth->getUserInfo();
-            
-            // 模拟统计数据（实际项目中应该从数据库查询）
-            $statistics = [
-                // 基础数据
-                'total_bet_amount' => 1250.00, // 总投注金额
-                'total_prize_amount' => 680.00, // 总中奖金额
-                'recharge_amount' => 2000.00, // 充值金额
-                'withdraw_amount' => 500.00, // 提现金额
-                'balance' => $userInfo['money'] ?? 1320.00, // 当前余额
-                'bet_count' => 45, // 投注次数
-                'win_count' => 12, // 中奖次数
-                'win_rate' => 26.67, // 中奖率
-                
-                // 投注分析数据
-                'max_bet_amount' => 200.00, // 最大单次投注
-                
-                // 中奖分析数据
-                'max_win_amount' => 1500.00, // 最大单次中奖
-                
-                // 投注习惯数据
-                'favorite_lottery' => '双色球', // 最爱彩种
-                'active_time' => '20:00-22:00', // 活跃时段
-                'consecutive_days' => 7, // 连续投注天数
-                'bet_frequency' => '每日1-3次', // 投注频率
-                
-                // 风险控制数据
-                'daily_bet_limit' => 1000.00, // 日投注限额
-                'monthly_bet_amount' => 8500.00, // 月投注金额
-                'risk_level' => 'low', // 风险等级: low, medium, high
-                
-                // 近期中奖记录
-                'recent_wins' => [
-                    [
-                        'date' => '12-20',
-                        'lottery_name' => '双色球',
-                        'amount' => '1500.00'
-                    ],
-                    [
-                        'date' => '12-18',
-                        'lottery_name' => '大乐透',
-                        'amount' => '50.00'
-                    ],
-                    [
-                        'date' => '12-15',
-                        'lottery_name' => '福彩3D',
-                        'amount' => '1040.00'
-                    ]
-                ]
-            ];
-        } catch (Exception $e) {
-            $this->error('获取统计数据失败：' . $e->getMessage());
-        }
-            
-        $this->success('获取统计数据成功', $statistics);
     }
 
     /**
@@ -833,4 +779,166 @@ class User extends Frontend
              
         $this->success('获取成功', $result);
      }
- }
+
+     //发送电子邮箱验证码
+     public function sendEmailCode(): void
+     {
+         $email = $this->request->param('email');
+         $type = $this->request->param('type', 'register'); // 默认为注册类型
+         
+         if (empty($email)) {
+             $this->error('邮箱不能为空');
+         }
+         
+         // 验证邮箱格式
+         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+             $this->error('邮箱格式不正确');
+         }
+         
+         try {
+             // 检查发送频率
+             if (!VerificationCode::checkSendFrequency($email, $type)) {
+                 $this->error('发送过于频繁，请1分钟后再试');
+             }
+             
+             // 如果是注册类型，检查邮箱是否已存在
+             if ($type === 'register') {
+                 $existUser = UserModel::where('email', $email)->find();
+                 if ($existUser) {
+                     $this->error('该邮箱已被注册');
+                 }
+             }
+             
+             // 生成验证码
+             $code = VerificationCode::generateCode($email, $type);
+             
+             // 发送邮件（这里需要配置邮件服务）
+            //  $this->sendEmail($email, $code, $type);
+         } catch (\Exception $e) {
+             $this->error('发送失败：' . $e->getMessage());
+         }
+            
+        $this->success('验证码发送成功，请查收邮件', ['code' => $code]);
+     }
+     
+     /**
+     * 发送邮件
+     * @param string $email 邮箱
+     * @param string $code 验证码
+     * @param string $type 类型
+     * @throws \Exception
+     */
+    private function sendEmail($email, $code, $type)
+    {
+        // 根据类型设置邮件标题和内容
+        $subjects = [
+            'register' => '注册验证码',
+            'reset_password' => '找回密码验证码',
+            'reset_pay_password' => '找回支付密码验证码',
+            'change_email' => '修改邮箱验证码'
+        ];
+        
+        $subject = $subjects[$type] ?? '验证码';
+        $content = "您的验证码是：{$code}，有效期10分钟，请勿泄露给他人。";
+        
+        try {
+            $mail = new \app\common\library\Email();
+            
+            if (!$mail->configured) {
+                throw new \Exception('邮件服务未配置');
+            }
+            
+            // 发送邮件
+            $mail->isSMTP();
+            $mail->addAddress($email);
+            $mail->isHTML(true);
+            $mail->setSubject($subject);
+            $mail->Body = "<p>{$content}</p>";
+            $mail->AltBody = $content;
+            
+            $mail->send();
+            \think\facade\Log::info("邮件发送成功到 {$email}");
+        } catch (\Exception $e) {
+            \think\facade\Log::error("邮件发送失败到 {$email}：" . $e->getMessage());
+            throw new \Exception('邮件发送失败，请稍后重试');
+        }
+     }
+
+     //找回密码
+     public function resetPassword(): void
+     {
+         $data = $this->request->param();
+         try {
+             $email = $data['email'] ?? '';
+             $code = $data['code'] ?? '';
+             $password = $data['password'] ?? '';
+             if (empty($email) || empty($code) || empty($password)) {
+                 throw new \Exception('参数错误');
+             }
+             // 验证验证码
+             $verification = VerificationCode::where([
+                 'email' => $email,
+                 'code' => $code,
+                 'type' => VerificationCode::TYPE_RESET_PASSWORD,
+                 'status' => VerificationCode::STATUS_UNUSED
+             ])->find();
+             if (!$verification) {
+                 throw new \Exception('验证码错误');
+             }
+             // 更新用户密码
+             $user = UserModel::where('email', $email)->find();
+             if (!$user) {
+                 throw new \Exception('用户不存在');
+             }
+             $user->password = password_hash($password, PASSWORD_DEFAULT);
+             $user->save();
+             // 标记验证码为已使用
+             $verification->status = VerificationCode::STATUS_USED;
+             $verification->save();
+         } catch (\Exception $e) {
+             $this->error('重置失败：' . $e->getMessage());
+         }
+         $this->success('重置成功');
+     }
+
+     //找回支付密码
+     public function resetPayPassword(): void
+     {
+         $data = $this->request->param();
+         try {
+             $email = $data['email'] ?? '';
+             $code = $data['code'] ?? '';
+             $payPassword = $data['payPassword'] ?? '';
+             if (empty($email) || empty($code) || empty($payPassword)) {
+                 throw new \Exception('参数错误');
+             }
+             // 验证支付密码格式（6位数字）
+             if (!preg_match('/^\d{6}$/', $payPassword)) {
+                 throw new \Exception('支付密码必须是6位数字');
+             }
+             // 验证验证码
+             $verification = VerificationCode::where([
+                 'email' => $email,
+                 'code' => $code,
+                 'type' => 'reset_pay_password',
+                 'status' => VerificationCode::STATUS_UNUSED
+             ])->find();
+             if (!$verification) {
+                 throw new \Exception('验证码错误');
+             }
+             // 更新用户支付密码
+             $user = UserModel::where('email', $email)->find();
+             if (!$user) {
+                 throw new \Exception('用户不存在');
+             }
+             $user->pay_password = password_hash($payPassword, PASSWORD_DEFAULT);
+             $user->save();
+             // 标记验证码为已使用
+             $verification->status = VerificationCode::STATUS_USED;
+             $verification->save();
+         } catch (\Exception $e) {
+             $this->error('重置失败：' . $e->getMessage());
+         }
+         $this->success('重置成功');
+     }    
+}

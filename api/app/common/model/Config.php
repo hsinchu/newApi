@@ -21,6 +21,11 @@ class Config extends Model
     protected $name = 'config';
 
     /**
+     * 关闭自动写入时间戳
+     */
+    protected $autoWriteTimestamp = false;
+
+    /**
      * 字段信息
      */
     protected $schema = [

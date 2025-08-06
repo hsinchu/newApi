@@ -131,7 +131,8 @@ class Api extends BaseController
         }
 
         $type = $type ?: $this->responseType;
-        $httpCode = $header['statusCode'] ?? ($code > 0 ? 200 : 400);
+        $httpCode = $header['statusCode'] ?? 200;
+        // $httpCode = $header['statusCode'] ?? ($code > 0 ? 200 : 400);
         
         // 移除statusCode避免重复设置
         unset($header['statusCode']);

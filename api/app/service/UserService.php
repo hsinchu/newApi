@@ -78,7 +78,7 @@ class UserService
             'birthday' => $data['birthday'] ?? null,
             'avatar' => $data['avatar'] ?? '',
             'money' => 0,
-            'frozen_money' => 0,
+            'unwith_money' => 0,
             'score' => 0,
             'invite_code' => $this->generateInviteCode(),
             'status' => $data['status'] ?? 1,

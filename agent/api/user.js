@@ -130,3 +130,105 @@ export function uploadAvatar(file) {
 		file: file
 	});
 }
+
+/**
+ * 发送邮箱验证码
+ * @param {Object} data 发送验证码数据
+ * @param {string} data.email 邮箱地址
+ * @param {string} data.type 验证码类型 (register/reset_password/reset_pay_password)
+ */
+export function sendEmailCode(data) {
+	return request.post('/user/sendEmailCode', data);
+}
+
+/**
+ * 重置支付密码
+ * @param {Object} data 重置数据
+ * @param {string} data.email 邮箱地址
+ * @param {string} data.code 验证码
+ * @param {string} data.pay_password 新支付密码
+ */
+export function resetPayPassword(data) {
+	return request.post('/user/resetPayPassword', data);
+}
+
+/**
+ * 获取提现账号列表
+ * @param {string} type 账号类型 (alipay/wechat/bank)
+ */
+export function getWithdrawAccounts(type = '') {
+	return request.get('/withdraw/getAccounts', {
+		params: { type }
+	});
+}
+
+/**
+ * 添加提现账号
+ * @param {Object} data 账号数据
+ * @param {string} data.type 账号类型
+ * @param {string} data.accountName 账号名称
+ * @param {string} data.alipayAccount 支付宝账号
+ * @param {string} data.wechatAccount 微信号
+ * @param {string} data.bankCardNumber 银行卡号
+ * @param {string} data.bankName 银行名称
+ */
+export function addWithdrawAccount(data) {
+	return request.post('/withdraw/addAccount', data);
+}
+
+/**
+ * 更新提现账号
+ * @param {Object} data 账号数据
+ * @param {number} data.id 账号ID
+ */
+export function updateWithdrawAccount(data) {
+	return request.post('/withdraw/updateAccount', data);
+}
+
+/**
+ * 删除提现账号
+ * @param {number} id 账号ID
+ */
+export function deleteWithdrawAccount(id) {
+	return request.post('/withdraw/deleteAccount', { id });
+}
+
+/**
+ * 设置默认提现账号
+ * @param {number} id 账号ID
+ */
+export function setDefaultWithdrawAccount(id) {
+	return request.post('/withdraw/setDefaultAccount', { id });
+}
+
+/**
+ * 提交提现申请
+ * @param {Object} data 提现数据
+ * @param {number} data.accountId 账号ID
+ * @param {number} data.amount 提现金额
+ * @param {string} data.payPassword 支付密码
+ * @param {string} data.remark 备注
+ */
+export function submitWithdraw(data) {
+	return request.post('/withdraw/submit', data);
+}
+
+/**
+ * 获取提现记录
+ * @param {Object} params 查询参数
+ * @param {number} params.page 页码
+ * @param {number} params.limit 每页数量
+ * @param {string} params.status 状态筛选
+ */
+export function getWithdrawRecords(params = {}) {
+	return request.get('/withdraw/getRecords', {
+		params
+	});
+}
+
+/**
+ * 获取提现配置
+ */
+export function getWithdrawConfig() {
+	return request.get('/withdraw/getConfig');
+}

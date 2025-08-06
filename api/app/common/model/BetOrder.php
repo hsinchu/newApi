@@ -94,8 +94,7 @@ class BetOrder extends Model
         if (empty($value)) {
             return [];
         }
-        $decoded = json_decode($value, true);
-        return is_array($decoded) ? $decoded : $value;
+        return is_string($value) ? $value : json_decode($value, true);
     }
     
     /**
