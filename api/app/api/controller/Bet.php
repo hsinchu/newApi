@@ -48,6 +48,10 @@ class Bet extends Frontend
             $params = Request::param();
 
             $lotteryType = LotteryType::where('type_code', $params['lottery_code'])->find();
+
+            if(!in_array($lotteryType['id'], $this->auth->game_ids)){
+                throw new ValidateException('您没有权限投注此彩种');
+            }
             
             // 参数验证（包含期号验证、余额检查等）
             $validateResult = $this->validateBetParams($params, $user);
@@ -168,6 +172,9 @@ class Bet extends Frontend
                 
                 // 投注成功后，推送奖池更新（80%的投注金额）
                 // WebsockService::pushPrizePoolUpdate($validatedData['lottery_code'], $totalAmount, $user->id);
+                
+                // 更新用户投注额并检查会员等级升级
+                $user->updateBetAmountAndCheckUpgrade($totalAmount);
                 
             } catch (ValidateException $e) {
                 Db::rollback();
@@ -317,6 +324,14 @@ class Bet extends Frontend
             }
         }
         
+        // 用户单日限额验证
+        if ($lotteryType && $lotteryType->daily_limit > 0) {
+            $dailyLimitValidation = $this->validateUserDailyLimit($validatedData, $user, $lotteryType);
+            if ($dailyLimitValidation['code'] != 1) {
+                return $dailyLimitValidation;
+            }
+        }
+        
         // 添加用户信息到验证结果
         $validatedData['user_balance'] = $user->money;
         
@@ -413,12 +428,54 @@ class Bet extends Frontend
     }
 
     /**
+     * 验证用户单日限额
+     * @param array $validatedData 验证后的数据
+     * @param object $user 用户对象
+     * @param object $lotteryType 彩种对象
+     * @return array
+     */
+    private function validateUserDailyLimit(array $validatedData, $user, $lotteryType): array
+    {
+        try {
+            // 获取今日开始和结束时间戳
+            $todayStart = strtotime(date('Y-m-d 00:00:00'));
+            $todayEnd = strtotime(date('Y-m-d 23:59:59'));
+            
+            // 计算用户今日在该彩种的投注总额
+            $todayBetAmount = BetOrder::where('user_id', $user->id)
+                ->where('lottery_type_id', $lotteryType->id)
+                ->where('create_time', 'between', [$todayStart, $todayEnd])
+                ->where('status', '!=', BetOrder::STATUS_CANCELLED)
+                ->sum('total_amount');
+            
+            // 转换为元（数据库存储为分）
+            $todayBetAmount = $todayBetAmount / 100;
+            $currentBetAmount = $validatedData['total_amount'];
+            $dailyLimit = $lotteryType->daily_limit;
+            
+            // 检查是否超过单日限额
+            if (($todayBetAmount + $currentBetAmount) > $dailyLimit) {
+                $remainingLimit = max(0, $dailyLimit - $todayBetAmount);
+                return [
+                    'code' => 0,
+                    'msg' => "超过该彩种单日投注限额，当前投注：{$currentBetAmount}元，今日已投注：{$todayBetAmount}元，单日限额：{$dailyLimit}元，剩余额度：{$remainingLimit}元"
+                ];
+            }
+            
+            return ['code' => 1, 'msg' => '单日限额验证通过'];
+            
+        } catch (\Exception $e) {
+            Log::error('用户单日限额验证失败: ' . $e->getMessage());
+            return ['code' => 0, 'msg' => '单日限额验证失败：' . $e->getMessage()];
+        }
+    }
+
+    /**
      * 获取最大投注额
      * @return \think\response\Json
      */
     public function getMaxBetAmount()
     {
-
         try {
             // 获取参数
             $lotteryCode = $this->request->param('lottery_code', '');

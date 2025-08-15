@@ -289,11 +289,18 @@ class RechargeOrder extends Backend
             $order->status = 'SUCCESS';
             $order->success_time = time();
             $order->admin_remark = '管理员手动处理成功';
+            $financeService = new \app\service\FinanceService();
+            $financeService->adjustUserBalance(
+                $order->user_id,
+                $order->amount,
+                '充值被管理员处理成功，增加资金',
+                'RECHARGE_ADD',
+            );
             $order->save();
-            $this->success('处理成功');
         } catch (\Exception $e) {
             $this->error($e->getMessage());
         }
+        $this->success('处理成功');
     }
 
     /**

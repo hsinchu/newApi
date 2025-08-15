@@ -39,21 +39,21 @@
 						:chain="false"
 						barWidth="128rpx"
 						:hdHeight="dynamicHeaderHeight"
-						barBgColor="#e2d5cf"
+						barBgColor="#f8f9fa"
 						:barItemStyle="{
 							textAlign: 'center',
 							padding: '15rpx',
-							color: '#424242',
+							color: '#666',
 						}"
 						:barItemActiveStyle="{
-							backgroundColor: '#f7e9de',
-							color: '#ff6b35',
+							backgroundColor: '#ff6b35',
+							color: '#fff',
 							padding: '15rpx',
 							fontWeight: '550',
-							textAlign: 'center',	
+							textAlign: 'center'
 						}"
 						:barItemActiveLineStyle="{
-							backgroundColor: '#ff6b35',
+							backgroundColor: '#3c9cff',
 							width: '0'
 						}"
 					></uv-vtabs>
@@ -2127,11 +2127,11 @@ export default {
 	bottom: 0;
 	left: 0;
 	right: 0;
-	background: #fff;
-	border-top: 1rpx solid #eee;
+	background: #ffffff;
+	border-top: 1rpx solid #e0e0e0;
 	padding: 20rpx;
 	z-index: 990;
-	box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+	box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
 }
 
 .bottom-buttons {
@@ -2149,21 +2149,22 @@ export default {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	background: #f8f8f8;
+	background: #f8f9fa;
 	border-radius: 12rpx;
 	position: relative;
 	transition: all 0.3s ease;
 	gap: 8rpx;
+	border: 1rpx solid #e0e0e0;
 }
 
 .bottom-btn:active {
 	transform: scale(0.95);
-	background: #e8e8e8;
+	background: #e9ecef;
 }
 
 .btn-text {
 	font-size: 22rpx;
-	color: #666;
+	color: #333;
 	font-weight: 500;
 }
 
@@ -2209,7 +2210,7 @@ export default {
 }
 
 .add-btn.disabled {
-	background: #f0f0f0;
+	background: #f8f9fa;
 	border: 1rpx solid #e0e0e0;
 	opacity: 0.6;
 }
@@ -2268,8 +2269,8 @@ export default {
 	gap: 8rpx;
 	padding: 0 16rpx;
 	height: 60rpx;
-	background: #f5f5f5;
-	border: 1rpx solid #ddd;
+	background: #f8f9fa;
+	border: 1rpx solid #e0e0e0;
 	border-radius: 8rpx;
 	min-width: 100rpx;
 	transition: all 0.3s ease;
@@ -2281,13 +2282,13 @@ export default {
 }
 
 .clear-section.disabled {
-	background: #f0f0f0;
+	background: #f8f9fa;
 	border: 1rpx solid #e0e0e0;
 	opacity: 0.6;
 }
 
 .clear-section:active {
-	background: #e8e8e8;
+	background: #e9ecef;
 }
 
 .clear-section.has-selection:active {
@@ -2296,18 +2297,18 @@ export default {
 
 .clear-text {
 	font-size: 24rpx;
-	color: #666;
+	color: #333;
 	font-weight: 500;
 }
 
 .bet-amount-input {
 	height: 60rpx;
-	border: 1rpx solid #ddd;
+	border: 1rpx solid #e0e0e0;
 	border-radius: 8rpx;
 	min-width: 120rpx;
 	display: flex;
 	align-items: center;
-	background: #fff;
+	background: #ffffff;
 }
 
 .amount-input {
@@ -2331,7 +2332,7 @@ export default {
 .label {
 	width:45rpx;
 	font-size: 24rpx;
-	color: #666;
+	color: #333;
 }
 
 /* 弹窗样式 */
@@ -2420,10 +2421,11 @@ export default {
 .bet-basket-popup {
 	width: 100vw;
 	max-height: 80vh;
-	background: #fff;
+	background: #ffffff;
 	border-radius: 20rpx 20rpx 0 0;
 	padding: 0;
 	overflow: hidden;
+	border: 1rpx solid #e0e0e0;
 }
 
 .popup-header {
@@ -2431,8 +2433,8 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	padding: 30rpx 40rpx;
-	border-bottom: 1rpx solid #f0f0f0;
-	background: #fff;
+	border-bottom: 1rpx solid #e0e0e0;
+	background: #ffffff;
 }
 
 .popup-title {
@@ -2469,7 +2471,7 @@ export default {
 	background: #f8f9fa;
 	border-radius: 12rpx;
 	padding: 20rpx;
-	border: 1rpx solid #e9ecef;
+	border: 1rpx solid #e0e0e0;
 }
 
 .bet-info {
@@ -2496,7 +2498,7 @@ export default {
 
 .bet-count {
 	font-size: 24rpx;
-	color: #666;
+	color: #333;
 }
 
 .bet-controls {
@@ -2514,7 +2516,7 @@ export default {
 
 .control-label {
 	font-size: 24rpx;
-	color: #666;
+	color: #333;
 }
 
 .bet-amount {
@@ -2530,8 +2532,8 @@ export default {
 
 .basket-footer {
 	padding: 20rpx 40rpx 40rpx;
-	border-top: 1rpx solid #f0f0f0;
-	background: #fff;
+	border-top: 1rpx solid #e0e0e0;
+	background: #ffffff;
 }
 
 .total-info {
@@ -2557,9 +2559,10 @@ export default {
 /* 近期投注弹窗样式 */
 .recent-bets-popup {
 	max-height: 80vh;
-	background: #fff;
+	background: #ffffff;
 	border-radius: 20rpx;
 	overflow: hidden;
+	border: 1rpx solid #e0e0e0;
 }
 
 .recent-content {
@@ -2579,7 +2582,7 @@ export default {
 
 .loading-text {
 	font-size: 28rpx;
-	color: #999;
+	color: #666;
 }
 
 .empty-orders {
@@ -2599,7 +2602,7 @@ export default {
 	background: #f8f9fa;
 	border-radius: 12rpx;
 	padding: 20rpx;
-	border: 1rpx solid #e9ecef;
+	border: 1rpx solid #e0e0e0;
 }
 
 .order-header {
@@ -2652,12 +2655,12 @@ export default {
 
 .order-game {
 	font-size: 24rpx;
-	color: #666;
+	color: #333;
 }
 
 .order-period {
 	font-size: 24rpx;
-	color: #666;
+	color: #333;
 }
 
 .order-details {
@@ -2687,7 +2690,7 @@ export default {
 
 .time-text {
 	font-size: 22rpx;
-	color: #999;
+	color: #666;
 }
 
 	/* 占位符内容样式 */
@@ -2702,8 +2705,8 @@ export default {
 	}
 	
 	.placeholder-text {
-		font-size: 28rpx;
-		color: #999;
-		font-weight: 500;
-	}
+	font-size: 28rpx;
+	color: #666;
+	font-weight: 500;
+}
 </style>

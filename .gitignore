@@ -1,32 +1,11 @@
-# 依赖文件
-node_modules/
-vendor/
-
-# 构建输出
-dist/
-build/
-unpackage/
-runtime/
-
-# 日志文件
-*.log
-logs/
-
-# 环境配置文件
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# IDE 和编辑器文件
+# IDE and Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# 操作系统生成的文件
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -35,81 +14,90 @@ logs/
 ehthumbs.db
 Thumbs.db
 
-# 临时文件
+# ThinkPHP
+/api/runtime/
+/api/vendor/
+/api/.env
+/api/composer.lock
+/api/public/storage/
+/api/public/static/uploads/
+
+# Node.js dependencies
+/api/web/node_modules/
+/api/web/dist/
+/api/web/.env.local
+/api/web/.env.development.local
+/api/web/.env.test.local
+/api/web/.env.production.local
+/api/web/npm-debug.log*
+/api/web/yarn-debug.log*
+/api/web/yarn-error.log*
+
+# UniApp
+/user/node_modules/
+/user/unpackage/
+/user/.hbuilderx/
+/agent/node_modules/
+/agent/unpackage/
+/agent/.hbuilderx/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.sql.bak
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
 *.tmp
 *.temp
 
-# 缓存文件
+# Cache
 .cache/
-.npm/
-.yarn/
+*.cache
 
-# 测试覆盖率报告
-coverage/
-*.lcov
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# 压缩文件
-*.zip
-*.rar
+# Package files
 *.7z
-*.tar.gz
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
 
-# 数据库文件
-*.sqlite
-*.db
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
 
-# 上传文件目录
-uploads/
-static/uploads/
+# Security
+*.pem
+*.key
+*.crt
+*.p12
 
-# 嵌入的git仓库
-api1/
-customer/
+# Custom
+/auto/*.log
+/维护信息 .xlsx
+*.bak
+*.backup
 
-# ThinkPHP 特定文件
-app/runtime/
-runtime/
-vendor/
-composer.lock
+# WebSocket
+/api/websock/node_modules/
 
-# API 目录中的忽略文件
-api/vendor/
-api/composer.lock
-api/runtime/
-api/app/runtime/
-api/public/static/uploads/
-api/public/install/
-api/public/npm-install-test/
-api/.env
-api/web/node_modules/
-api/web/dist/
-api/web/package-lock.json
-
-# uni-app 特定文件
-unpackage/
-.hbuilderx/
-
-# 微信小程序
-project.config.json
-project.private.config.json
-
-# 支付宝小程序
-mini.project.json
-
-# 百度小程序
-project.swan.json
-
-# 字节跳动小程序
-project.config.json
-
-# QQ小程序
-project.config.json
-
-# 快手小程序
-project.ks.json
-
-# 钉钉小程序
-project.dd.json
-
-# 飞书小程序
-project.lark.json
+# Install lock
+/api/public/install.lock

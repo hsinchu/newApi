@@ -62,7 +62,7 @@ return [
                 'port'       => 6379,
                 'password'   => '',
                 // Db索引，非 0 以避免数据被意外清理
-                'select'     => 1,
+                'select'     => 11,
                 'timeout'    => 0,
                 // 默认 token 有效时间
                 'expire'     => 2592000,

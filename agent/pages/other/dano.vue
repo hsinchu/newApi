@@ -21,24 +21,24 @@
 				@change="tabChange"
 				:chain="false"
 				bar-width="200rpx"
-				bar-bg-color="#2a2a2a"
+				bar-bg-color="#f8f9fa"
 				:bar-item-style="{
 					padding: '12rpx 8rpx',
-					borderBottom: '1px solid #2a2a2a',
+					borderBottom: '1px solid #e9ecef',
 					fontSize: '28rpx',
 					textAlign: 'center',
-					color: '#c5c5c5'
+					color: '#666'
 				}"
 				:bar-item-active-style="{
 					backgroundColor: '#3c9cff',
 					textAlign: 'center',
 					fontWeight: 'bold',
 					fontSize: '28rpx',
-					color: '#e1e1e1',
+					color: '#fff',
 					padding: '12rpx 8rpx',
 				}"
 				:content-style="{
-					backgroundColor: '#000',
+					backgroundColor: '#fff',
 				}"
 			>
 				<uv-vtabs-item>
@@ -116,8 +116,8 @@ export default {
 	
 }
 .dano-container {
-	background: linear-gradient(180deg, #000 0%, #1a1a1a 100%);
-	color: #e1e1e1;
+	background: linear-gradient(180deg, #f8f9fa 0%, #fff 100%);
+	color: #333;
 	min-height: 100vh;
 }
 
@@ -131,7 +131,7 @@ export default {
 	
 	.loading-text {
 		margin-top: 20rpx;
-		color: #999;
+		color: #666;
 		font-size: 28rpx;
 	}
 }
@@ -152,14 +152,14 @@ export default {
 }
 
 .announce-detail {
-	background:#252525;
+	background:#fff;
 	padding: 20rpx;
 }
 
 .announce-header {
 	margin-bottom: 40rpx;
 	padding-bottom: 30rpx;
-	border-bottom: 2rpx solid #2a2a2a;
+	border-bottom: 2rpx solid #e9ecef;
 	
 	.announce-title {
 		display: block;
@@ -172,7 +172,7 @@ export default {
 	
 	.announce-date {
 		display: block;
-		color: #999;
+		color: #666;
 		font-size: 24rpx;
 	}
 }
@@ -182,7 +182,7 @@ export default {
 	
 	.content-text {
 		display: block;
-		color: #e0e0e0;
+		color: #333;
 		font-size: 28rpx;
 		line-height: 2;
 		text-align: justify;
@@ -192,21 +192,21 @@ export default {
 
 .announce-footer {
 	padding-top: 30rpx;
-	border-top: 1rpx solid #2a2a2a;
+	border-top: 1rpx solid #e9ecef;
 	
 	.attachment-section {
 		display: flex;
 		align-items: center;
 		gap: 16rpx;
 		padding: 20rpx;
-		background: linear-gradient(135deg, #252525, #1a1a1a);
+		background: linear-gradient(135deg, #f8f9fa, #fff);
 		border-radius: 16rpx;
-		border: 1rpx solid #333;
+		border: 1rpx solid #e9ecef;
 		transition: all 0.3s ease;
 		
 		&:active {
 			transform: scale(0.98);
-			background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+			background: linear-gradient(135deg, #e9ecef, #f8f9fa);
 		}
 		
 		.attachment-text {
@@ -220,8 +220,8 @@ export default {
 /* 自定义vtabs样式 */
 :deep(.uv-vtabs) {
 	.uv-vtabs__bar {
-		background-color: #1a1a1a !important;
-		border-right: 2rpx solid #2a2a2a;
+		background-color: #f8f9fa !important;
+		border-right: 2rpx solid #e9ecef;
 	}
 	
 	.uv-vtabs__bar__item {
@@ -229,7 +229,7 @@ export default {
 		font-size: 26rpx;
 		
 		&:hover {
-			background-color: #252525 !important;
+			background-color: #e9ecef !important;
 		}
 	}
 	
@@ -250,7 +250,7 @@ export default {
 	}
 	
 	.uv-vtabs__content {
-		background-color: #000 !important;
+		background-color: #fff !important;
 	}
 }
 </style>

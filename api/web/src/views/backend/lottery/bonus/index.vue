@@ -7,12 +7,34 @@
       type="info"
       show-icon
     />
-
+      
     <!-- 表格顶部菜单 -->
     <TableHeader
       :buttons="['refresh', 'add', 'edit', 'comSearch', 'quickSearch', 'columnDisplay']"
       :quick-search-placeholder="'快速搜索：类型、名称、键值'"
     >
+    <!-- 过滤条件 -->
+    <div class="filter-bar" style="width: 200px;">
+      <el-row :gutter="20">
+        <el-col :span="24">
+          <el-select 
+            v-model="selectedLotteryType" 
+            placeholder="选择彩种类型" 
+            clearable 
+            @change="handleLotteryTypeChange"
+            style="width: 100%"
+          >
+            <el-option label="全部" value="" />
+            <el-option
+              v-for="item in lotteryTypes"
+              :key="item.id"
+              :label="item.type_name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-col>
+      </el-row>
+    </div>
     </TableHeader>
 
     <!-- 表格 -->
@@ -40,6 +62,10 @@ defineOptions({
 const { t } = useI18n()
 const tableRef = ref()
 const formRef = ref()
+
+// 彩种类型选项
+const lotteryTypes = ref<any[]>([])
+const selectedLotteryType = ref('')
 
 const baTable = new baTableClass(
   new baTableApi('/admin/lottery.LotteryBonus/'),
@@ -91,14 +117,6 @@ const baTable = new baTableClass(
         operator: false, 
         width: 80 
       },
-      { 
-        label: '更新时间', 
-        prop: 'update_time', 
-        align: 'center', 
-        render: 'datetime', 
-        operator: false, 
-        width: 160 
-      },
       {
         label: '操作',
         align: 'center',
@@ -124,16 +142,50 @@ const baTable = new baTableClass(
   }
 )
 
+// 加载彩种类型
+const loadLotteryTypes = async () => {
+  try {
+    const statisticsApi = new baTableApi('/admin/lottery.Statistics/')
+    const res = await statisticsApi.postData('lotteryTypes')
+    if (res.code === 1) {
+      lotteryTypes.value = res.data
+    }
+  } catch (error) {
+    console.error('加载彩种类型失败:', error)
+  }
+}
+
+// 彩种类型过滤
+const handleLotteryTypeChange = (value: string) => {
+  selectedLotteryType.value = value
+  if (value) {
+    // 根据选择的彩种ID找到对应的彩种名称
+    const selectedType = lotteryTypes.value.find(item => item.id == value)
+    if (selectedType) {
+      // 使用search数组格式进行过滤
+      baTable.table.filter!.search = [{
+        field: 'lotteryType.type_name',
+        val: selectedType.type_name,
+        operator: 'eq',
+        render: 'tag'
+      }]
+    }
+  } else {
+    // 清空搜索条件
+    delete baTable.table.filter!.search
+  }
+  baTable.getIndex()
+}
+
 provide('baTable', baTable)
 
 onMounted(() => {
   baTable.table.ref = tableRef.value
   baTable.mount()
+  loadLotteryTypes()
   baTable.getIndex()?.then(() => {
     baTable.initSort()
     baTable.dragSort()
   })
 })
 </script>
-
-<style scoped></style>

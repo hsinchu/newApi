@@ -8,7 +8,7 @@
 				@change="onCategoryChange"
 				:chain="false"
 				barWidth="200rpx"
-				barBgColor="#2a2a2a"
+				barBgColor="#f8f9fa"
 				:barItemStyle="barItemStyle"
 				:barItemActiveStyle="barItemActiveStyle"
 				:contentStyle="contentStyle"
@@ -32,7 +32,7 @@
 								scroll-y 
 								class="scroll-list" 
 								@scrolltolower="handleScrollToLower"
-								lower-threshold="100"
+								lower-threshold="50"
 							>
 								<view v-for="(item, index) in moneyLogList" :key="index" class="log-item">
 									<view class="log-info">
@@ -113,7 +113,7 @@
 			// 样式配置
 			barItemStyle: {
 				backgroundColor: 'transparent',
-				color: '#999',
+				color: '#666',
 				fontSize: '28rpx',
 				textAlign: 'center',
 				padding: '12rpx 10rpx'
@@ -126,7 +126,7 @@
 				padding: '12rpx 10rpx'
 			},
 			contentStyle: {
-				backgroundColor: '#1c1c1c',
+				backgroundColor: '#fff',
 			}
 		}
 	},
@@ -268,8 +268,17 @@
 			this.loadStatus = 'loading'
 			this.page++
 			console.log('开始加载第', this.page, '页')
-			await this.loadMoneyLog()
-			this.loading = false
+			try {
+				await this.loadMoneyLog()
+			} catch (error) {
+				console.error('加载更多失败:', error)
+				// 回滚页码
+				this.page--
+				// 重置状态
+				this.loadStatus = 'loadmore'
+			} finally {
+				this.loading = false
+			}
 		},
 		
 
@@ -390,20 +399,22 @@
 
 <style lang="scss" scoped>
 .money-log-container {
-	background-color: #1c1c1c;
+	background-color: #f8f9fa;
 }
 
 .right-content {
-	height: 100%;
+	height: 100vh;
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
 }
 
 .fixed-header {
 	position: sticky;
 	top: 0;
 	z-index: 100;
-	background-color: #252525;
+	background-color: #fff;
+	border-bottom: 1px solid #e9ecef;
 }
 
 .date-header {
@@ -416,7 +427,7 @@
 
 .date-title {
 	font-size: 25rpx;
-	color: #8a9eff;
+	color: #333;
 	font-weight: 500;
 }
 
@@ -425,7 +436,7 @@
 	align-items: center;
 	gap: 10rpx;
 	padding: 10rpx 15rpx;
-	background-color: rgba(0, 122, 255, 0.1);
+	background-color: #f8f9fa;
 	border-radius: 25rpx;
 	border: 1rpx solid #fd4300;
 }
@@ -440,11 +451,12 @@
 	flex: 1;
 	padding: 0 15rpx 20rpx;
 	padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-	height: calc(100vh - 200rpx);
+	height: 0;
 }
 
 .scroll-list {
 	height: 100%;
+	width: 100%;
 }
 
 
@@ -454,7 +466,8 @@
 	justify-content: space-between;
 	align-items: center;
 	padding: 20rpx;
-	background-color: #252525;
+	background-color: #fff;
+	border: 1px solid #e9ecef;
 	margin: 10rpx 0;
 	border-radius: 35rpx 0 35rpx 0;
 }
@@ -468,14 +481,14 @@
 
 .log-title {
 	font-size: 25rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 400;
 }
 
 .log-time {
 	font-size: 20rpx;
-	color: #e1e1e1;
-	opacity: 0.7;
+	color: #666;
+	opacity: 0.8;
 }
 
 .log-amount {

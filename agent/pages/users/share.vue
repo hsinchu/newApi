@@ -2,7 +2,7 @@
 	<view class="share-container">
 		<view class="content-wrapper">
 			<!-- Tab切换区域 -->
-			<view class="tab-section">
+			<!-- <view class="tab-section">
 				<view class="tab-container">
 					<view 
 						class="tab-item" 
@@ -19,7 +19,7 @@
 						<text class="tab-text">邀请用户</text>
 					</view>
 				</view>
-			</view>
+			</view> -->
 			
 			<!-- 主要内容区域 -->
 			<view class="main-content">
@@ -53,8 +53,7 @@
 						<view class="copy-btn" @click="copyInviteCode">复制</view>
 					</view>
 				</view>
-			</view>
-			
+			</view>			
 			<!-- 邀请链接区域 -->
 			<view class="link-section">
 				<view class="link-header">
@@ -88,7 +87,7 @@ import config from '@/utils/config.js';
 export default {
 	data() {
 		return {
-			currentTab: 'agent', // 当前选中的tab，默认为代理商
+			currentTab: 'user', // 当前选中的tab，默认为代理商
 			userInfo: {
 				invite_code: ''
 			},
@@ -118,7 +117,8 @@ export default {
 				// 从API地址提取域名，构建注册链接
 				const apiUrl = appConfig.baseURL;
 				const baseHost = apiUrl.replace('/api', ''); // 移除/api后缀
-				this.baseUrl = `${baseHost}/register?type=${type}&code=`;
+				this.baseUrl = `${baseHost}/register?code=`;
+				// this.baseUrl = `${baseHost}/register?type=${type}&code=`;
 				this.inviteUrl = this.baseUrl + this.userInfo.invite_code;
 			}
 		},
@@ -273,14 +273,14 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.content-wrapper{background:#252525;padding:25rpx;}
+.content-wrapper{background:#f8f9fa;padding:25rpx;}
 
 .tab-section {
 	margin-bottom: 20rpx;
 	
 	.tab-container {
 		display: flex;
-		background-color: #3d3d3d;
+		background-color: #e9ecef;
 		border-radius: 25rpx;
 		padding: 6rpx;
 		gap: 6rpx;
@@ -296,11 +296,11 @@ export default {
 			cursor: pointer;
 			
 			.tab-text {
-				font-size: 26rpx;
-				font-weight: 500;
-				color: #999;
-				transition: color 0.3s ease;
-			}
+			font-size: 26rpx;
+			font-weight: 500;
+			color: #666;
+			transition: color 0.3s ease;
+		}
 			
 			&.active {
 				background: linear-gradient(135deg, #ff7c4d, #ff5722);
@@ -340,7 +340,7 @@ export default {
 	}
 	
 	.qrcode-tip {
-		color: #999;
+		color: #666;
 		font-size: 24rpx;
 		text-align: center;
 	}
@@ -354,7 +354,7 @@ export default {
 	
 	.invite-title {
 		.title-text {
-			color: #e1e1e1;
+			color: #333;
 			font-size: 32rpx;
 			font-weight: bold;
 			display: block;
@@ -362,7 +362,7 @@ export default {
 		}
 		
 		.subtitle-text {
-			color: #999;
+			color: #666;
 			font-size: 24rpx;
 			display: block;
 		}
@@ -370,7 +370,7 @@ export default {
 	
 	.code-item {
 		.label {
-			color: #999;
+			color: #666;
 			font-size: 24rpx;
 			margin-bottom: 10rpx;
 			display: block;
@@ -380,12 +380,13 @@ export default {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			background-color: #252525;
+			background-color: #fff;
+			border: 1rpx solid #e9ecef;
 			border-radius: 12rpx;
 			padding: 15rpx;
 			
 			.code-value {
-				color: #e1e1e1;
+				color: #333;
 				font-size: 26rpx;
 				font-weight: bold;
 				flex: 1;
@@ -396,7 +397,8 @@ export default {
 }
 
 .link-section {
-	background-color: #3d3d3d;
+	background-color: #fff;
+	border: 1rpx solid #e9ecef;
 	border-radius: 45rpx;
 	padding: 20rpx;
 	margin-bottom: 15rpx;
@@ -408,14 +410,14 @@ export default {
 		margin-bottom: 15rpx;
 		
 		.link-label {
-			color: #999;
+			color: #666;
 			font-size: 24rpx;
 			font-weight: 500;
 		}
 	}
 	
 	.link-text {
-		color: #e1e1e1;
+		color: #333;
 		font-size: 24rpx;
 		word-break: break-all;
 		line-height: 1.4;

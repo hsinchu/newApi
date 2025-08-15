@@ -34,189 +34,6 @@ class LotteryDraw extends Backend
     }
 
     /**
-     * 添加开奖结果
-     */
-    public function add(): void
-    {
-        if ($this->request->isPost()) {
-            $data = $this->request->post();
-            if (!$data) {
-                $this->error(__('Parameter %s can not be empty', ['']));
-            }
-
-            $data = $this->excludeFields($data);
-            if ($this->dataLimit && $this->dataLimitFieldAutoFill) {
-                $data[$this->dataLimitField] = $this->auth->id;
-            }
-
-            $result = false;
-            $this->model->startTrans();
-            try {
-                // 验证数据
-                $this->validateDrawData($data);
-                
-                // 检查期号是否重复
-                $exists = $this->model
-                    ->where('lottery_code', $data['lottery_code'])
-                    ->where('period_no', $data['period_no'])
-                    ->find();
-                if ($exists) {
-                    throw new Exception('该期号已存在开奖结果');
-                }
-                
-                // 设置开奖时间
-                if (empty($data['draw_time'])) {
-                    $data['draw_time'] = time();
-                } else {
-                    $data['draw_time'] = strtotime($data['draw_time']);
-                }
-                
-                // 设置状态为已开奖
-                $data['status'] = 'DRAWN';
-                
-                // 设置创建者
-                $data['created_by'] = $this->auth->id;
-                
-                $result = $this->model->save($data);
-                $this->model->commit();
-                
-                // 记录操作日志
-                Log::info('管理员添加开奖结果', [
-                    'admin_id' => $this->auth->id,
-                    'draw_id' => $this->model->id,
-                    'lottery_code' => $data['lottery_code'],
-                    'period_no' => $data['period_no'],
-                    'draw_numbers' => $data['draw_numbers']
-                ]);
-                
-                // 将派奖任务推送到Redis队列
-                if ($result) {
-                    $queueService = new \app\service\QueueService();
-                    $queueData = [
-                         'draw_id' => $this->model->id,
-                         'draw_numbers' => $data['draw_numbers'],
-                         'lottery_type' => $this->model->lottery_type,
-                         'period_no' => $this->model->period_no
-                     ];
-                    
-                    $queueResult = $queueService->push('settle', $queueData);
-                    
-                    if (!$queueResult) {
-                        throw new Exception('派奖任务推送到队列失败');
-                    }
-                    
-                    Log::info('派奖任务已推送到队列', [
-                        'draw_id' => $this->model->id,
-                        'period_no' => $data['period_no'],
-                        'draw_numbers' => $data['draw_numbers']
-                    ]);
-                }
-            } catch (Exception $e) {
-                $this->model->rollback();
-                Log::error('添加开奖结果失败', [
-                    'admin_id' => $this->auth->id,
-                    'data' => $data,
-                    'error' => $e->getMessage()
-                ]);
-                $this->error($e->getMessage());
-            }
-            if ($result !== false) {
-                $this->success(__('Added successfully'));
-            } else {
-                $this->error(__('No rows were added'));
-            }
-        }
-
-        // 获取彩种列表供选择
-        $lotteryTypes = LotteryType::where('status', 1)->field('id,type_code,type_name')->select();
-        
-        $this->success('', [
-            'lottery_types' => $lotteryTypes,
-            'remark' => get_route_remark(),
-        ]);
-    }
-
-    /**
-     * 编辑开奖结果
-     */
-    public function edit(): void
-    {
-        $id = $this->request->param($this->model->getPk());
-        $row = $this->model->find($id);
-        if (!$row) {
-            $this->error(__('Record not found'));
-        }
-
-        // 已结算的开奖结果不允许修改
-        if ($row->status === LotteryDrawModel::STATUS_SETTLED) {
-            $this->error('已结算的开奖结果不允许修改');
-        }
-
-        if ($this->request->isPost()) {
-            $data = $this->request->post();
-            if (!$data) {
-                $this->error(__('Parameter %s can not be empty', ['']));
-            }
-
-            $data = $this->excludeFields($data);
-            $result = false;
-            $this->model->startTrans();
-            try {
-                // 验证数据
-                $this->validateDrawData($data);
-                
-                // 检查期号是否重复（排除自己）
-                $exists = $this->model
-                    ->where('lottery_code', $data['lottery_code'])
-                    ->where('period_no', $data['period_no'])
-                    ->where('id', '<>', $id)
-                    ->find();
-                if ($exists) {
-                    throw new Exception('该期号已存在开奖结果');
-                }
-                
-                $result = $row->save($data);
-                $this->model->commit();
-                
-                // 如果修改了开奖号码，重新推送派奖任务到队列
-                if ($result && isset($data['draw_numbers'])) {
-                    $queueService = new \app\service\QueueService();
-                    $queueData = [
-                         'draw_id' => $id,
-                         'draw_numbers' => $data['draw_numbers'],
-                         'lottery_type' => $row->lottery_type,
-                         'period_no' => $row->period_no
-                     ];
-                    
-                    $queueResult = $queueService->push('settle', $queueData);
-                    
-                    if (!$queueResult) {
-                        throw new Exception('派奖任务推送到队列失败');
-                    }
-                    
-                    Log::info('修改开奖号码后派奖任务已推送到队列', [
-                        'draw_id' => $id,
-                        'draw_numbers' => $data['draw_numbers']
-                    ]);
-                }
-            } catch (Exception $e) {
-                $this->model->rollback();
-                $this->error($e->getMessage());
-            }
-            if ($result !== false) {
-                $this->success(__('Update successful'));
-            } else {
-                $this->error(__('No rows updated'));
-            }
-        }
-
-        $this->success('', [
-            'row' => $row,
-            'remark' => get_route_remark(),
-        ]);
-    }
-
-    /**
      * 手动开奖
      */
     public function manualDraw(): void
@@ -273,6 +90,11 @@ class LotteryDraw extends Backend
                 $updateData['draw_result'] = json_encode($drawResult);
             }
             
+            // 统计该期投注数据
+            $betStats = $this->calculateBetStatistics($draw->lottery_code, $draw->period_no);
+            $updateData['bet_count'] = $betStats['bet_count'];
+            $updateData['total_bet_amount'] = $betStats['total_bet_amount'];
+            
             $result = $draw->save($updateData);
             
             if ($result) {
@@ -284,28 +106,9 @@ class LotteryDraw extends Backend
                     'lottery_code' => $draw->lottery_code,
                     'period_no' => $draw->period_no,
                     'draw_numbers' => $drawNumbers,
-                    'remark' => $remark
-                ]);
-                
-                // 将派奖任务推送到Redis队列
-                $queueService = new \app\service\QueueService();
-                $queueData = [
-                     'draw_id' => $id,
-                     'draw_numbers' => $drawNumbers,
-                     'lottery_type' => $draw->lottery_type,
-                     'period_no' => $draw->period_no
-                 ];
-                
-                $queueResult = $queueService->push('settle', $queueData);
-                
-                if (!$queueResult) {
-                    throw new Exception('派奖任务推送到队列失败');
-                }
-                
-                Log::info('手动开奖派奖任务已推送到队列', [
-                    'draw_id' => $id,
-                    'period_no' => $draw->period_no,
-                    'draw_numbers' => $drawNumbers
+                    'remark' => $remark,
+                    'bet_count' => $betStats['bet_count'],
+                    'total_bet_amount' => $betStats['total_bet_amount']
                 ]);
                 
                 $this->success('开奖成功');
@@ -395,75 +198,6 @@ class LotteryDraw extends Backend
             Log::error('批量手动开奖失败', [
                 'admin_id' => $this->auth->id,
                 'params' => $params,
-                'error' => $e->getMessage()
-            ]);
-            $this->error($e->getMessage());
-        }
-    }
-
-    /**
-     * 结算开奖结果
-     */
-    public function settle(): void
-    {
-        $id = $this->request->param('id');
-        $forceSettle = $this->request->param('force_settle', false);
-        
-        // 参数验证
-        $validate = Validate::rule([
-            'id' => 'require|integer|gt:0',
-            'force_settle' => 'boolean'
-        ]);
-        
-        if (!$validate->check(['id' => $id, 'force_settle' => $forceSettle])) {
-            $this->error($validate->getError());
-        }
-
-        try {
-            // 检查开奖结果是否存在
-            $draw = $this->model->find($id);
-            if (!$draw) {
-                $this->error('开奖结果不存在');
-            }
-            
-            // 检查状态
-            if ($draw->status === LotteryDrawModel::STATUS_SETTLED && !$forceSettle) {
-                $this->error('该开奖结果已结算，如需重新结算请勾选强制结算');
-            }
-            
-            if ($draw->status !== LotteryDrawModel::STATUS_DRAWN && $draw->status !== LotteryDrawModel::STATUS_SETTLED) {
-                $this->error('只能结算已开奖的结果');
-            }
-            
-            // 将派奖任务推送到Redis队列
-            $queueService = new \app\service\QueueService();
-            $queueData = [
-                'draw_id' => $id,
-                'draw_numbers' => $draw->draw_numbers,
-                'lottery_type' => $draw->lottery_type,
-                'period_no' => $draw->period_no,
-                'force_settle' => $forceSettle,
-                'operator_id' => $this->auth->id
-            ];
-            
-            $queueResult = $queueService->push('settle', $queueData);
-            
-            if ($queueResult) {
-                Log::info('管理员结算开奖结果任务已推送到队列', [
-                    'admin_id' => $this->auth->id,
-                    'draw_id' => $id,
-                    'lottery_type' => $draw->lottery_type,
-                    'period_no' => $draw->period_no,
-                    'force_settle' => $forceSettle
-                ]);
-                $this->success('结算任务已提交，正在处理中');
-            } else {
-                $this->error('结算任务提交失败');
-            }
-        } catch (Exception $e) {
-            Log::error('结算开奖结果失败', [
-                'admin_id' => $this->auth->id,
-                'draw_id' => $id,
                 'error' => $e->getMessage()
             ]);
             $this->error($e->getMessage());
@@ -573,7 +307,7 @@ class LotteryDraw extends Backend
             $item->total_sales = $item->total_sales / 100;
             $item->prize_pool = $item->prize_pool / 100;
             $item->total_bet_amount = $item->total_bet_amount / 100;
-            $item->total_win_amount = $item->total_win_amount / 100;
+            $item->total_win_amount = $item->total_win_amount;
             
             // 解析开奖详情JSON
             if ($item->draw_result && is_string($item->draw_result)) {
@@ -653,6 +387,33 @@ class LotteryDraw extends Backend
             'month' => $monthData,
             'status' => $statusData
         ]);
+    }
+    
+    /**
+     * 计算投注统计数据
+     * @param string $lotteryCode
+     * @param string $periodNo
+     * @return array
+     */
+    private function calculateBetStatistics(string $lotteryCode, string $periodNo): array
+    {
+        $betOrderModel = new \app\common\model\BetOrder();
+        
+        // 统计该期投注数据
+        $stats = $betOrderModel
+            ->where('lottery_code', $lotteryCode)
+            ->where('period_no', $periodNo)
+            ->where('status', 'in', ['PENDING', 'WINNING', 'LOSING', 'PAID'])
+            ->field([
+                'COUNT(*) as bet_count',
+                'SUM(bet_amount) as total_bet_amount'
+            ])
+            ->find();
+        
+        return [
+            'bet_count' => (int)($stats['bet_count'] ?? 0),
+            'total_bet_amount' => (int)($stats['total_bet_amount'] ?? 0)
+        ];
     }
     
     /**

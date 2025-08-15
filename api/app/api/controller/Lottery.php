@@ -3,17 +3,25 @@
 namespace app\api\controller;
 
 use think\facade\Db;
-use app\common\controller\Api;
+use app\common\controller\Frontend;
 use app\service\LotteryService;
 use app\service\LotteryBonusService;
 use app\service\ApiService;
-use app\common\model\LotteryType;
+use app\common\model\LotteryType;   
 use app\common\model\BetOrder;
 use app\common\model\LotteryDraw;
 use app\common\model\LotteryType as LotteryTime;
 
-class Lottery extends Api
+class Lottery extends Frontend
 {
+
+    protected array $noNeedLogin = ['*'];
+
+    public function initialize(): void
+    {
+        parent::initialize();
+    }
+
     /**
      * 获取彩种信息
      * @return \think\response\Json
@@ -57,7 +65,7 @@ class Lottery extends Api
             // 调用LotteryService获取期号信息
             $lotteryService = new LotteryService();
 
-            if($lotteryType['category'] == 'QUICK'){
+            if($lotteryType['category'] == 'QUICK' && $lotteryName != 'day3d'){
                 $result = $lotteryService->getCurrentPeriod($lotteryName);
             }else{
                 $result = $lotteryService->getCurrentPeriodOther($lotteryName);
@@ -108,6 +116,8 @@ class Lottery extends Api
             $lottery_code = $this->request->param('lottery_code', 'ff3d');
             $page = (int)$this->request->param('page', 1);
             $limit = (int)$this->request->param('limit', 20);
+
+            $lotteryType = LotteryType::where('type_code', $lottery_code)->find();
             
             // 参数验证
             if ($page < 1) $page = 1;
@@ -129,6 +139,7 @@ class Lottery extends Api
             // 构造返回数据
             $result = [
                 'list' => $lotteryList,
+                'category' => $lotteryType['category'],
                 'total' => $total,
                 'page' => $page,
                 'limit' => $limit,
@@ -167,11 +178,19 @@ class Lottery extends Api
     public function getLotteryTypes(): void
     {
         try {
-            $lotteryTypes = LotteryType::field('type_code, type_name, category, type_icon')
-                ->where('is_enabled', 1)
+            $getWhere = [];
+            $getWhere[] = $this->auth->is_agent == 1 ? ['id', '>', 0] : ['id', 'in', $this->auth->game_ids];
+            $getWhere[] = ['is_enabled', '=', 1];
+            $lotteryTypes = LotteryType::field('type_code, type_name, category, type_icon, type_group, type_desc')
+                ->where($getWhere)
                 ->order('sort_order desc')
                 ->select();
-            
+            if($lotteryTypes){
+                foreach($lotteryTypes as $key => $val){
+                    $thisUrlTypeIcon = request()->domain() . $val['type_icon'];
+                    $lotteryTypes[$key]['type_icon'] = !is_null($val['type_icon']) && substr($val['type_icon'], 0, 4) == 'http' ? $val['type_icon'] : $thisUrlTypeIcon;
+                }
+            }
         } catch (\Exception $e) {
             $this->error('获取彩种类型失败：' . $e->getMessage());
         }
@@ -295,7 +314,7 @@ class Lottery extends Api
         try {
             // 获取所有开放的彩种
             $lotteryTypes = LotteryType::where('is_enabled', 1)
-                ->field('type_code,type_name')
+                ->field('type_code,type_name,type_icon,category')
                 ->select();
             
             if ($lotteryTypes->isEmpty()) {
@@ -310,10 +329,15 @@ class Lottery extends Api
                     ->where('lottery_code', $lotteryType->type_code)
                     ->order('period_no', 'desc')
                     ->find();
+
+                $thisUrlTypeIcon = request()->domain() . $lotteryType->type_icon;
+                $lotteryType->type_icon = !is_null($lotteryType->type_icon) && substr($lotteryType->type_icon, 0, 4) == 'http' ? $lotteryType->type_icon : $thisUrlTypeIcon;
                 
                 $result[] = [
                     'lottery_code' => $lotteryType->type_code,
+                    'lottery_category' => $lotteryType->category,
                     'lottery_name' => $lotteryType->type_name,
+                    'type_icon' => $thisUrlTypeIcon,
                     'latest_draw' => $latestDraw ? $latestDraw->toArray() : null
                 ];
             }

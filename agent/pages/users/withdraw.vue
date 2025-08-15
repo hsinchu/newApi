@@ -9,10 +9,10 @@
 				:chain="false"
 				key-name="name"
 				bar-width="220rpx"
-				:bar-bg-color="'#333'"
-				:bar-item-style="barItemStyle"
-				:bar-item-active-style="barItemActiveStyle"
-				:content-style="contentStyle"
+				:bar-bg-color="'#f8f9fa'"
+			:bar-item-style="barItemStyle"
+			:bar-item-active-style="barItemActiveStyle"
+			:content-style="contentStyle"
 			>
 				<uv-vtabs-item :index="0">
 					<view class="recharge-info">
@@ -22,10 +22,10 @@
 								<view class="balance-header">
 									<text class="balance-label">可提现余额</text>
 									<view class="refresh-btn" @tap="refreshBalance">
-										<uv-icon name="reload" size="16" color="#e1e1e1" :class="{ 'rotating': refreshing }"></uv-icon>
+										<uv-icon name="reload" size="16" color="#333" :class="{ 'rotating': refreshing }"></uv-icon>
 									</view>
 									<view class="moneylog-btn" @tap="goToWithdrawLog">
-										<uv-icon name="list" size="16" color="#e1e1e1"></uv-icon>
+										<uv-icon name="list" size="16" color="#333"></uv-icon>
 									</view>
 								</view>
 								<text class="balance-amount">¥{{ balance }}</text>
@@ -91,7 +91,7 @@
 								v-model="inputAmount" 
 								type="digit" 
 								placeholder="请输入提现金额" 
-								placeholder-style="color: #666;"
+								placeholder-style="color: #8f8f8f;"
 								class="amount-input"
 								@input="onAmountInput"
 							/>
@@ -163,14 +163,14 @@
 			ref="addAccountPopup"
 			mode="bottom" 
 			border-radius="20"
-			:custom-style="{ backgroundColor: '#2a2a2a' }"
+			:custom-style="{ backgroundColor: '#fff' }"
 			@close="closeAddPopup"
 		>
 			<view class="popup-container">
 				<view class="popup-header">
 					<text class="popup-title">{{ isEditMode ? '修改' : '添加' }}提现账号</text>
 					<view class="close-btn" @tap="closeAddPopup">
-						<uv-icon name="close" size="20" color="#d8d8d8"></uv-icon>
+						<uv-icon name="close" size="20" color="#666"></uv-icon>
 					</view>
 				</view>
 				
@@ -203,7 +203,7 @@
 							placeholder-style="color: #666;"
 						/>
 					</view>
-					<view class="form-item">
+					<!-- <view class="form-item">
 						<text class="item-label">收款码</text>
 						<view class="upload-container">
 							<view v-if="!formData.alipayQrCode" class="upload-btn" @tap="uploadQrCode('alipay')">
@@ -217,7 +217,7 @@
 								</view>
 							</view>
 						</view>
-					</view>
+					</view> -->
 				</view>
 				
 				<!-- 微信表单 -->
@@ -240,7 +240,7 @@
 							placeholder-style="color: #666;"
 						/>
 					</view>
-					<view class="form-item">
+					<!-- <view class="form-item">
 						<text class="item-label">收款码</text>
 						<view class="upload-container">
 							<view v-if="!formData.wechatQrCode" class="upload-btn" @tap="uploadQrCode('wechat')">
@@ -254,7 +254,7 @@
 								</view>
 							</view>
 						</view>
-					</view>
+					</view> -->
 				</view>
 				
 				<!-- 银行卡表单 -->
@@ -325,7 +325,7 @@ export default {
 			// 提现方式
 			paymentMethods: [
 				{ id: 'alipay', name: '支付宝', icon: 'checkmark-circle' },
-				{ id: 'wechat', name: '微信支付', icon: 'checkmark-circle' },
+				// { id: 'wechat', name: '微信支付', icon: 'checkmark-circle' },
 				{ id: 'bank', name: '银行卡', icon: 'checkmark-circle' }
 			],
 			selectedPaymentMethod: '',
@@ -335,21 +335,21 @@ export default {
 			boundAccounts: [],
 			selectedAccount: '',
 			barItemStyle: {
-				backgroundColor: '#333',
-				color: '#e1e1e1',
+				backgroundColor: 'transparent',
+				color: '#666',
 				borderRadius: '0',
 				textAlign: 'center',
-				padding: '20rpx 15rpx'
+				padding: '20rpx 15rpx',
 			},
 			barItemActiveStyle: {
-				backgroundColor: '#007AFF',
+				backgroundColor: '#3c9cff',
 				padding: '20rpx 15rpx',
 				fontWeight: 'bold',
 				textAlign: 'center',
-				color: '#ffffff'
+				color: '#fff'
 			},
 			contentStyle: {
-				backgroundColor: '#252525',
+				backgroundColor: '#fff',
 			},
 			
 
@@ -993,7 +993,8 @@ export default {
 
 .balance-card {
 	margin-top:15rpx;
-	background: linear-gradient(135deg, #333 0%, #444 100%);
+	background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+	border: 1px solid #e9ecef;
 	border-radius: 20rpx;
 	padding: 30rpx 20rpx;
 	position: relative;
@@ -1008,7 +1009,7 @@ export default {
 
 .balance-label {
 	font-size: 28rpx;
-	color: #d8d8d8;
+	color: #666;
 }
 
 .refresh-btn, .moneylog-btn {
@@ -1018,11 +1019,11 @@ export default {
 	align-items: center;
 	justify-content: center;
 	border-radius: 50%;
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(0, 0, 0, 0.05);
 	transition: all 0.3s ease;
 
 	&:active {
-		background-color: rgba(255, 255, 255, 0.2);
+		background-color: rgba(0, 0, 0, 0.1);
 		transform: scale(0.95);
 	}
 }
@@ -1053,12 +1054,12 @@ export default {
 
 .non-withdrawable-label {
 	font-size: 26rpx;
-	color: #d8d8d8;
+	color: #8f8f8f;
 }
 
 .non-withdrawable-amount {
 	font-size: 28rpx;
-	color: #c4c4c4;
+	color: #ff7b7b;
 	font-weight: 500;
 }
 
@@ -1093,7 +1094,7 @@ export default {
 
 .tip-label {
 	font-size: 24rpx;
-	color: #d8d8d8;
+	color: #666;
 }
 
 .tip-value {
@@ -1110,8 +1111,8 @@ export default {
 }
 
 .account-item {
-	background: #2a2a2a;
-	border: 2rpx solid #444;
+	background: #ffffff;
+	border: 2rpx solid rgb(70, 70, 255);
 	border-radius: 12rpx;
 	padding: 24rpx;
 	transition: all 0.3s ease;
@@ -1140,13 +1141,13 @@ export default {
 
 .type-name {
 	font-size: 28rpx;
-	color: #ffffff;
+	color: #8f8f8f;
 	font-weight: 500;
 }
 
 .account-number {
 	font-size: 26rpx;
-	color: #d8d8d8;
+	color: #818181;
 }
 
 .account-name {
@@ -1167,11 +1168,11 @@ export default {
 	align-items: center;
 	justify-content: center;
 	border-radius: 50%;
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(0, 0, 0, 0.05);
 	transition: background-color 0.3s ease;
 
 	&:active {
-		background-color: rgba(255, 255, 255, 0.2);
+		background-color: rgba(0, 0, 0, 0.1);
 	}
 }
 
@@ -1199,8 +1200,8 @@ export default {
 }
 
 .add-account-item {
-	background: #2a2a2a;
-	border: 2rpx dashed #666;
+	background: #fff;
+	border: 2rpx dashed #dee2e6;
 	border-radius: 12rpx;
 	padding: 25rpx 24rpx;
 	display: flex;
@@ -1239,7 +1240,8 @@ export default {
 	justify-content: center;
 	gap: 12rpx;
 	padding: 60rpx 20rpx;
-	background: #2a2a2a;
+	background: #f8f9fa;
+	border: 1px solid #e9ecef;
 	border-radius: 12rpx;
 	margin-bottom: 16rpx;
 }
@@ -1334,10 +1336,10 @@ export default {
 	}
 	
 	.cancel-btn {
-		background-color: rgba(255, 255, 255, 0.1) !important;
-		border: 2rpx solid #666 !important;
-		color: #d8d8d8 !important;
-	}
+	background-color: #f8f9fa !important;
+	border: 2rpx solid #e9ecef !important;
+	color: #666 !important;
+}
 	
 	.save-btn {
 		background: linear-gradient(135deg, #007AFF 0%, #0056CC 100%) !important;
@@ -1350,22 +1352,22 @@ export default {
 .amount-input-wrapper {
 	display: flex;
 	align-items: center;
-	background-color: #444;
 	border-radius: 12rpx;
 	padding: 0 25rpx;
 	height: 100rpx;
-	border: 2rpx solid #555;
+	border: 2rpx solid #e9ecef;
 	transition: border-color 0.3s ease;
+	background-color: #fff;
 
 	&:focus-within {
 		border-color: #007AFF;
-		background-color: #333;
+		background-color: #f8f9fa;
 	}
 }
 
 .currency-symbol {
 	font-size: 32rpx;
-	color: #e1e1e1;
+	color: #666;
 	margin-right: 15rpx;
 	font-weight: 500;
 }
@@ -1373,7 +1375,7 @@ export default {
 .amount-input {
 	flex: 1;
 	font-size: 32rpx;
-	color: #e1e1e1;
+	color: #333;
 	height: 100%;
 	background-color: transparent;
 	border: none;
@@ -1388,15 +1390,15 @@ export default {
 
 .tip-text {
 	font-size: 24rpx;
-	color: #d8d8d8;
+	color: #999;
 }
 
 // 费用预览
 .fee-preview {
-	background: #2a2a2a;
+	background: #f8f9fa;
 	border-radius: 12rpx;
 	padding: 24rpx;
-	border: 1rpx solid #444;
+	border: 1rpx solid #e9ecef;
 }
 
 .fee-item {
@@ -1408,18 +1410,18 @@ export default {
 	&:last-child {
 		margin-bottom: 0;
 		padding-top: 16rpx;
-		border-top: 1rpx solid #444;
+		border-top: 1rpx solid #e9ecef;
 	}
 }
 
 .fee-label {
 	font-size: 26rpx;
-	color: #d8d8d8;
+	color: #666;
 }
 
 .fee-value {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 
 	&.highlight {
@@ -1443,17 +1445,17 @@ export default {
 	margin-top: 20rpx;
 
 	&[disabled] {
-		background: #666 !important;
-		color: #d8d8d8 !important;
+		background: #ccc !important;
+		color: #999 !important;
 	}
 }
 
 // 支付说明
 .notice-content {
-	background-color: #444;
+	background-color: #f8f9fa;
 	border-radius: 12rpx;
 	padding: 25rpx;
-	border: 1rpx solid #555;
+	border: 1rpx solid #e9ecef;
 }
 
 .notice-item {
@@ -1466,13 +1468,13 @@ export default {
 
 .notice-text {
 	font-size: 26rpx;
-	color: #d8d8d8;
+	color: #666;
 	line-height: 1.6;
 }
 
 // 弹窗样式
 .popup-container {
-	background: #1c1c1c;
+	background: #fff;
 	border-radius: 20rpx;
 	padding: 40rpx;
 }
@@ -1486,7 +1488,7 @@ export default {
 
 .popup-title {
 	font-size: 32rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 600;
 }
 
@@ -1511,7 +1513,7 @@ export default {
 
 .form-label {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 	margin-bottom: 20rpx;
 	display: block;
@@ -1542,7 +1544,7 @@ export default {
 
 .type-name {
 	font-size: 24rpx;
-	color: #d8d8d8;
+	color: #8d8d8d;
 	transition: color 0.3s ease;
 
 	&.active {
@@ -1563,9 +1565,9 @@ export default {
 	}
 }
 
-.item-label {
+.form-label {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333;
 	margin-bottom: 12rpx;
 	display: block;
 }
@@ -1574,11 +1576,11 @@ export default {
 	width: 100%;
 	height: 80rpx;
 	text-indent:15rpx;
-	background: #333;
-	border: 2rpx solid #444;
+	background: #fff;
+	border: 2rpx solid #e9ecef;
 	border-radius: 12rpx;
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	transition: border-color 0.3s ease;
 
 	&:focus {
@@ -1598,7 +1600,7 @@ export default {
 }
 
 .cancel-btn {
-	background: #666 !important;
-	color: #e1e1e1 !important;
+	background: #f8f9fa !important;
+	color: #666 !important;
 }
 </style>

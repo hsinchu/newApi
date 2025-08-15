@@ -50,7 +50,6 @@
                             remoteUrl: '/admin/user.User/select',
                         }"
                     />
-                    <FormItem label="用户标签" type="remoteSelects" v-model="baTable.form.items!.user_tag" prop="user_tag" :input-attr="{ pk: 'user_tag.id', field: 'name', 'remote-url': '/admin/user.Tag/index', multiple: true }" placeholder="请选择用户标签" />
                     <el-form-item prop="username" label="用户名">
                         <el-input
                             v-model="baTable.form.items!.username"
@@ -58,6 +57,8 @@
                             placeholder="请输入用户名（登录账号）"
                         ></el-input>
                     </el-form-item>
+                    <FormItem label="游戏选择" type="remoteSelects" v-model="baTable.form.items!.game_ids" prop="game_ids" :input-attr="{ pk: 'id', field: 'type_name', 'remote-url': '/admin/lottery.LotteryType/index', multiple: true }" placeholder="请选择游戏" />
+                    <FormItem label="用户标签" type="remoteSelects" v-model="baTable.form.items!.user_tag" prop="user_tag" :input-attr="{ pk: 'user_tag.id', field: 'name', 'remote-url': '/admin/user.Tag/index', multiple: true }" placeholder="请选择用户标签" />
                     <el-form-item prop="password" label="密码">
                         <el-input
                             v-model="baTable.form.items!.password"
@@ -66,6 +67,18 @@
                             :placeholder="
                                 baTable.form.operate == 'Add'
                                     ? '请输入密码'
+                                    : '不修改请留空'
+                            "
+                        ></el-input>
+                    </el-form-item>
+                    <el-form-item prop="pay_password" label="支付密码">
+                        <el-input
+                            v-model="baTable.form.items!.pay_password"
+                            type="password"
+                            autocomplete="new-password"
+                            :placeholder="
+                                baTable.form.operate == 'Add'
+                                    ? '请输入支付密码'
                                     : '不修改请留空'
                             "
                         ></el-input>
@@ -120,7 +133,7 @@
                             placeholder="请输入不中奖返佣比例"
                         ></el-input>
                     </el-form-item>
-                    <el-form-item prop="motto" label="个人签名">
+                    <!-- <el-form-item prop="motto" label="个人签名">
                         <el-input
                             @keyup.enter.stop=""
                             @keyup.ctrl.enter="baTable.onSubmit(formRef)"
@@ -128,37 +141,16 @@
                             type="textarea"
                             placeholder="请输入个人签名"
                         ></el-input>
-                    </el-form-item>
+                    </el-form-item> -->
                     <FormItem
-                        label="性别"
-                        v-model="baTable.form.items!.gender"
+                        label="身份认证"
+                        v-model="baTable.form.items!.is_verified"
                         type="radio"
                         :input-attr="{
                             border: true,
-                            content: { 0: '未知', 1: '男', 2: '女' },
+                            content: { 0: '未认证', 1: '已认证', 2: '审核中' },
                         }"
                     />
-                    <el-form-item prop="birthday" label="生日">
-                        <el-date-picker
-                            v-model="baTable.form.items!.birthday"
-                            type="date"
-                            placeholder="请选择生日"
-                            format="YYYY-MM-DD"
-                            value-format="YYYY-MM-DD"
-                        ></el-date-picker>
-                    </el-form-item>
-                    <el-form-item prop="pay_password" label="支付密码">
-                        <el-input
-                            v-model="baTable.form.items!.pay_password"
-                            type="password"
-                            autocomplete="new-password"
-                            :placeholder="
-                                baTable.form.operate == 'Add'
-                                    ? '请输入支付密码'
-                                    : '不修改请留空'
-                            "
-                        ></el-input>
-                    </el-form-item>
                     <FormItem
                         label="状态"
                         v-model="baTable.form.items!.status"
@@ -188,7 +180,6 @@ import type baTableClass from '/@/utils/baTable'
 import { regularPassword } from '/@/utils/validate'
 import type { FormItemRule } from 'element-plus'
 import FormItem from '/@/components/formItem/index.vue'
-import router from '/@/router/index'
 import { buildValidatorData } from '/@/utils/validate'
 import { useConfig } from '/@/stores/config'
 
@@ -199,7 +190,6 @@ const baTable = inject('baTable') as baTableClass
 const rules: Partial<Record<string, FormItemRule[]>> = reactive({
     username: [buildValidatorData({ name: 'required', title: '用户名' })],
     nickname: [buildValidatorData({ name: 'required', title: '昵称' })],
-    group_id: [buildValidatorData({ name: 'required', message: '请选择用户组' })],
     email: [buildValidatorData({ name: 'email', title: '邮箱' })],
     mobile: [buildValidatorData({ name: 'mobile' })],
     real_name: [buildValidatorData({ name: 'varName', title: '真实姓名' })],
@@ -237,19 +227,17 @@ const rules: Partial<Record<string, FormItemRule[]>> = reactive({
     pay_password: [
         {
             validator: (rule: any, val: string, callback: Function) => {
-                if (val && !regularPassword(val)) {
-                    return callback(new Error('请输入正确的支付密码格式'))
+                if (baTable.form.operate == 'Add') {
+                    if (!val) {
+                        return callback(new Error('请输入密码'))
+                    }
+                } else {
+                    if (!val) {
+                        return callback()
+                    }
                 }
-                return callback()
-            },
-            trigger: 'blur',
-        },
-    ],
-    birthday: [
-        {
-            validator: (rule: any, val: string, callback: Function) => {
-                if (val && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                    return callback(new Error('请选择正确的日期格式'))
+                if (!regularPassword(val)) {
+                    return callback(new Error('请输入正确的密码格式'))
                 }
                 return callback()
             },
@@ -262,6 +250,7 @@ watch(
     () => baTable.form.operate,
     (newVal) => {
         rules.password![0].required = newVal == 'Add'
+        rules.pay_password![0].required = newVal == 'Add'
     }
 )
 </script>

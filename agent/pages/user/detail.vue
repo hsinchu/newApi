@@ -3,11 +3,11 @@
 		<!-- 会员基本信息 -->
 		<view class="member-card">
 			<view class="member-header">
-				<uv-avatar :src="memberInfo.avatar || '/static/images/default-avatar.png'" :text="(memberInfo.nickname || memberInfo.username || '').charAt(0)" size="60" shape="circle" bgColor="#2e2e2e"></uv-avatar>
+				<uv-avatar src="/static/images/avatar.jpg" size="60" shape="circle" bgColor="#c5c5c5"></uv-avatar>
 				<view class="member-basic">
 					<view class="member-name-row">
 						<text class="member-name">{{memberInfo.nickname || memberInfo.username}}</text>
-						<uv-icon :name="memberInfo.agent_favorite === 1 ? 'star-fill' : 'star'" :color="memberInfo.agent_favorite === 1 ? '#ff934a' : '#ccc'" size="20" @tap="toggleFavorite"></uv-icon>
+						<uv-icon :name="memberInfo.agent_favorite === 1 ? 'star-fill' : 'star'" :color="memberInfo.agent_favorite === 1 ? '#ff934a' : '#a0a0a0'" size="20" @tap="toggleFavorite"></uv-icon>
 					</view>
 					<text class="member-id">ID: {{memberInfo.id}}</text>
 					<view class="member-status">
@@ -76,15 +76,15 @@
 		<view class="action-section">
 			<view class="action-buttons">
 				<view class="action-btn" @tap="viewFundRecords">
-					<uv-icon name="file-text" color="#e1e1e1" size="20"></uv-icon>
+					<uv-icon name="file-text" size="20"></uv-icon>
 					<text class="btn-text">资金记录</text>
 				</view>
 				<view class="action-btn" @tap="setRebateRate">
-					<uv-icon name="setting" color="#e1e1e1" size="20"></uv-icon>
+					<uv-icon name="setting" size="20"></uv-icon>
 					<text class="btn-text">投注返佣</text>
 				</view>
 				<view class="action-btn" @tap="setNowinRate">
-					<uv-icon name="setting" color="#e1e1e1" size="20"></uv-icon>
+					<uv-icon name="setting" size="20"></uv-icon>
 					<text class="btn-text">不中奖返佣</text>
 				</view>
 			</view>
@@ -171,14 +171,14 @@
 			ref="addMoneyPopup" 
 			mode="bottom" 
 			border-radius="20"
-			:custom-style="{ backgroundColor: '#2a2a2a' }"
+			:custom-style="{ backgroundColor: '#fff' }"
 			@close="closeMoneyPopup"
 		>
 			<view class="popup-container">
 				<view class="popup-header">
 					<text class="popup-title">给用户加款</text>
 					<view class="close-btn" @tap="closeMoneyPopup">
-						<uv-icon name="close" size="20" color="#d8d8d8"></uv-icon>
+						<uv-icon name="close" size="20" color="#666"></uv-icon>
 					</view>
 				</view>
 				
@@ -249,14 +249,14 @@
 			ref="reduceMoneyPopup" 
 			mode="bottom" 
 			border-radius="20"
-			:custom-style="{ backgroundColor: '#2a2a2a' }"
+			:custom-style="{ backgroundColor: '#fff' }"
 			@close="closeMoneyPopup"
 		>
 			<view class="popup-container">
 				<view class="popup-header">
 					<text class="popup-title">给用户减款</text>
 					<view class="close-btn" @tap="closeMoneyPopup">
-						<uv-icon name="close" size="20" color="#d8d8d8"></uv-icon>
+						<uv-icon name="close" size="20" color="#666"></uv-icon>
 					</view>
 				</view>
 				
@@ -327,14 +327,14 @@
 			ref="payPasswordPopup" 
 			mode="center" 
 			border-radius="20"
-			:custom-style="{ backgroundColor: '#2a2a2a' }"
+			:custom-style="{ backgroundColor: '#fff' }"
 			@close="closePayPasswordPopup"
 		>
 			<view class="popup-container pay-password-container">
 				<view class="popup-header">
 					<text class="popup-title">验证支付密码</text>
 					<view class="close-btn" @tap="closePayPasswordPopup">
-						<uv-icon name="close" size="20" color="#d8d8d8"></uv-icon>
+						<uv-icon name="close" size="20" color="#666"></uv-icon>
 					</view>
 				</view>
 				
@@ -982,11 +982,11 @@ export default {
 /* 会员卡片 */
 .member-card {
 	margin: 25rpx 25rpx 0;
-	background-color: #252525;
+	background-color: #fff;
 	border-radius: 55rpx 55rpx 0 0;
 	padding: 30rpx;
-	border: 1px solid #333;
-	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+	border: 1px solid #e9ecef;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 
 .member-header {
@@ -1008,13 +1008,13 @@ export default {
 
 .member-name {
 	font-size: 32rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 600;
 }
 
 .member-id {
 	font-size: 24rpx;
-	color: #999;
+	color: #666;
 	margin-bottom: 12rpx;
 }
 
@@ -1042,16 +1042,16 @@ export default {
 
 .last-login {
 	font-size: 20rpx;
-	color: #666;
+	color: #999;
 }
 
 /* 信息区域 */
 .info-section {
 		margin: 20rpx 25rpx;
-		background-color: #252525;
+		background-color: #fff;
 		padding: 30rpx;
-		border: 1px solid #333;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+		border: 1px solid #e9ecef;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 	}
 
 .section-title {
@@ -1063,7 +1063,7 @@ export default {
 
 .title-text {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 600;
 }
 
@@ -1090,7 +1090,8 @@ export default {
 	flex-direction: column;
 	align-items: center;
 	padding: 20rpx;
-	background-color: #313131;
+	background-color: #f8f9fa;
+	border: 1px solid #e9ecef;
 	border-radius: 35rpx;
 	/* #ifdef MP */
 	width: calc(50% - 12rpx);
@@ -1104,13 +1105,13 @@ export default {
 
 .info-label {
 	font-size: 22rpx;
-	color: #999;
+	color: #666;
 	margin-bottom: 8rpx;
 }
 
 .info-value {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 600;
 }
 
@@ -1159,10 +1160,10 @@ export default {
 	align-items: center;
 	justify-content: center;
 	padding: 30rpx 20rpx;
-	background-color: #252525;
+	background-color: #fff;
 	border-radius: 16rpx;
-	border: 1px solid #333;
-	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+	// border: 1px solid #e9ecef;
+	// box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 	transition: all 0.3s ease;
 	/* #ifdef MP */
 	min-width: 200rpx;
@@ -1170,13 +1171,13 @@ export default {
 }
 
 .action-btn:active {
-	background-color: #333;
+	background-color: #f8f9fa;
 	transform: scale(0.98);
 }
 
 .btn-text {
 	font-size: 24rpx;
-	color: #e1e1e1;
+	color: #333;
 	margin-top: 12rpx;
 }
 
@@ -1218,15 +1219,15 @@ export default {
 /* 弹窗样式 */
 .popup-content {
 	min-width: 600rpx;
-	background-color: #1a1a1a;
+	background-color: #fff;
 	border-radius: 20rpx;
 	padding: 40rpx;
-	border: 1px solid #333;
+	border: 1px solid #e9ecef;
 }
 
 .popup-title {
 	font-size: 32rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 600;
 	text-align: center;
 	margin-bottom: 30rpx;
@@ -1262,9 +1263,9 @@ export default {
 
 .popup-cancel-btn {
 	flex: 1;
-	background-color: #333 !important;
-	color: #e1e1e1 !important;
-	border: 1px solid #555 !important;
+	background-color: #f5f5f5 !important;
+	color: #333 !important;
+	border: 1px solid #e9ecef !important;
 }
 
 .popup-confirm-btn {
@@ -1290,7 +1291,7 @@ export default {
 		margin-bottom: 40rpx;
 		
 		.popup-title {
-			color: #e1e1e1;
+			color: #333;
 			font-size: 36rpx;
 			font-weight: bold;
 		}
@@ -1299,7 +1300,7 @@ export default {
 			width: 60rpx;
 			height: 60rpx;
 			border-radius: 50%;
-			background-color: #333;
+			background-color: #f5f5f5;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -1311,7 +1312,7 @@ export default {
 			margin-bottom: 40rpx;
 			
 			.item-label {
-				color: #e1e1e1;
+				color: #333;
 				font-size: 28rpx;
 				display: block;
 				margin-bottom: 20rpx;
@@ -1320,7 +1321,7 @@ export default {
 			.input-wrapper {
 				display: flex;
 				align-items: center;
-				background-color: #333;
+				background-color: #f5f5f5;
 				border-radius: 12rpx;
 				padding: 0 20rpx;
 				height: 88rpx;
@@ -1333,7 +1334,7 @@ export default {
 				
 				.form-input {
 					flex: 1;
-					color: #e1e1e1;
+					color: #333;
 					font-size: 28rpx;
 					height: 100%;
 					border: none;
@@ -1342,14 +1343,14 @@ export default {
 			}
 			
 			.textarea-wrapper {
-				background-color: #333;
+				background-color: #f5f5f5;
 				border-radius: 12rpx;
 				padding: 20rpx;
 				height:115rpx;
 				
 				.form-textarea {
 					width: 100%;
-					color: #e1e1e1;
+					color: #333;
 					font-size: 28rpx;
 					border: none;
 					background: transparent;
@@ -1374,7 +1375,7 @@ export default {
 			
 			.preview-content {
 				.preview-text {
-					color: #e1e1e1;
+					color: #333;
 					font-size: 28rpx;
 					display: block;
 					margin-bottom: 10rpx;
@@ -1403,7 +1404,7 @@ export default {
 
 // 独立的余额信息样式
 .balance-info {
-	background-color: #252525;
+	background-color: #f8f9fa;
 	border-radius: 55rpx;
 	padding: 25rpx;
 	margin-bottom:25rpx;
@@ -1419,7 +1420,7 @@ export default {
 		}
 		
 		.balance-label {
-			color: #e1e1e1;
+			color: #333;
 			font-size: 26rpx;
 			font-weight: 500;
 		}
@@ -1451,7 +1452,7 @@ export default {
 		border: 1px solid rgba(255, 147, 74, 0.3);
 		
 		.tip-text {
-			color: #e1e1e1;
+			color: #333;
 			font-size: 26rpx;
 			line-height: 1.4;
 		}

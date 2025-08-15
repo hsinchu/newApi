@@ -12,6 +12,7 @@ use app\service\LotteryService;
 use app\service\BetOrderService;
 use app\service\ApiService;
 use app\service\LotteryBetService;
+use app\common\model\LotteryPoolLog;
 use app\common\model\BetOrder;
 use app\common\model\LotteryDraw;
 use app\common\model\LotteryType;
@@ -21,6 +22,7 @@ class AutoDraw extends Command
 {
     protected function configure()
     {
+        
         $this->setName('autodraw')
             ->setDescription('自动开奖 - 把待派奖的订单加入redis队列，把未中奖的订单执行未中奖佣金处理')
             ->addArgument('lottery_code', \think\console\input\Argument::OPTIONAL, '彩种代码，如：ff3d')
@@ -97,6 +99,8 @@ class AutoDraw extends Command
                 'lottery_code' => $lotteryCode,
                 'period_no' => $periodNo
             ])->find();
+
+            // Log::info("检查期号是否已开奖 - 彩种: {$lotteryCode}, 期号: {$periodNo}");
             
             $drawNumbers = null;
             if ($existingDraw) {
@@ -105,16 +109,37 @@ class AutoDraw extends Command
             } else {
                 // 根据彩种类型决定开奖号码获取方式（复用之前获取的彩种信息）
                 if ($lotteryType && $lotteryType['category'] === 'QUICK') {
-                    // 快彩：使用智能开奖号码生成
+                    // 快彩：使用智能开奖号码生成（内部已包含新用户必中逻辑检查）
                     $drawNumbers = $this->generateDrawNumbers($lotteryCode, $periodNo);
-                    $output->writeln("快彩生成智能开奖号码: {$drawNumbers}");
+                    
+                    $output->writeln("快彩生成开奖号码: {$drawNumbers}");
+                    Log::info("快彩智能开奖号码生成完成 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 开奖号码: {$drawNumbers}, 时间: " . date('Y-m-d H:i:s'));
                 } else {
                     // 官方彩种：尝试获取真实开奖号码
                     $drawNumbers = $this->getRealDrawNumbers($lotteryCode, $periodNo, $output);
                     if ($drawNumbers) {
                         $output->writeln("官方彩种获取真实开奖号码: {$drawNumbers}");
+                        Log::info("官方彩种获取真实开奖号码 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 开奖号码: {$drawNumbers}, 时间: " . date('Y-m-d H:i:s'));
+                    } else {
+                        // 官方彩种获取失败时不处理开奖
+                        $output->writeln("官方彩种 {$lotteryCode} 期号 {$periodNo} 获取真实开奖数据失败，跳过本次开奖");
+                        Log::warning("官方彩种获取真实开奖数据失败", [
+                            'lottery_code' => $lotteryCode,
+                            'period_no' => $periodNo,
+                            'timestamp' => date('Y-m-d H:i:s')
+                        ]);
+                        return;
                     }
                 }
+                
+                // 统计当期投注数据
+                $betCount = BetOrder::where('lottery_code', $lotteryCode)
+                    ->where('period_no', $periodNo)
+                    ->count();
+                    
+                $totalBetAmount = BetOrder::where('lottery_code', $lotteryCode)
+                    ->where('period_no', $periodNo)
+                    ->sum('bet_amount');
                 
                 // 保存开奖记录
                 LotteryDraw::create([
@@ -124,11 +149,14 @@ class AutoDraw extends Command
                     'draw_numbers' => $drawNumbers,
                     'draw_time' => time(),
                     'status' => 'DRAWN',
+                    'bet_count' => $betCount,
+                    'total_bet_amount' => $totalBetAmount ?: 0,
                     'create_time' => time(),
                     'update_time' => time()
                 ]);
                 
-                $output->writeln("期号 {$periodNo} 开奖完成");
+                $output->writeln("期号 {$periodNo} 开奖完成 (投注笔数: {$betCount}, 总投注额: {$totalBetAmount})");
+                Log::info("开奖记录保存完成 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 开奖号码: {$drawNumbers}, 投注笔数: {$betCount}, 总投注额: {$totalBetAmount}, 时间: " . date('Y-m-d H:i:s'));
             }
             
             // 获取该期所有订单
@@ -142,6 +170,8 @@ class AutoDraw extends Command
                 $output->writeln("期号 {$periodNo} 没有待处理的订单");
                 return;
             }
+            
+            Log::info("开始处理订单 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 订单数量: " . count($orders) . ", 开奖号码: {$drawNumbers}, 时间: " . date('Y-m-d H:i:s'));
             
             $winningOrders = 0;
             $losingOrders = 0;
@@ -170,33 +200,70 @@ class AutoDraw extends Command
                         $queuedOrders++;
                         
                         $output->writeln("订单 {$order->order_no} 中奖，已加入派奖队列");
+                        Log::info("订单中奖处理 - 订单号: {$order->order_no}, 用户ID: {$order->user_id}, 投注内容: {$order->bet_content}, 投注金额: {$order->bet_amount}, 赔率: {$order->odds}, 开奖号码: {$drawNumbers}, 时间: " . date('Y-m-d H:i:s'));
                     } else {
                         // 未中奖订单处理返佣
                         $this->processLosingOrder($order);
                         $losingOrders++;
                         
                         $output->writeln("订单 {$order->order_no} 未中奖，已处理返佣");
+                        Log::info("订单未中奖处理 - 订单号: {$order->order_no}, 用户ID: {$order->user_id}, 投注内容: {$order->bet_content}, 投注金额: {$order->bet_amount}, 开奖号码: {$drawNumbers}, 时间: " . date('Y-m-d H:i:s'));
                     }
                     
                 } catch (Exception $e) {
-                    Log::error("处理订单 {$order->order_no} 失败: " . $e->getMessage());
+                    Log::error("处理订单失败", [
+                        'order_no' => $order->order_no,
+                        'user_id' => $order->user_id,
+                        'lottery_code' => $lotteryCode,
+                        'period_no' => $periodNo,
+                        'error_message' => $e->getMessage(),
+                        'error_trace' => $e->getTraceAsString()
+                    ]);
                     $output->writeln("处理订单 {$order->order_no} 失败: " . $e->getMessage());
+                }
+            }
+
+            if($lotteryType['category'] === 'QUICK') {
+                $lotteryType = $this->getLotteryTypeInfo($lotteryCode);
+                $originalBonusPool = $lotteryType['bonus_pool'];
+                $bonusSystem = $lotteryType['bonus_system'];
+                
+                if(LotteryType::where('type_code', $lotteryCode)->update([
+                    'default_pool' => $lotteryType['default_pool']+$lotteryType['bonus_system'], //服务费加入默认奖池（不派奖）
+                    'bonus_pool' => $lotteryType['bonus_pool']-$lotteryType['bonus_system'], //减去服务费
+                    'bonus_system' => 0,
+                    'update_time' => time(),
+                ])){
+
+                    Log::info("快彩奖池处理完成 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 原奖池: {$originalBonusPool}, 服务费: {$bonusSystem}, 新奖池: " . ($originalBonusPool - $bonusSystem));
+                    
+                    // 记录服务费到日志表
+                    if ($lotteryType['bonus_system'] > 0) {
+                        LotteryPoolLog::recordBonusSystem(
+                            $lotteryCode, 
+                            $periodNo, 
+                            $lotteryType['bonus_system']
+                        );
+                        Log::info("服务费记录完成 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 服务费金额: {$lotteryType['bonus_system']}");
+                    }
                 }
             }
             
             $output->writeln("开奖任务完成 - 中奖订单: {$winningOrders}笔, 未中奖订单: {$losingOrders}笔, 加入队列: {$queuedOrders}笔");
             
-            // 记录日志
-            Log::info("自动开奖任务完成", [
-                'lottery_code' => $lotteryCode,
-                'period_no' => $periodNo,
-                'winning_orders' => $winningOrders,
-                'losing_orders' => $losingOrders,
-                'queued_orders' => $queuedOrders
-            ]);
+            // 记录详细的任务完成日志
+            Log::info("自动开奖任务完成 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 开奖号码: {$drawNumbers}, 中奖订单: {$winningOrders}笔, 未中奖订单: {$losingOrders}笔, 队列订单: {$queuedOrders}笔, 总订单: " . ($winningOrders + $losingOrders) . "笔, 彩种类别: " . ($lotteryType['category'] ?? 'unknown') . ", 结束时间: " . date('Y-m-d H:i:s') . ", 执行时长: " . (time() - (Cache::get($lockKey) ?? time())) . "秒");
             
         } catch (Exception $e) {
-            Log::error('自动开奖任务失败: ' . $e->getMessage());
+            Log::error('自动开奖任务失败', [
+                'lottery_code' => $lotteryCode,
+                'period_no' => $periodNo ?? 'unknown',
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'error_trace' => $e->getTraceAsString(),
+                'execution_time' => date('Y-m-d H:i:s')
+            ]);
             $output->writeln('自动开奖任务失败: ' . $e->getMessage());
         } finally {
             // 释放锁
@@ -256,6 +323,16 @@ class AutoDraw extends Command
                                 $lotteryType = $this->getLotteryTypeInfo($lotteryCode);
                                 $lotteryTypeId = $lotteryType ? $lotteryType['id'] : 0;
                                 
+                                // 统计当期投注数据
+                                $betCount = BetOrder::where('lottery_code', $lotteryCode)
+                                    ->where('period_no', $periodNo)
+                                    ->whereIn('status', ['pending', 'win', 'lose', 'paid'])
+                                    ->count();
+                                    
+                                $totalBetAmount = BetOrder::where('lottery_code', $lotteryCode)
+                                    ->where('period_no', $periodNo)
+                                    ->sum('bet_amount');
+                                
                                 // 保存开奖记录
                                 LotteryDraw::create([
                                     'lottery_type_id' => $lotteryTypeId,
@@ -265,11 +342,13 @@ class AutoDraw extends Command
                                     'draw_time' => time(),
                                     'status' => 'DRAWN',
                                     'is_official' => 1,
+                                    'bet_count' => $betCount,
+                                    'total_bet_amount' => $totalBetAmount ?: 0,
                                     'create_time' => time(),
                                     'update_time' => time()
                                 ]);
                                 
-                                $output->writeln("已保存期号 {$periodNo} 的开奖记录: {$drawNumbers}");
+                                $output->writeln("已保存期号 {$periodNo} 的开奖记录: {$drawNumbers} (投注笔数: {$betCount}, 总投注额: {$totalBetAmount})");
                             }
                         }
                         
@@ -436,11 +515,26 @@ class AutoDraw extends Command
      */
     private function generateDrawNumbers(string $lotteryCode, string $periodNo = ''): string
     {
+        Log::info("开始生成开奖号码", [
+            'lottery_code' => $lotteryCode,
+            'period_no' => $periodNo
+        ]);
+        
         $lotteryTypeCategory = LotteryType::where('type_code', $lotteryCode)->value('category');
         // 对于快彩（ff3d, 5f3d），使用智能开奖号码生成
         if ($lotteryTypeCategory == 'QUICK' && !empty($periodNo)) {
+            Log::info("快彩彩种，使用智能开奖逻辑 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 分类: {$lotteryTypeCategory}");
+            
+            // 检查是否满足新用户必中条件
+            $newUserWinNumbers = $this->checkNewUserWinCondition($lotteryCode, $periodNo);
+            if ($newUserWinNumbers) {
+                Log::info("新用户必中条件触发 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 中奖号码: {$newUserWinNumbers}, 时间: " . date('Y-m-d H:i:s'));
+                return $newUserWinNumbers;
+            }
+            
             $smartNumbers = $this->generateSmartDrawNumbers($lotteryCode, $periodNo);
             if ($smartNumbers) {
+                Log::info("智能开奖号码生成成功 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 智能号码: {$smartNumbers}, 时间: " . date('Y-m-d H:i:s'));
                 return $smartNumbers;
             }
         }
@@ -500,10 +594,14 @@ class AutoDraw extends Command
      */
     private function generateSmartDrawNumbers(string $lotteryCode, string $periodNo): ?string
     {
+        Log::info("开始智能生成开奖号码 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 时间: " . date('Y-m-d H:i:s'));
+        
         try {
             // 使用LotteryBetService获取当期投注统计
             $lotteryBetService = new LotteryBetService();
             $currentPeriodStats = $lotteryBetService->getCurrentPeriodStats($lotteryCode, $periodNo);
+            
+            Log::info("获取当期投注统计 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 统计数据: " . json_encode($currentPeriodStats, JSON_UNESCAPED_UNICODE) . ", 时间: " . date('Y-m-d H:i:s'));
             
             // 获取彩种信息计算实际奖金池
             $lotteryType = LotteryType::where('type_code', $lotteryCode)->find();
@@ -530,9 +628,11 @@ class AutoDraw extends Command
             
             // 如果没有投注，使用随机开奖
             if ($totalBetAmount <= 0) {
-                Log::info("期号 {$periodNo} 无投注订单，使用随机开奖");
+                Log::info("期号无投注订单，使用随机开奖 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 总投注额: {$totalBetAmount}");
                 return null;
             }
+            
+            Log::info("当期投注汇总 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 总投注额: {$totalBetAmount}, 潜在赔付: " . json_encode($potentialPayouts, JSON_UNESCAPED_UNICODE) . ", 奖金池: {$bonusPool}, 奖金系统: {$bonusSystem}, 时间: " . date('Y-m-d H:i:s'));
             
             // 计算各开奖结果对奖金池的影响
             $poolAnalysis = [];
@@ -555,16 +655,7 @@ class AutoDraw extends Command
                     $validResults[] = $resultType;
                 }
                 
-                Log::info("开奖结果奖金池分析", [
-                    'lottery_code' => $lotteryCode,
-                    'period_no' => $periodNo,
-                    'result_type' => $resultType,
-                    'bonus_pool' => $bonusPool,
-                    'bonus_system' => $bonusSystem,
-                    'winning_payout' => $winningPayout,
-                    'remaining_pool' => $remainingPool,
-                    'is_valid' => $remainingPool >= 0
-                ]);
+                Log::info("开奖结果奖金池分析 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 结果类型: {$resultType}, 奖金池: {$bonusPool}, 奖金系统: {$bonusSystem}, 中奖赔付: {$winningPayout}, 剩余池: {$remainingPool}, 有效: " . ($remainingPool >= 0 ? '是' : '否') . ", 时间: " . date('Y-m-d H:i:s'));
             }
             
             // 选择开奖结果
@@ -573,9 +664,8 @@ class AutoDraw extends Command
             if (!empty($validResults)) {
                 // 如果有满足奖金池余额要求的结果，随机选择一个
                 $selectedResult = $validResults[array_rand($validResults)];
-                Log::info("选择满足奖金池余额要求的开奖结果: {$selectedResult}", [
-                    'remaining_pool' => $poolAnalysis[$selectedResult]['remaining_pool']
-                ]);
+                $selectedPayout = $poolAnalysis[$selectedResult]['winning_payout'];
+                Log::info("在满足奖金池余额要求的结果中随机选择: {$selectedResult} - 中奖赔付: {$selectedPayout}, 剩余池: " . $poolAnalysis[$selectedResult]['remaining_pool'] . ", 时间: " . date('Y-m-d H:i:s'));
             } else {
                 // 如果没有满足奖金池余额要求的结果，选择余额最大的（可能为负数）
                 $maxRemainingPool = max(array_column($poolAnalysis, 'remaining_pool'));
@@ -585,16 +675,18 @@ class AutoDraw extends Command
                         break;
                     }
                 }
-                Log::warning("无满足奖金池余额要求的结果，选择余额最大的结果: {$selectedResult}", [
-                    'remaining_pool' => $maxRemainingPool
-                ]);
+                Log::warning("无满足奖金池余额要求的结果，选择余额最大的结果: {$selectedResult} - 剩余池: {$maxRemainingPool}, 时间: " . date('Y-m-d H:i:s'));
             }
             
             // 根据选择的结果生成对应的开奖号码
-            return $this->generateNumbersForResult($selectedResult);
+            $finalNumbers = $this->generateNumbersForResult($selectedResult);
+            
+            Log::info("智能开奖号码生成完成 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 选择结果: {$selectedResult}, 最终号码: {$finalNumbers}, 中奖赔付: " . $poolAnalysis[$selectedResult]['winning_payout'] . ", 剩余池: " . $poolAnalysis[$selectedResult]['remaining_pool'] . ", 时间: " . date('Y-m-d H:i:s'));
+            
+            return $finalNumbers;
             
         } catch (Exception $e) {
-            Log::error('智能开奖号码生成失败: ' . $e->getMessage());
+            Log::error("智能开奖号码生成失败 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 错误信息: " . $e->getMessage() . ", 时间: " . date('Y-m-d H:i:s') . ", 错误追踪: " . $e->getTraceAsString());
             return null;
         }
     }
@@ -630,6 +722,8 @@ class AutoDraw extends Command
      */
     private function generateNumbersWithSum(int $minSum, int $maxSum): string
     {
+        Log::info("开始生成指定和值号码 - 最小和值: {$minSum}, 最大和值: {$maxSum}, 时间: " . date('Y-m-d H:i:s'));
+        
         $attempts = 0;
         $maxAttempts = 1000; // 防止无限循环
         
@@ -640,6 +734,7 @@ class AutoDraw extends Command
             $sum = $num1 + $num2 + $num3;
             
             if ($sum >= $minSum && $sum <= $maxSum) {
+                Log::info("成功生成符合条件的号码 - 号码: {$num1},{$num2},{$num3}, 和值: {$sum}, 尝试次数: " . ($attempts + 1) . ", 时间: " . date('Y-m-d H:i:s'));
                 return sprintf('%d,%d,%d', $num1, $num2, $num3);
             }
             
@@ -647,8 +742,11 @@ class AutoDraw extends Command
         }
         
         // 如果无法生成符合条件的号码，使用保底方案
+        Log::warning("随机生成失败，使用保底方案 - 尝试次数: {$attempts}, 最小和值: {$minSum}, 最大和值: {$maxSum}, 时间: " . date('Y-m-d H:i:s'));
         $targetSum = rand($minSum, $maxSum);
-        return $this->generateNumbersForTargetSum($targetSum);
+        $result = $this->generateNumbersForTargetSum($targetSum);
+        Log::info("保底方案生成结果 - 目标和值: {$targetSum}, 结果: {$result}, 时间: " . date('Y-m-d H:i:s'));
+        return $result;
     }
     
     /**
@@ -682,36 +780,286 @@ class AutoDraw extends Command
     }
     
     /**
-     * 检查订单是否中奖
-     * @param BetOrder $order
-     * @param string $drawNumbers
+     * 检查用户必中条件（新用户或连输用户）
+     * @param string $lotteryCode 彩种代码
+     * @param string $periodNo 期号
+     * @return string|null 如果满足条件返回必中开奖号码，否则返回null
+     */
+    private function checkNewUserWinCondition(string $lotteryCode, string $periodNo): ?string
+    {
+        Log::info("检查新用户必中条件", [
+            'lottery_code' => $lotteryCode,
+            'period_no' => $periodNo
+        ]);
+        
+        try {
+            // 获取当期所有投注订单
+            $orders = BetOrder::where([
+                'lottery_code' => $lotteryCode,
+                'period_no' => $periodNo,
+                'status' => BetOrder::STATUS_CONFIRMED
+            ])->select();
+            
+            Log::info("当期投注订单统计 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 订单数量: " . $orders->count() . ", 时间: " . date('Y-m-d H:i:s'));
+            
+            // 检查是否只有一个用户投注
+            if ($orders->count() !== 1) {
+                Log::info("当期投注用户数量不为1，跳过新用户必中检查 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 订单数量: " . $orders->count() . ", 时间: " . date('Y-m-d H:i:s'));
+                return null;
+            }
+            
+            $order = $orders[0];
+            $userId = $order->user_id;
+            
+            // 1. 检查是否为新用户（没有历史投注记录）
+            $historyOrderCount = BetOrder::where('user_id', $userId)
+                ->where('id', '<', $order->id) // 排除当前订单
+                ->count();
+            
+            Log::info("用户历史投注记录检查 - 用户ID: {$userId}, 订单ID: {$order->id}, 历史订单数: {$historyOrderCount}, 时间: " . date('Y-m-d H:i:s'));
+            
+            if ($historyOrderCount == 0) {
+                // 新用户逻辑：检查投注条件：中奖金额<150元，只投了一注
+                $potentialWin = $order->bet_amount * $order->odds;
+                
+                Log::info("新用户投注条件检查 - 用户ID: {$userId}, 订单号: {$order->order_no}, 投注金额: {$order->bet_amount}, 赔率: {$order->odds}, 潜在中奖: {$potentialWin}, 投注数量: {$order->bet_count}, 时间: " . date('Y-m-d H:i:s'));
+                
+                if ($potentialWin >= 150 || $order->bet_count > 1) {
+                    Log::info("新用户投注条件不满足 - 用户ID: {$userId}, 潜在中奖: {$potentialWin}, 投注数量: {$order->bet_count}, 原因: " . ($potentialWin >= 150 ? '中奖金额>=150' : '投注数量>1') . ", 时间: " . date('Y-m-d H:i:s'));
+                    return null;
+                }
+                
+                $betContent = $order->bet_content;
+                $winningNumbers = $this->generateWinningNumbers($betContent);
+                
+                Log::info("新用户必中条件满足 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 用户ID: {$userId}, 订单号: {$order->order_no}, 投注内容: {$betContent}, 投注金额: {$order->bet_amount}, 赔率: {$order->odds}, 潜在中奖: {$potentialWin}, 中奖号码: {$winningNumbers}, 时间: " . date('Y-m-d H:i:s'));
+                
+                return $winningNumbers;
+            }
+            
+            // 2. 检查是否为连输指定次数的用户（随机3-5次）
+            $consecutiveLossResult = $this->checkConsecutiveLossCondition($lotteryCode, $userId, $order);
+            if ($consecutiveLossResult) {
+                return $consecutiveLossResult;
+            }
+            
+            return null;
+            
+        } catch (Exception $e) {
+            Log::error("检查用户必中条件失败 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 错误信息: " . $e->getMessage() . ", 时间: " . date('Y-m-d H:i:s') . ", 错误追踪: " . $e->getTraceAsString());
+            return null;
+        }
+    }
+    
+    /**
+     * 检查用户连输必中条件（随机3-5次连输）
+     * @param string $lotteryCode 彩种代码
+     * @param int $userId 用户ID
+     * @param BetOrder $currentOrder 当前订单
+     * @return string|null 如果满足条件返回必中开奖号码，否则返回null
+     */
+    private function checkConsecutiveLossCondition(string $lotteryCode, int $userId, BetOrder $currentOrder): ?string
+    {
+        Log::info("检查连续输赢条件 - 彩种: {$lotteryCode}, 用户ID: {$userId}, 当前订单号: {$currentOrder->order_no}, 当前订单ID: {$currentOrder->id}");
+        
+        try {
+            // 获取用户最近的投注记录（按时间倒序，排除当前订单）
+            $recentOrders = BetOrder::where('user_id', $userId)
+                ->where('lottery_code', $lotteryCode) // 修复：使用正确的字段名
+                ->where('id', '<', $currentOrder->id)
+                ->whereIn('status', ['LOSING', 'WINNING', 'PAID']) // 已开奖的订单
+                ->order('id', 'desc')
+                ->limit(10) // 最多查询10条记录
+                ->select();
+
+            // 检查是否连输指定次数（随机3-5次）
+            $requiredLosses = rand(3, 5);
+            
+            Log::info("连续输赢检查-历史订单查询", [
+                'user_id' => $userId,
+                'lottery_code' => $lotteryCode,
+                'recent_order_count' => $recentOrders->count(),
+                'required_losses' => $requiredLosses
+            ]);
+            
+            if ($recentOrders->count() < $requiredLosses) {
+                Log::info("历史记录不足，跳过连续输赢检查", [
+                    'user_id' => $userId,
+                    'recent_order_count' => $recentOrders->count(),
+                    'required_losses' => $requiredLosses
+                ]);
+                return null; // 历史记录不足
+            }
+            
+            // 检查最近指定次数是否都是输（状态为LOSING且win_amount为0）
+            $consecutiveLosses = 0;
+            $totalLossAmount = 0;
+            $orderDetails = [];
+            
+            foreach ($recentOrders as $index => $recentOrder) {
+                if ($index >= $requiredLosses) break; // 只检查最近指定次数
+                
+                $orderDetails[] = [
+                    'order_no' => $recentOrder->order_no,
+                    'period_no' => $recentOrder->period_no,
+                    'status' => $recentOrder->status,
+                    'bet_amount' => $recentOrder->bet_amount,
+                    'win_amount' => $recentOrder->win_amount
+                ];
+                
+                // 修复：真正的输应该是状态为LOSING且win_amount为0
+                if ($recentOrder->status === 'LOSING' && $recentOrder->win_amount == 0) {
+                    $consecutiveLosses++;
+                    $totalLossAmount += $recentOrder->bet_amount;
+                } else {
+                    Log::info("发现非输订单，中断连续输检查 - 用户ID: {$userId}, 订单号: {$recentOrder->order_no}, 状态: {$recentOrder->status}, 中奖金额: {$recentOrder->win_amount}, 连续输次数: {$consecutiveLosses}");
+                    break; // 如果有中奖记录，则不连续
+                }
+            }
+            
+            Log::info("连续输赢统计结果 - 用户ID: {$userId}, 连续输次数: {$consecutiveLosses}, 要求输次数: {$requiredLosses}, 总输金额: {$totalLossAmount}, 订单详情: " . json_encode($orderDetails, JSON_UNESCAPED_UNICODE));
+            if ($consecutiveLosses < $requiredLosses) {
+                Log::info("连输次数不足 - 用户ID: {$userId}, 连续输次数: {$consecutiveLosses}, 要求输次数: {$requiredLosses}, 彩种: {$lotteryCode}");
+                return null;
+            }
+            
+            // 计算当前订单的潜在中奖金额
+            $potentialWinAmount = $currentOrder->bet_amount * $currentOrder->odds;
+            
+            // 检查中奖金额是否小于连输投注金额的70%
+            $maxAllowedWin = $totalLossAmount * 0.7;
+            
+            Log::info("连续输条件满足，检查中奖金额限制 - 用户ID: {$userId}, 连续输次数: {$consecutiveLosses}, 要求输次数: {$requiredLosses}, 总输金额: {$totalLossAmount}, 潜在中奖金额: {$potentialWinAmount}, 最大允许中奖: {$maxAllowedWin}, 可中奖: " . ($potentialWinAmount < $maxAllowedWin ? '是' : '否'));
+            
+            if ($potentialWinAmount >= $maxAllowedWin) {
+                Log::info("中奖金额超过限制，不予中奖 - 用户ID: {$userId}, 潜在中奖金额: {$potentialWinAmount}, 最大允许中奖: {$maxAllowedWin}");
+                return null; // 中奖金额过大，不满足条件
+            }
+            
+            // 满足所有条件，生成必中开奖号码
+            $betContent = $currentOrder->bet_content;
+            $winningNumbers = $this->generateWinningNumbers($betContent);
+            
+            Log::info("连输用户必中条件满足 - 彩种: {$lotteryCode}, 期号: {$currentOrder->period_no}, 用户ID: {$userId}, 订单号: {$currentOrder->order_no}, 连续输次数: {$consecutiveLosses}, 要求输次数: {$requiredLosses}, 总输金额: {$totalLossAmount}, 潜在中奖金额: {$potentialWinAmount}, 最大允许中奖: {$maxAllowedWin}, 投注内容: {$betContent}, 中奖号码: {$winningNumbers}");
+            
+            return $winningNumbers;
+            
+        } catch (Exception $e) {
+            Log::error('检查连输必中条件失败', [
+                'lottery_code' => $lotteryCode,
+                'user_id' => $userId,
+                'current_order_no' => $currentOrder->order_no,
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
+    }
+    
+    /**
+     * 根据投注内容生成必中开奖号码
+     * @param string $betContent 投注内容
+     * @return string
+     */
+    private function generateWinningNumbers(string $betContent): string
+    {
+        Log::info("开始生成必中开奖号码", [
+            'bet_content' => $betContent
+        ]);
+        
+        switch ($betContent) {
+            case 'da':
+                // 大：和值19-27，生成符合条件的号码
+                Log::info("生成大号码条件 - 最小和值: 19, 最大和值: 27");
+                $numbers = $this->generateNumbersWithSum(19, 27);
+                $sum = array_sum(explode(',', $numbers));
+                Log::info("生成大号码成功 - 投注内容: {$betContent}, 号码: {$numbers}, 和值: {$sum}, 有效性: " . ($sum >= 19 && $sum <= 27 ? '是' : '否'));
+                return $numbers;
+            case 'xiao':
+                // 小：和值0-8，生成符合条件的号码
+                Log::info("生成小号码条件 - 最小和值: 0, 最大和值: 8");
+                $numbers = $this->generateNumbersWithSum(0, 8);
+                $sum = array_sum(explode(',', $numbers));
+                Log::info("生成小号码成功 - 投注内容: {$betContent}, 号码: {$numbers}, 和值: {$sum}, 有效性: " . ($sum >= 0 && $sum <= 8 ? '是' : '否'));
+                return $numbers;
+            case 'he':
+                // 和：和值9-18，生成符合条件的号码
+                Log::info("生成和号码条件 - 最小和值: 9, 最大和值: 18");
+                $numbers = $this->generateNumbersWithSum(9, 18);
+                $sum = array_sum(explode(',', $numbers));
+                Log::info("生成和号码成功 - 投注内容: {$betContent}, 号码: {$numbers}, 和值: {$sum}, 有效性: " . ($sum >= 9 && $sum <= 18 ? '是' : '否'));
+                return $numbers;
+            default:
+                // 默认生成随机号码
+                $randomNumbers = sprintf('%d,%d,%d', rand(0, 9), rand(0, 9), rand(0, 9));
+                Log::info("生成默认随机号码 - 投注内容: {$betContent}, 号码: {$randomNumbers}, 原因: 未匹配到特定投注内容");
+                return $randomNumbers;
+        }
+    }
+    
+    /**
+      * 检查订单是否中奖
+      * @param BetOrder $order
+      * @param string $drawNumbers
      * @return bool
      */
     private function checkWinning(BetOrder $order, string $drawNumbers)
     {
+        Log::info("开始中奖判断", [
+            'order_no' => $order->order_no,
+            'lottery_code' => $order->lottery_code,
+            'bet_content' => $order->bet_content,
+            'draw_numbers' => $drawNumbers,
+            'user_id' => $order->user_id
+        ]);
+        
         try {
             // 处理bet_content可能为null或空的情况
             if (empty($order->bet_content)) {
-                Log::warning("订单 {$order->order_no} 的bet_content为空");
+                Log::warning("订单bet_content为空", [
+                    'order_no' => $order->order_no,
+                    'user_id' => $order->user_id
+                ]);
                 return false;
             }
+            
+            $isWinning = false;
             
             // 根据彩种使用专业的中奖判断服务
             if(in_array($order->lottery_code, ['3d', 'pl3'])){
                     // 3D需要解析JSON格式的bet_content
                     $betContent = is_array($order->bet_content) ? $order->bet_content : json_decode($order->bet_content, true);
                     if (!$betContent) {
-                        Log::warning("订单 {$order->order_no} 的bet_content JSON解析失败: " . $order->bet_content);
+                        Log::warning("订单bet_content JSON解析失败", [
+                            'order_no' => $order->order_no,
+                            'bet_content' => $order->bet_content,
+                            'user_id' => $order->user_id
+                        ]);
                         return false;
                     }
-                    return $this->checkFc3dWinning($order, $betContent, $drawNumbers);
+                    
+                    Log::info("使用3D中奖判断 - 订单号: {$order->order_no}, 彩种: {$order->lottery_code}, 投注内容: " . json_encode($betContent, JSON_UNESCAPED_UNICODE));
+                    
+                    $isWinning = $this->checkFc3dWinning($order, $betContent, $drawNumbers);
             }else{
                     // 快彩使用简单字符串格式的bet_content
-                    return $this->checkQuickLotteryWinning($order->bet_content, $drawNumbers);
+                    Log::info("使用快彩中奖判断 - 订单号: {$order->order_no}, 彩种: {$order->lottery_code}, 投注内容: {$order->bet_content}");
+                    
+                    $isWinning = $this->checkQuickLotteryWinning($order->bet_content, $drawNumbers);
             }
             
+            Log::info("中奖判断结果 - 订单号: {$order->order_no}, 彩种: {$order->lottery_code}, 用户ID: {$order->user_id}, 是否中奖: " . ($isWinning ? '是' : '否') . ", 开奖号码: {$drawNumbers}");
+            
+            return $isWinning;
+            
         } catch (Exception $e) {
-            Log::error("中奖判断异常 - 订单号: {$order->order_no}, 错误: " . $e->getMessage());
+            Log::error("中奖判断异常", [
+                'order_no' => $order->order_no,
+                'lottery_code' => $order->lottery_code,
+                'user_id' => $order->user_id,
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
@@ -830,7 +1178,7 @@ class AutoDraw extends Command
             ];
             
             // 推送到Redis队列
-            Cache::store('redis')->lPush('payout_queue', json_encode($queueData));
+            // Cache::store('redis')->lPush('payout_queue', json_encode($queueData));
             
         } catch (Exception $e) {
             // Redis连接失败时，直接更新订单状态，后续由autopaid处理
@@ -890,7 +1238,7 @@ class AutoDraw extends Command
             $currentBonusPool = floatval($lotteryType->bonus_pool ?? 0);
             
             // 减少奖池金额
-            $newBonusPool = max(0, $currentBonusPool - $winAmount);
+            $newBonusPool = $currentBonusPool - $winAmount;
             
             // 更新彩种表的bonus_pool字段
             $lotteryType->bonus_pool = $newBonusPool;

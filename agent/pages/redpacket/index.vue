@@ -28,7 +28,7 @@
 				type="primary" 
 				text="发放红包" 
 				@click="createRedPacket"
-				customStyle="background: orangered; color: #e1e1e1; border: none; border-radius: 40rpx;"
+				customStyle="background: orangered; color: #fff; border: none; border-radius: 40rpx;"
 			></uv-button>
 		</view>
 		
@@ -115,8 +115,8 @@
 					<view class="redpacket-progress" v-if="item.status === 'ACTIVE' && item.total_count > 0">
 						<uv-line-progress 
 							:percentage="calculateProgress(item)" 
-							activeColor="#ff934a" 
-							inactiveColor="#333"
+							activeColor="orange" 
+							inactiveColor="#ccc"
 							height="6"
 							borderRadius="3"
 						></uv-line-progress>
@@ -590,8 +590,8 @@ export default {
 .stats-card {
 	display: flex;
 	justify-content: space-around;
-	background-color: #1b1b1b;
-	border-radius: 105rpx;
+	background: linear-gradient(135deg, #88c5ff 0%, #50a9ff 100%);
+	border-radius: 55rpx;
 	padding: 30rpx 20rpx;
 	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
 	margin-bottom: 20rpx;
@@ -606,13 +606,13 @@ export default {
 .stat-value {
 	font-size: 32rpx;
 	font-weight: bold;
-	color: #ff934a;
+	color: #fff;
 	margin-bottom: 8rpx;
 }
 
 .stat-label {
 	font-size: 24rpx;
-	color: #999;
+	color: #f1f1f1;
 }
 
 /* 操作按钮 */
@@ -629,10 +629,11 @@ export default {
 /* 筛选区域 */
 .filter-section {
 	margin: 20rpx 30rpx;
-	background-color: #1a1a1a;
+	background-color: #fff;
+	border: 1px solid #e9ecef;
 	border-radius: 50rpx;
 	padding: 20rpx;
-	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 
 .filter-tabs {
@@ -648,18 +649,20 @@ export default {
 	position: relative;
 	padding: 5rpx 24rpx 12rpx 24rpx;
 	border-radius: 35rpx;
-	background-color: #333;
+	background-color: #f8f9fa;
+	border: 1px solid #e9ecef;
 	transition: all 0.3s ease;
 	flex-shrink: 0;
 }
 
 .filter-tab.active {
 	background-color: rgba(255, 147, 74, 0.2);
+	border-color: #ff934a;
 }
 
 .tab-text {
 	font-size: 24rpx;
-	color: #999;
+	color: #666;
 	transition: color 0.3s ease;
 }
 
@@ -686,8 +689,9 @@ export default {
 	margin: 20rpx 22rpx;
 	border-radius: 20rpx;
 	overflow: hidden;
-	background-color: #1a1a1a;
-	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+	background-color: #fff;
+	border: 1px solid #e9ecef;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 
 .scroll-container {
@@ -707,15 +711,15 @@ export default {
 
 .redpacket-item {
 	padding: 30rpx;
-	border-bottom: 1px solid #333;
-	background-color: #1b1b1b;
+	border-bottom: 1px solid #e9ecef;
+	background-color: #fff;
 	border-radius:55rpx 0 55rpx 0;
 	transition: all 0.3s ease;
 	margin-bottom:15rpx;
 }
 
 .redpacket-item:active {
-	background-color: #252525;
+	background-color: #f8f9fa;
 	transform: scale(0.995);
 	/* #ifdef H5 */
 	cursor: pointer;
@@ -752,7 +756,7 @@ export default {
 
 .redpacket-title {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -772,7 +776,7 @@ export default {
 
 .redpacket-time {
 	font-size: 22rpx;
-	color: #666;
+	color: #999;
 }
 
 .header-right {
@@ -789,7 +793,7 @@ export default {
 
 .redpacket-blessing {
 	font-size: 24rpx;
-	color: #999;
+	color: #666;
 	display: block;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -854,7 +858,7 @@ export default {
 
 .amount-label {
 	font-size: 22rpx;
-	color: #999;
+	color: #666;
 }
 
 .info-grid {
@@ -872,7 +876,7 @@ export default {
 
 .info-value {
 	font-size: 24rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 	margin-bottom: 4rpx;
 }
@@ -883,7 +887,7 @@ export default {
 
 .info-label {
 	font-size: 20rpx;
-	color: #999;
+	color: #666;
 }
 
 .condition-info {
@@ -911,7 +915,7 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	padding-top: 16rpx;
-	border-top: 1px solid #333;
+	border-top: 1px solid #e9ecef;
 }
 
 .action-left {
@@ -933,12 +937,12 @@ export default {
 }
 
 .action-btn.secondary {
-	background-color: #333;
-	border: 1px solid #444;
+	background-color: #f8f9fa;
+	border: 1px solid #e9ecef;
 }
 
 .action-btn.secondary:active {
-	background-color: #444;
+	background-color: #e9ecef;
 }
 
 .action-btn.primary {
@@ -956,7 +960,7 @@ export default {
 
 .btn-text {
 	font-size: 22rpx;
-	color: #e1e1e1;
+	color: #333;
 }
 
 .action-btn.primary .btn-text {
@@ -976,13 +980,13 @@ export default {
 
 .empty-text {
 	font-size: 28rpx;
-	color: #666;
+	color: #999;
 	margin-top: 24rpx;
 }
 
 .empty-tip {
 	font-size: 24rpx;
-	color: #999;
+	color: #666;
 	margin-top: 12rpx;
 }
 
@@ -996,7 +1000,7 @@ export default {
 
 .load-text {
 	font-size: 24rpx;
-	color: #999;
+	color: #666;
 	margin-top: 10rpx;
 }
 
@@ -1011,9 +1015,9 @@ export default {
 
 .loading-text {
 	font-size: 26rpx;
-	color: #999;
+	color: #666;
 	margin-top: 20rpx;
 }
 
-.stat-rate{color:#cbcbcb;}
+.stat-rate{color:#efefef;}
 </style>

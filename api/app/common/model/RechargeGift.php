@@ -11,12 +11,17 @@ class RechargeGift extends Model
     // 设置字段信息
     protected $schema = [
         'id'            => 'int',
-        'agent_id'      => 'int',
-        'charge_amount' => 'int',
-        'bonus_amount'  => 'int',
+        'charge_amount' => 'decimal',
+        'bonus_amount'  => 'decimal',
         'status'        => 'int',
         'create_time'   => 'int',
         'update_time'   => 'int',
+    ];
+    
+    // 类型转换
+    protected $type = [
+        'charge_amount' => 'float',
+        'bonus_amount'  => 'float',
     ];
     
     // 自动时间戳
@@ -47,7 +52,7 @@ class RechargeGift extends Model
      */
     public function agent()
     {
-        return $this->belongsTo(User::class, 'agent_id', 'id');
+        return $this->belongsTo(User::class, 'agent_id', 'id')->where('is_agent', 1);
     }
     
     /**

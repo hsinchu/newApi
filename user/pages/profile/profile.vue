@@ -6,7 +6,7 @@
 			<view class="avatar-section">
 				<view class="user-basic-info" @click="openSettings">
 					<view class="user-info-row">
-						<uv-avatar :src="userInfo.avatar" size="55" shape="circle"></uv-avatar>
+						<uv-avatar src="/static/images/avatar.jpg" size="55" shape="circle"></uv-avatar>
 						<text class="username">{{ userInfo.nickname || userInfo.username }}</text>
 						<text>#{{userInfo.id}}</text>
 					</view>
@@ -17,7 +17,25 @@
 					plain 
 					shape="circle">
 				</uv-tags>
-				<uv-icon name="setting" size="20" color="#e1e1e1" @click="openSettings"></uv-icon>
+				<uv-icon name="setting" size="20" color="#333" @click="openSettings"></uv-icon>
+			</view>
+			
+			<!-- 会员等级信息 -->
+			<view class="level-info" v-if="userInfo.level_info">
+				<view class="level-badge">
+					<text class="level-name">{{ userInfo.level_info.name }}</text>
+					<text class="level-number">LV.{{ userInfo.level_info.level }}</text>
+				</view>
+				<view class="level-progress" v-if="userInfo.next_level">
+					<view class="progress-text">
+						<text class="progress-label">升级进度</text>
+						<text class="progress-value">{{ userInfo.upgrade_progress }}%</text>
+					</view>
+					<view class="progress-bar">
+						<view class="progress-fill" :style="{ width: userInfo.upgrade_progress + '%' }"></view>
+					</view>
+					<text class="next-level-text">下一等级：{{ userInfo.next_level.name }}</text>
+				</view>
 			</view>
 			
 			<!-- 统计数据 -->
@@ -46,14 +64,14 @@
 			<view class="grid-title">常用功能</view>
 			<uv-grid :col="4" @click="toDetail">
 				<uv-grid-item v-for="(item,index) in baseList" :key="index" class="grid-item">
-					<uv-icon :name="item.name" :size="28" color="#e1e1e1" class="grid-icon"></uv-icon>
+					<uv-icon :name="item.name" :size="28" color="#333" class="grid-icon"></uv-icon>
 					<text class="grid-text">{{item.title}}</text>
 				</uv-grid-item>
 			</uv-grid>
 		</view>
 		
 		<!-- 设置列表 -->
-		<view class="list-container">
+		<view class="list-container" v-if="settingsList.length > 0">
 			<view class="list-item" v-for="(item, index) in settingsList" :key="index" @click="handleListClick(item)">
 				<text class="list-text">{{ item.title }}</text>
 				<uv-icon name="arrow-right" size="16" color="#666"></uv-icon>
@@ -70,7 +88,8 @@
 				<view class="red-packet-avatar">
 					<image src="/static/images/logo.png" class="avatar-img"></image>
 				</view>
-				<view class="red-packet-sender">代理红包</view>
+				<view class="red-packet-sender" v-if="currentRedPacket.agent_id > 0">代理红包</view>
+				<view class="red-packet-sender" v-else>BNB平台红包</view>
 				<view class="red-packet-title">{{ currentRedPacket.title || '恭喜发财，大吉大利' }}</view>
 			</view>
 			
@@ -94,7 +113,8 @@
 			</view>
 			
 			<view class="red-packet-footer">
-				<text class="footer-text">红包来自代理商</text>
+				<text class="footer-text" v-if="currentRedPacket.agent_id > 0">红包来自代理商</text>
+				<text class="footer-text" v-else>红包来自BNB平台</text>
 			</view>
 		</view>
 	</view>
@@ -114,20 +134,23 @@
 		}, {
 			name: 'chat',
 			title: '平台公告'
-		}, {
-			name: 'share',
-			title: '邀请会员'
-		}, {
+		}, 
+		{
+			name: 'kefu-ermai',
+			title: '在线客服'
+		}, 
+		{
 			name: 'coupon',
 			title: '资金变动'
 		}],
 			settingsList: [
-			{
-				title: '在线客服',
-				key: 'kefu'
-			}],
+			// {
+			// 	title: '在线客服',
+			// 	key: 'kefu'
+			// }
+			],
 			userInfo: {
-			avatar: '/static/images/avatar.svg',
+			avatar: '/static/images/avatar.jpg',
 			username: '加载中...',
 			id: '',
 			is_agent: 0
@@ -401,9 +424,9 @@
 <style scoped lang="scss">
 
 	.profile-container {
-		background: linear-gradient(180deg, #252525 0%, #0b0b0b 100%);
+		background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
 		padding-bottom:25rpx;
-		color: #e1e1e1;
+		color: #333333;
 	}
 	
 	.user-info {
@@ -436,18 +459,89 @@
 				}
 				
 				.username {
-					color: #e1e1e1;
+					color: #333333;
 					font-size: 32rpx;
 					font-weight: bold;
 				}
 			}
 		}
 		
-		.stats-row {
-			display: flex;
-			align-items: center;
-			justify-content: space-around;
-			margin-bottom: 20rpx;
+		/* 会员等级样式 */
+	.level-info {
+		margin: 20rpx 0;
+		padding: 25rpx;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		border-radius: 15rpx;
+		color: #fff;
+	}
+	
+	.level-badge {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15rpx;
+	}
+	
+	.level-name {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #fff;
+	}
+	
+	.level-number {
+		font-size: 24rpx;
+		background: rgba(255, 255, 255, 0.2);
+		padding: 8rpx 16rpx;
+		border-radius: 20rpx;
+		color: #fff;
+	}
+	
+	.level-progress {
+		margin-top: 15rpx;
+	}
+	
+	.progress-text {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 10rpx;
+	}
+	
+	.progress-label {
+		font-size: 26rpx;
+		color: rgba(255, 255, 255, 0.8);
+	}
+	
+	.progress-value {
+		font-size: 26rpx;
+		font-weight: bold;
+		color: #fff;
+	}
+	
+	.progress-bar {
+		height: 8rpx;
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 4rpx;
+		overflow: hidden;
+		margin-bottom: 10rpx;
+	}
+	
+	.progress-fill {
+		height: 100%;
+		background: linear-gradient(90deg, #ffd700, #ffed4e);
+		border-radius: 4rpx;
+		transition: width 0.3s ease;
+	}
+	
+	.next-level-text {
+		font-size: 24rpx;
+		color: rgba(255, 255, 255, 0.7);
+	}
+	
+	.stats-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-around;
+		margin-bottom: 20rpx;
 			
 			.stat-container {
 				display: flex;
@@ -468,7 +562,7 @@
 					}
 					
 					.stat-label {
-						color: #999;
+						color: #333;
 						font-size: 28rpx;
 					}
 				}
@@ -489,14 +583,15 @@
 	.grid-container {
 		padding: 0 16rpx;
 		margin: 20rpx 0;
-		background-color: #1a1a1a;
+		background-color: #ffffff;
 		border-radius: 38rpx;
 		padding: 24rpx 16rpx;
 		margin: 16rpx;
+		border: 1px solid #e0e0e0;
 	}
 	
 	.grid-title {
-		color: #989898;
+		color: #333333;
 		font-size: 28rpx;
 		font-weight: 600;
 		margin-bottom: 30rpx;
@@ -504,19 +599,18 @@
 	}
 	
 	.grid-item {
-		background-color: #252525 !important;
+		background-color: #f8f9fa !important;
 		padding: 30rpx 20rpx;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		transition: all 0.3s ease;
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 	}
 	
 	.grid-item:active {
 		transform: scale(0.95);
-		background-color: #2a2a2a !important;
+		background-color: #e9ecef !important;
 	}
 	
 	.grid-icon {
@@ -529,7 +623,7 @@
 	}
 	
 	.grid-text {
-		color: #e1e1e1;
+		color: #333333;
 		font-size: 24rpx;
 		text-align: center;
 		font-weight: 500;
@@ -579,11 +673,12 @@
 	}
 	
 	.list-container {
-		background-color: #1a1a1a;
+		background-color: #ffffff;
 		border-radius: 38rpx;
 		margin: 16rpx;
 		padding: 8rpx 0;
 		overflow: hidden;
+		border: 1px solid #e0e0e0;
 	}
 	
 	.list-item {
@@ -591,8 +686,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 32rpx 40rpx;
-		background-color: #1a1a1a;
-		border-bottom: 1px solid #2a2a2a;
+		background-color: #ffffff;
+		border-bottom: 1px solid #e0e0e0;
 		transition: background-color 0.2s ease;
 		cursor: pointer;
 	}
@@ -602,11 +697,11 @@
 	}
 	
 	.list-item:active {
-		background-color: #252525;
+		background-color: #f8f9fa;
 	}
 	
 	.list-text {
-		color: #e1e1e1;
+		color: #333333;
 		font-size: 28rpx;
 		font-weight: 500;
 		flex: 1;

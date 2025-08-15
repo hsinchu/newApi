@@ -15,9 +15,8 @@
 						v-model="formData.title" 
 						placeholder="请输入红包标题（2-50字符）"
 						maxlength="50"
-						border="none"
 						bgColor="#333"
-						color="#e1e1e1"
+						color="#555"
 						placeholderStyle="color: #999"
 						customStyle="border-radius: 12rpx; padding: 0 20rpx;"
 						@input="validateField('title')"
@@ -35,7 +34,7 @@
 						maxlength="100"
 						:count="true"
 						bgColor="#333"
-						color="#e1e1e1"
+						color="#555"
 						placeholderStyle="color: #999"
 						customStyle="padding: 20rpx;"
 						height="50"
@@ -76,9 +75,8 @@
 						v-model="formData.totalAmount" 
 						placeholder="请输入总金额"
 						type="number"
-						border="none"
 						bgColor="#333"
-						color="#e1e1e1"
+						color="#555"
 						placeholderStyle="color: #999"
 						customStyle="border-radius: 12rpx; padding: 0 20rpx;"
 						@input="onAmountInput"
@@ -91,9 +89,8 @@
 						v-model="formData.totalCount" 
 						placeholder="请输入红包个数"
 						type="number"
-						border="none"
 						bgColor="#333"
-						color="#e1e1e1"
+						color="#555"
 						placeholderStyle="color: #999"
 						customStyle="border-radius: 12rpx; padding: 0 20rpx;"
 						@input="onCountInput"
@@ -120,7 +117,7 @@
 							:name="item.value" 
 							:label="item.label"
 							activeColor="#ff934a"
-							labelColor="#e1e1e1"
+							labelcolor="#555"
 							customStyle="margin:0 20rpx 20rpx 0;"
 						></uv-radio>
 					</uv-radio-group>
@@ -132,9 +129,8 @@
 						v-model="formData.conditionValue" 
 						:placeholder="getConditionPlaceholder()"
 						type="number"
-						border="none"
 						bgColor="#333"
-						color="#e1e1e1"
+						color="#555"
 						placeholderStyle="color: #999"
 						customStyle="border-radius: 12rpx; padding: 0 20rpx;"
 					></uv-input>
@@ -431,7 +427,7 @@ export default {
 
 <style scoped>
 .container {
-	background-color: #252525;
+	background-color: #f8f9fa;
 }
 
 .scroll-container {
@@ -443,11 +439,11 @@ export default {
 /* 表单区域 */
 .form-section {
 	margin: 15rpx 20rpx;
-	background-color: #2d2d2d;
+	background-color: #fff;
 	border-radius: 20rpx;
 	padding: 30rpx;
-	border: 1px solid #333;
-	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+	border: 1px solid #e9ecef;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 
 .section-title {
@@ -458,7 +454,7 @@ export default {
 
 .title-text {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 	margin-left: 12rpx;
 }
@@ -473,7 +469,7 @@ export default {
 
 .form-label {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333;
 	margin-bottom: 16rpx;
 	display: block;
 }
@@ -500,18 +496,18 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	padding: 24rpx 20rpx;
-	background-color: #333;
+	background-color: #f8f9fa;
 	border-radius: 12rpx;
-	border: 1px solid #444;
+	border: 1px solid #e9ecef;
 }
 
 .datetime-text {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333;
 }
 
 .datetime-text.placeholder {
-	color: #999;
+	color: #666;
 }
 
 
@@ -529,7 +525,7 @@ export default {
 
 .char-count {
 	font-size: 20rpx;
-	color: #999;
+	color: #666;
 	text-align: right;
 	display: block;
 	margin-top: 8rpx;
@@ -552,8 +548,8 @@ export default {
 .type-option {
 	flex: 1;
 	padding: 24rpx 16rpx;
-	background-color: #333;
-	border: 2rpx solid #444;
+	background-color: #f8f9fa;
+	border: 2rpx solid #e9ecef;
 	border-radius: 55rpx;
 	text-align: center;
 	transition: all 0.3s ease;
@@ -572,7 +568,7 @@ export default {
 
 .option-title {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 	display: block;
 	margin-bottom: 4rpx;
@@ -580,7 +576,7 @@ export default {
 
 .option-desc {
 	font-size: 20rpx;
-	color: #999;
+	color: #666;
 	display: block;
 }
 
@@ -600,19 +596,19 @@ export default {
 	left: 0;
 	right: 0;
 	z-index: 999;
-	background: linear-gradient(to top, #252525 0%, #252525 80%, rgba(37, 37, 37, 0.95) 90%, rgba(37, 37, 37, 0.8) 100%);
+	background: linear-gradient(to top, #fff 0%, #fff 80%, rgba(255, 255, 255, 0.95) 90%, rgba(255, 255, 255, 0.8) 100%);
 	padding: 20rpx 30rpx;
 	padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-	border-top: 1rpx solid rgba(255, 255, 255, 0.1);
-	box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.3);
+	border-top: 1rpx solid #e9ecef;
+	box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
 	
 	/* #ifdef APP-PLUS */
 	/* 安卓APP特殊优化 */
 	padding: 25rpx 40rpx;
 	padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
-	background: linear-gradient(to top, #252525 0%, #252525 85%, rgba(37, 37, 37, 0.98) 95%, rgba(37, 37, 37, 0.9) 100%);
-	border-top: 2rpx solid rgba(255, 255, 255, 0.15);
-	box-shadow: 0 -6rpx 25rpx rgba(0, 0, 0, 0.4);
+	background: linear-gradient(to top, #fff 0%, #fff 85%, rgba(255, 255, 255, 0.98) 95%, rgba(255, 255, 255, 0.9) 100%);
+	border-top: 2rpx solid #e9ecef;
+	box-shadow: 0 -6rpx 25rpx rgba(0, 0, 0, 0.15);
 	/* #ifdef APP-PLUS-NVUE */
 	padding: 30rpx 45rpx;
 	padding-bottom: calc(35rpx + env(safe-area-inset-bottom));
@@ -623,15 +619,15 @@ export default {
 	/* #ifdef H5 */
 	padding: 18rpx 25rpx;
 	padding-bottom: calc(18rpx + env(safe-area-inset-bottom));
-	background: linear-gradient(to top, #252525 0%, #252525 75%, rgba(37, 37, 37, 0.92) 90%, rgba(37, 37, 37, 0.75) 100%);
-	box-shadow: 0 -3rpx 15rpx rgba(0, 0, 0, 0.25);
+	background: linear-gradient(to top, #fff 0%, #fff 75%, rgba(255, 255, 255, 0.92) 90%, rgba(255, 255, 255, 0.75) 100%);
+	box-shadow: 0 -3rpx 15rpx rgba(0, 0, 0, 0.1);
 	/* #endif */
 	
 	/* #ifdef MP */
 	padding: 22rpx 35rpx;
 	padding-bottom: calc(25rpx + 20rpx);
-	background: linear-gradient(to top, #252525 0%, #252525 80%, rgba(37, 37, 37, 0.95) 100%);
-	box-shadow: 0 -4rpx 18rpx rgba(0, 0, 0, 0.3);
+	background: linear-gradient(to top, #fff 0%, #fff 80%, rgba(255, 255, 255, 0.95) 100%);
+	box-shadow: 0 -4rpx 18rpx rgba(0, 0, 0, 0.1);
 	/* #endif */
 }
 </style>

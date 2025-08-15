@@ -353,7 +353,7 @@ const baTable = new baTableClass(
       },
       { label: '申请时间', prop: 'create_time', align: 'center', width: 155, operator: 'RANGE', render: 'datetime' },
       { label: '处理时间', prop: 'process_time', align: 'center', width: 155, operator: false, render: 'datetime' },
-      { label: '处理人', prop: 'process_admin', align: 'center', width: 80, operator: false },
+      { label: '处理人', prop: 'process_admin', align: 'center', operator: false },
       {
         label: '操作',
         align: 'center',

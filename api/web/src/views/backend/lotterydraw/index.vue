@@ -13,28 +13,28 @@
           <div class="stat-item">
             <div class="stat-title">今日开奖</div>
             <div class="stat-value">{{ overview.today?.count || 0 }}期</div>
-            <div class="stat-desc">投注: ¥{{ formatAmount(overview.today?.total_bet || 0) }}</div>
+            <!-- <div class="stat-desc">投注: ¥{{ formatAmount(overview.today?.total_bet || 0) }}</div> -->
           </div>
         </el-col>
         <el-col :span="6">
           <div class="stat-item">
             <div class="stat-title">昨日开奖</div>
             <div class="stat-value">{{ overview.yesterday?.count || 0 }}期</div>
-            <div class="stat-desc">投注: ¥{{ formatAmount(overview.yesterday?.total_bet || 0) }}</div>
+            <!-- <div class="stat-desc">投注: ¥{{ formatAmount(overview.yesterday?.total_bet || 0) }}</div> -->
           </div>
         </el-col>
         <el-col :span="6">
           <div class="stat-item">
             <div class="stat-title">本周开奖</div>
             <div class="stat-value">{{ overview.week?.count || 0 }}期</div>
-            <div class="stat-desc">投注: ¥{{ formatAmount(overview.week?.total_bet || 0) }}</div>
+            <!-- <div class="stat-desc">投注: ¥{{ formatAmount(overview.week?.total_bet || 0) }}</div> -->
           </div>
         </el-col>
         <el-col :span="6">
           <div class="stat-item">
             <div class="stat-title">本月开奖</div>
             <div class="stat-value">{{ overview.month?.count || 0 }}期</div>
-            <div class="stat-desc">投注: ¥{{ formatAmount(overview.month?.total_bet || 0) }}</div>
+            <!-- <div class="stat-desc">投注: ¥{{ formatAmount(overview.month?.total_bet || 0) }}</div> -->
           </div>
         </el-col>
       </el-row>
@@ -44,7 +44,7 @@
 
     <!-- 表格顶部菜单 -->
     <TableHeader
-      :buttons="['refresh', 'add', 'edit', 'delete', 'comSearch', 'quickSearch', 'columnDisplay']"
+      :buttons="['refresh', 'comSearch', 'quickSearch', 'columnDisplay']"
       quick-search-placeholder="快速搜索：期号/彩种代码"
     />
 
@@ -209,20 +209,18 @@ const baTable = new baTableClass(
   {
     pk: 'id',
     column: [
-      { type: 'selection', align: 'center', operator: false },
-      { label: 'ID', prop: 'id', align: 'center', width: 70, operator: 'RANGE', sortable: 'custom' },
+      // { type: 'selection', align: 'center', operator: false },
+      // { label: 'ID', prop: 'id', align: 'center', width: 70, operator: 'RANGE', sortable: 'custom' },
       { label: '彩种代码', prop: 'lottery_code', align: 'center', operator: 'LIKE', operatorPlaceholder: '模糊查询', width: 100 },
-      { label: '彩种名称', prop: 'lottery_type.type_name', align: 'center', operator: 'LIKE', operatorPlaceholder: '模糊查询' },
+      { label: '彩种名称', prop: 'lottery_type_name', align: 'center', operator: 'LIKE', operatorPlaceholder: '模糊查询', width: 100 },
       { label: '期号', prop: 'period_no', align: 'center', operator: 'LIKE', operatorPlaceholder: '模糊查询', width: 120 },
       { label: '开奖号码', prop: 'draw_numbers', align: 'center', operator: false, width: 150 },
       { label: '开奖时间', prop: 'draw_time', align: 'center', operator: 'RANGE', sortable: 'custom', width: 160 },
       { label: '结算时间', prop: 'settle_time', align: 'center', operator: 'RANGE', width: 160 },
-      { label: '总销售额', prop: 'total_sales', align: 'center', operator: 'RANGE', render: 'tag', width: 120 },
-      { label: '奖池金额', prop: 'prize_pool', align: 'center', operator: 'RANGE', render: 'tag', width: 120 },
-      { label: '总投注金额', prop: 'total_bet_amount', align: 'center', operator: 'RANGE', render: 'tag', width: 120 },
-      { label: '总中奖金额', prop: 'total_win_amount', align: 'center', operator: 'RANGE', render: 'tag', width: 120 },
-      { label: '投注笔数', prop: 'bet_count', align: 'center', operator: 'RANGE', width: 80 },
-      { label: '中奖笔数', prop: 'win_count', align: 'center', operator: 'RANGE', width: 80 },
+      { label: '投注金额', prop: 'total_bet_amount', align: 'center', operator: 'RANGE', render: 'tag', width: 111 },
+      { label: '中奖金额', prop: 'total_win_amount', align: 'center', operator: 'RANGE', render: 'tag', width: 111 },
+      { label: '投注笔数', prop: 'bet_count', align: 'center', operator: 'RANGE', width: 88 },
+      { label: '中奖笔数', prop: 'win_count', align: 'center', operator: 'RANGE', width: 88 },
       { label: '状态', prop: 'status', align: 'center', operator: 'eq', replaceValue: {
         'PENDING': '待开奖',
         'DRAWN': '已开奖',
@@ -235,42 +233,9 @@ const baTable = new baTableClass(
         'CANCELLED': 'danger'
       }},
       { label: '更新时间', prop: 'update_time', align: 'center', render: 'datetime', operator: 'RANGE', sortable: 'custom', width: 160, timeFormat: 'yyyy-mm-dd hh:MM:ss' },
-      {
-        label: '操作',
-        align: 'center',
-        width: 220,
-        render: 'buttons',
-        buttons: [
-          ...defaultOptButtons(['edit', 'delete']),
-          {
-            render: 'tipButton',
-            class: 'el-button el-button--warning is-link el-button--small',
-            text: '手动开奖',
-            title: '手动开奖',
-            click: (row: any) => showDrawDialog(row),
-            display: (row: any) => row.status === 'PENDING'
-          },
-          {
-            render: 'tipButton',
-            class: 'el-button el-button--success is-link el-button--small',
-            text: '结算',
-            title: '结算',
-            click: (row: any) => showSettleDialog(row),
-            display: (row: any) => row.status === 'DRAWN'
-          },
-          {
-            render: 'tipButton',
-            class: 'el-button el-button--primary is-link el-button--small',
-            text: '统计',
-            title: '统计',
-            click: (row: any) => showStats(row.id)
-          }
-        ],
-        operator: false,
-      },
     ],
     dblClickNotEditColumn: [undefined],
-    defaultOrder: { prop: 'draw_time', order: 'desc' },
+    defaultOrder: { prop: 'id', order: 'desc' },
   },
   {
     defaultItems: {

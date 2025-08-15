@@ -18,7 +18,7 @@
 			<!-- 用户名输入 -->
 			<view class="input-group">
 				<view class="input-wrapper">
-					<uv-icon name="account-fill" size="20" color="#e1e1e1"></uv-icon>
+					<uv-icon name="account-fill" size="20" color="#333"></uv-icon>
 					<input 
 						v-model="formData.username" 
 						type="text" 
@@ -33,7 +33,7 @@
 			<!-- 密码输入 -->
 			<view class="input-group">
 				<view class="input-wrapper">
-					<uv-icon name="lock-fill" size="20" color="#e1e1e1"></uv-icon>
+					<uv-icon name="lock-fill" size="20" color="#333"></uv-icon>
 					<input 
 						v-model="formData.password" 
 						:password="!showPassword"
@@ -70,10 +70,10 @@
 					></uv-icon>
 				</view>
 				<text class="agreement-text">
-					为保障您的合法权益，请阅读并同意
-					<text class="link-text" @tap="showUserAgreement">《用户协议》</text>
+					为保障您的合法权益，请阅读并同意《用户协议》和《隐私政策》
+					<!-- <text class="link-text" @tap="showUserAgreement">《用户协议》</text>
 					和
-					<text class="link-text" @tap="showPrivacyPolicy">《隐私政策》</text>
+					<text class="link-text" @tap="showPrivacyPolicy">《隐私政策》</text> -->
 				</text>
 			</view>
 			
@@ -96,7 +96,7 @@
 				<view class="popup-header">
 					<text class="popup-title">用户协议</text>
 					<view class="popup-close" @tap="closePopup">
-						<uv-icon name="close" size="20" color="#e1e1e1"></uv-icon>
+						<uv-icon name="close" size="20" color="#333"></uv-icon>
 					</view>
 				</view>
 				<scroll-view class="popup-scroll" scroll-y="true">
@@ -130,7 +130,7 @@
 				<view class="popup-header">
 					<text class="popup-title">隐私政策</text>
 					<view class="popup-close" @tap="closePopup">
-						<uv-icon name="close" size="20" color="#e1e1e1"></uv-icon>
+						<uv-icon name="close" size="20" color="#333"></uv-icon>
 					</view>
 				</view>
 				<scroll-view class="popup-scroll" scroll-y="true">
@@ -363,7 +363,7 @@ export default {
 <style lang="scss">
 .container {
 	min-height: 100vh;
-	background-color: #000;
+	background-color: #f8f9fa;
 	position: relative;
 	/* #ifdef APP-PLUS */
 	padding-top: var(--status-bar-height);
@@ -405,7 +405,7 @@ export default {
 .welcome-text {
 	font-size: 36rpx;
 	font-weight: 500;
-	color: #e1e1e1;
+	color: #333333;
 }
 
 .form-section {
@@ -423,8 +423,8 @@ export default {
 .input-wrapper {
 	display: flex;
 	align-items: center;
-	background-color: #1a1a1a;
-	border: 2rpx solid #333;
+	background-color: #ffffff;
+	border: 2rpx solid #e0e0e0;
 	border-radius: 20rpx;
 	padding: 0 30rpx;
 	height: 100rpx;
@@ -434,7 +434,7 @@ export default {
 .input-field {
 	flex: 1;
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333333;
 	height: 100%;
 	background-color: transparent;
 }
@@ -461,7 +461,7 @@ export default {
 
 .agreement-text {
 	font-size: 24rpx;
-	color: #b9b9b9;
+	color: #666666;
 	line-height: 1.6;
 	flex: 1;
 }
@@ -481,7 +481,7 @@ export default {
 
 .register-text {
 	font-size: 26rpx;
-	color: #b9b9b9;
+	color: #666666;
 }
 
 .register-link {
@@ -494,7 +494,7 @@ export default {
 .popup-content {
 	width: 640rpx;
 	max-height: 80vh;
-	background-color: #1a1a1a;
+	background-color: #ffffff;
 	border-radius: 20rpx;
 	padding: 0;
 	overflow: hidden;
@@ -505,13 +505,13 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	padding: 40rpx 40rpx 20rpx;
-	border-bottom: 1px solid #333;
+	border-bottom: 1px solid #e0e0e0;
 }
 
 .popup-title {
 	font-size: 32rpx;
 	font-weight: 600;
-	color: #e1e1e1;
+	color: #333333;
 }
 
 .popup-close {
@@ -529,23 +529,23 @@ export default {
 
 .popup-text {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333333;
 	line-height: 1.8;
 	white-space: pre-line;
 }
 
 .popup-footer {
 	padding: 20rpx 40rpx 40rpx;
-	border-top: 1px solid #333;
+	border-top: 1px solid #e0e0e0;
 }
 
 .popup-agree-btn {
-	background-color: orangered !important;
-	color: #e1e1e1 !important;
-	border-radius: 12rpx;
-	height: 80rpx;
-	line-height: 80rpx;
-	font-size: 28rpx;
-	font-weight: 500;
-}
+		background-color: orangered !important;
+		color: #ffffff !important;
+		border-radius: 12rpx;
+		height: 80rpx;
+		line-height: 80rpx;
+		font-size: 28rpx;
+		font-weight: 500;
+	}
 </style>

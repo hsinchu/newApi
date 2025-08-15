@@ -86,12 +86,12 @@
 					</view>
 					<view class="adjustment-divider"></view>
 					<view class="adjustment-item">
-						<text class="adjustment-label">给会员加款金额</text>
+						<text class="adjustment-label">给会员加款</text>
 						<text class="adjustment-value red">{{statisticsData.member_add_amount}}</text>
 					</view>
 					<view class="adjustment-divider"></view>
 					<view class="adjustment-item">
-						<text class="adjustment-label">给会员扣款金额</text>
+						<text class="adjustment-label">给会员扣款</text>
 						<text class="adjustment-value red">{{statisticsData.member_deduct_amount}}</text>
 					</view>
 				</view>
@@ -242,10 +242,13 @@
     }
 </script>
 <style scoped lang="scss">
-	
+	.container {
+		background-color: #f7f7f7;
+	}
 	.date-selector {
 		display: flex;
 		align-items: center;
+		background:#fff;
 		padding: 12rpx 20rpx;
 		margin: 20rpx;
 	}
@@ -261,7 +264,7 @@
 	
 	.date-text {
 		font-size: 28rpx;
-		color:#e1e1e1;
+		color:#333;
 	}
 	
 	.statistics-content {
@@ -269,7 +272,8 @@
 	}
 	
 	.top-card {
-		background: linear-gradient(180deg, rgb(90, 90, 90) 0%, rgb(37, 37, 37) 100%);
+		background-color: #fff;
+		border: 1px solid #e9ecef;
 		border-radius: 45rpx 45rpx 0 0;
 		margin-top:12px;
 		padding: 40rpx 30rpx;
@@ -277,7 +281,7 @@
 		align-items: center;
 		justify-content: space-between;
 		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-		color: white;
+		color: #333;
 	}
 	
 	.card-item {
@@ -303,7 +307,7 @@
 	.card-divider {
 		width: 2rpx;
 		height: 60rpx;
-		background-color: rgba(255, 255, 255, 0.3);
+		background-color: #e9ecef;
 	}
 	
 	.agent-info {
@@ -345,7 +349,8 @@
 	}
 	
 	.summary-section, .adjustment-section {
-		background-color: #252525;
+		background-color: #fff;
+		border: 1px solid #e9ecef;
 		border-radius: 45rpx;
 		padding: 30rpx;
 		margin-top: 25rpx;
@@ -365,7 +370,7 @@
 	
 	.summary-label, .adjustment-label {
 		font-size: 26rpx;
-		color: #e1e1e1;
+		color: #666;
 		margin: 22rpx;
 	}
 	
@@ -376,7 +381,9 @@
 	}
 	
 	.recharge-section {
-		background-color: #252525;
+		background-color: #fff;
+		border: 1px solid #e9ecef;
+		border-top: none;
 		border-radius: 0 0 45rpx 45rpx;
 		margin-bottom: 20rpx;
 	}
@@ -386,7 +393,7 @@
 		display: flex;
 		align-items: center;
 		gap: 16rpx;
-		border-bottom: 1rpx solid #5e5e5e;
+		border-bottom: 1rpx solid #e9ecef;
 	}
 	
 	.recharge-item:last-child {
@@ -396,7 +403,7 @@
 	.recharge-text {
 		flex: 1;
 		font-size: 28rpx;
-		color: #e1e1e1;
+		color: #333;
 	}
 	
 	.recharge-amount {

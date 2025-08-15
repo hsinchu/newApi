@@ -25,7 +25,7 @@ class User extends Backend
      */
     protected $financeService;
 
-    protected array $withJoinTable = ['userGroup', 'parentUser'];
+    protected array $withJoinTable = ['userGroup', 'parentUser', 'level'];
 
     // 排除字段
     protected string|array $preExcludeFields = ['last_login_time', 'login_failure', 'password', 'salt'];
@@ -59,8 +59,22 @@ class User extends Backend
             ->order($order)
             ->paginate($limit);
 
+        // 为代理商用户添加返水配置状态
+        $list = $res->items();
+        foreach ($list as &$user) {
+            if ($user['is_agent'] == 1) {
+                // 检查代理商是否配置了返水config
+                $rebateConfig = \app\common\model\AgentRebateConfig::where('agent_id', $user['id'])
+                    ->where('is_enabled', 1)
+                    ->find();
+                $user['has_rebate_config'] = $rebateConfig ? 1 : 0;
+            } else {
+                $user['has_rebate_config'] = 0;
+            }
+        }
+
         $this->success('', [
-            'list'   => $res->items(),
+            'list'   => $list,
             'total'  => $res->total(),
             'remark' => get_route_remark(),
         ]);
@@ -191,6 +205,7 @@ class User extends Backend
 
         unset($row->salt);
         $row->password = '';
+        $row->pay_password = '';
         $this->success('', [
             'row' => $row
         ]);

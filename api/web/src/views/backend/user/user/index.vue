@@ -16,6 +16,9 @@
         <!-- 表单 -->
         <PopupForm />
         <MoneyForm />
+        <RebateConfig ref="rebateConfigRef" />
+        <RebateRecord ref="rebateRecordRef" />
+        <RebateSettlement ref="rebateSettlementRef" />
     </div>
 </template>
 
@@ -26,6 +29,9 @@ import { defaultOptButtons } from '/@/components/table'
 import { baTableApi } from '/@/api/common'
 import PopupForm from './popupForm.vue'
 import MoneyForm from './money.vue'
+import RebateConfig from './rebateConfig.vue'
+import RebateRecord from './rebateRecord.vue'
+import RebateSettlement from './rebateSettlement.vue'
 import Table from '/@/components/table/index.vue'
 import TableHeader from '/@/components/table/header/index.vue'
 
@@ -34,6 +40,9 @@ defineOptions({
 })
 
 const tableRef = ref()
+const rebateConfigRef = ref()
+const rebateRecordRef = ref()
+const rebateSettlementRef = ref()
 const optButtons: OptButton[] = defaultOptButtons(['edit'])
 optButtons.push({
     render: 'tipButton',
@@ -46,6 +55,48 @@ optButtons.push({
         baTable.form.operate = 'Money'
         baTable.form.items = { user_id: row.id }
         baTable.toggleForm('Money')
+    },
+})
+
+// 代理商返点配置按钮
+optButtons.push({
+    render: 'tipButton',
+    name: 'rebate-config',
+    title: '',
+    text: '返点配置',
+    type: 'primary',
+    icon: 'fa fa-cog',
+    display: (row) => row.is_agent === 1,
+    click(row, field) {
+        rebateConfigRef.value?.open({ id: row.id, username: row.username })
+    },
+})
+
+// 代理商返点记录按钮
+optButtons.push({
+    render: 'tipButton',
+    name: 'rebate-record',
+    title: '',
+    text: '返点记录',
+    type: 'info',
+    icon: 'fa fa-list',
+    display: (row) => row.is_agent === 1 && row.has_rebate_config === 1,
+    click(row, field) {
+        rebateRecordRef.value?.open({ id: row.id, username: row.username })
+    },
+})
+
+// 代理商发放返点按钮
+optButtons.push({
+    render: 'tipButton',
+    name: 'rebate-settlement',
+    title: '',
+    text: '发放返点',
+    type: 'success',
+    icon: 'fa fa-money',
+    display: (row) => row.is_agent === 1 && row.has_rebate_config === 1,
+    click(row, field) {
+        rebateSettlementRef.value?.open({ id: row.id, username: row.username })
     },
 })
 
@@ -72,24 +123,9 @@ const baTable = new baTableClass(
                 sortable: false,
             },
             { label: '昵称', prop: 'nickname', align: 'center', width: 120, operator: 'LIKE', operatorPlaceholder: '模糊查询' },
+            { label: '会员等级', prop: 'level.name', align: 'center', width: 100, operator: false },
+            { label: '邮箱', prop: 'email', align: 'center', width: 180, operator: 'LIKE', operatorPlaceholder: '模糊查询' },
             { label: '头像', prop: 'avatar', align: 'center', width: 80, render: 'image', operator: false },
-            {
-                label: '性别',
-                prop: 'gender',
-                align: 'center',
-                width: 80,
-                render: 'tag',
-                custom: { 0: 'info', 1: 'primary', 2: 'danger' },
-                replaceValue: { 0: '未知', 1: '男', 2: '女' },
-                operator: false,
-            },
-            {
-                label: '生日',
-                prop: 'birthday',
-                align: 'center',
-                width: 120,
-                operator: false,
-            },
             { label: '上级代理', prop: 'parentUser.username', align: 'center', width: 120, operator: 'LIKE', operatorPlaceholder: '模糊查询' },
             {
                 label: '状态',
@@ -108,8 +144,8 @@ const baTable = new baTableClass(
                 align: 'center',
                 width: 100,
                 render: 'tag',
-                custom: { 0: 'danger', 1: 'success' },
-                replaceValue: { 0: '未认证', 1: '已认证' },
+                custom: { 0: 'danger', 1: 'success', 2: 'info' },
+                replaceValue: { 0: '未认证', 1: '已认证', 2: '审核中' },
                 operator: 'eq',
                 sortable: false,
             },
@@ -120,8 +156,6 @@ const baTable = new baTableClass(
             { label: '真实姓名', prop: 'real_name', align: 'center', width: 100, operator: 'LIKE', operatorPlaceholder: '模糊查询' },
             { label: '身份证号', prop: 'id_card', align: 'center', width: 120, operator: false },
             { label: '手机号', prop: 'mobile', align: 'center', width: 120, operator: 'LIKE', operatorPlaceholder: '模糊查询' },
-            { label: '邮箱', prop: 'email', align: 'center', width: 180, operator: 'LIKE', operatorPlaceholder: '模糊查询' },
-            { label: '个人签名', prop: 'motto', align: 'center', width: 120, operator: false },
             { label: '最后登录IP', prop: 'last_login_ip', align: 'center', width: 130, operator: false },
             { label: '最后登录时间', prop: 'last_login_time', align: 'center', render: 'datetime', operator: 'RANGE', sortable: 'custom', width: 160 },
             { label: '创建时间', prop: 'create_time', align: 'center', render: 'datetime', operator: 'RANGE', sortable: 'custom', width: 160 },

@@ -354,7 +354,6 @@ class User extends Frontend
         try {
             $userId = $this->auth->id;
             $currentTime = time();
-            
             // 1. 获取用户今日投注金额（缓存优化）
             $todayBetAmount = $this->getUserTodayBetAmount($userId);
             
@@ -813,12 +812,12 @@ class User extends Frontend
              $code = VerificationCode::generateCode($email, $type);
              
              // 发送邮件（这里需要配置邮件服务）
-            //  $this->sendEmail($email, $code, $type);
+             $this->sendEmail($email, $code, $type);
          } catch (\Exception $e) {
              $this->error('发送失败：' . $e->getMessage());
          }
             
-        $this->success('验证码发送成功，请查收邮件', ['code' => $code]);
+        $this->success('验证码发送成功，请查收邮件');
      }
      
      /**

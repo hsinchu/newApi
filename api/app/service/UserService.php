@@ -66,7 +66,7 @@ class UserService
             'username' => $data['username'],
             'nickname' => $data['nickname'],
             'password' => hash_password($data['password']),
-            'group_id' => $data['group_id'] ?? 1,
+            'group_id' => 1,
             'parent_id' => $data['parent_id'] ?? 0,
             'is_agent' => $data['is_agent'] ?? 0,
             'user_tag' => $data['user_tag'] ?? '',

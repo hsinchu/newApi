@@ -63,15 +63,15 @@
 			ref="activityPopup"
 			mode="bottom" 
 			border-radius="20"
-			:custom-style="{ backgroundColor: '#2a2a2a' }"
+			:custom-style="{ backgroundColor: '#fff' }"
 			@close="closeModal"
 		>
 			<view class="popup-container">
 				<view class="popup-header">
 					<text class="popup-title">{{ isEditMode ? '编辑' : '添加' }}充值活动</text>
 					<view class="close-btn" @tap="closeModal">
-						<uv-icon name="close" size="20" color="#d8d8d8"></uv-icon>
-					</view>
+					<uv-icon name="close" size="20" color="#666"></uv-icon>
+				</view>
 				</view>
 				
 				<view class="form-content">
@@ -357,7 +357,7 @@ export default {
 		padding: 30rpx 40rpx;
 		
 		.activity-title {
-			color: #e1e1e1;
+			color: #333;
 			font-size: 36rpx;
 			font-weight: bold;
 			display: block;
@@ -382,7 +382,7 @@ export default {
 		padding: 30rpx 0 20rpx 0;
 		
 		.list-title {
-			color: #e1e1e1;
+			color: #333;
 			font-size: 30rpx;
 			border-left:5rpx solid orangered;
 			text-indent:25rpx;
@@ -414,19 +414,20 @@ export default {
 		padding: 100rpx 0;
 		
 		.empty-text {
-			color: #666;
+			color: #999;
 			font-size: 32rpx;
 			margin: 20rpx 0 10rpx 0;
 		}
 		
 		.empty-desc {
-			color: #999;
+			color: #666;
 			font-size: 24rpx;
 		}
 	}
 	
 	.activity-item {
-		background-color: #1b1b1b;
+		background-color: #fff;
+		border: 1px solid #e9ecef;
 		border-radius: 55rpx 55rpx 0 0;
 		margin-bottom: 20rpx;
 		display: flex;
@@ -443,7 +444,7 @@ export default {
 				margin-bottom: 15rpx;
 				
 				.charge-amount {
-					color: #e1e1e1;
+					color: #333;
 					font-size: 28rpx;
 					font-weight: bold;
 				}
@@ -487,16 +488,16 @@ export default {
 				}
 				
 				.bonus-rate {
-					color: #999;
+					color: #666;
 					font-size: 24rpx;
 				}
 			}
 			
 			.item-footer {
 				.create-time {
-					color: #666;
-					font-size: 22rpx;
-				}
+				color: #999;
+				font-size: 22rpx;
+			}
 			}
 		}
 		
@@ -513,11 +514,13 @@ export default {
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				background-color: #252525;
+				background-color: #f8f9fa;
+				border: 1px solid #e9ecef;
 				transition: all 0.2s ease;
 				
 				&:active {
 					transform: scale(0.9);
+					background-color: #e9ecef;
 				}
 			}
 		}
@@ -536,7 +539,7 @@ export default {
 		margin-bottom: 40rpx;
 		
 		.popup-title {
-			color: #e1e1e1;
+			color: #333;
 			font-size: 36rpx;
 			font-weight: bold;
 		}
@@ -545,7 +548,8 @@ export default {
 			width: 60rpx;
 			height: 60rpx;
 			border-radius: 50%;
-			background-color: #333;
+			background-color: #f8f9fa;
+			border: 1px solid #e9ecef;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -557,7 +561,7 @@ export default {
 			margin-bottom: 40rpx;
 			
 			.item-label {
-				color: #e1e1e1;
+				color: #333;
 				font-size: 28rpx;
 				display: block;
 				margin-bottom: 20rpx;
@@ -566,20 +570,21 @@ export default {
 			.input-wrapper {
 				display: flex;
 				align-items: center;
-				background-color: #333;
+				background-color: #f8f9fa;
+				border: 1px solid #e9ecef;
 				border-radius: 12rpx;
 				padding: 0 20rpx;
 				height: 88rpx;
 				
 				.currency-symbol {
-					color: #999;
+					color: #666;
 					font-size: 28rpx;
 					margin-right: 10rpx;
 				}
 				
 				.form-input {
 					flex: 1;
-					color: #e1e1e1;
+					color: #333;
 					font-size: 28rpx;
 					height: 100%;
 					border: none;
@@ -604,7 +609,7 @@ export default {
 			
 			.preview-content {
 				.preview-text {
-					color: #e1e1e1;
+					color: #333;
 					font-size: 28rpx;
 					display: block;
 					margin-bottom: 10rpx;

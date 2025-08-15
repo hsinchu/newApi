@@ -8,3 +8,10 @@ export function index() {
         method: 'get',
     })
 }
+
+export function getData() {
+    return createAxios({
+        url: url + 'data',
+        method: 'get',
+    })
+}

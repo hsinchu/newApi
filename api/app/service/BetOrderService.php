@@ -34,7 +34,6 @@ class BetOrderService
             $rebateInfo = UserService::getUserBrokRate($userId);
             
             $financeService = new FinanceService();
-            $orderNoStr = implode(',', $orderNos);
             // 用户自身投注返佣
             if($type == 'bet'){
                 if ($rebateInfo['rebate_rate'] > 0) {

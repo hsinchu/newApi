@@ -26,7 +26,7 @@
 					<text class="item-label">用户昵称</text>
 					<view class="item-content">
 						<text class="item-value">{{userInfo.nickname}}</text>
-						<uv-icon name="arrow-right" size="16" color="#999"></uv-icon>
+						<uv-icon name="arrow-right" size="16" color="#333"></uv-icon>
 					</view>
 				</view>
 				
@@ -37,7 +37,7 @@
 						<text class="item-value" :class="userInfo.is_verified === 1 ? 'certified' : userInfo.is_verified === 2 ? 'reviewing' : 'uncertified'">
 							{{userInfo.is_verified === 1 ? '已认证' : userInfo.is_verified === 2 ? '审核中' : '未认证'}}
 						</text>
-						<uv-icon v-if="userInfo.is_verified == 0" name="arrow-right" size="16" color="#999"></uv-icon>
+						<uv-icon v-if="userInfo.is_verified == 0" name="arrow-right" size="16" color="#333"></uv-icon>
 					</view>
 				</view>
 				
@@ -55,7 +55,7 @@
 					<text class="item-label">修改密码</text>
 					<view class="item-content">
 						<text class="item-value">修改登录密码</text>
-						<uv-icon name="arrow-right" size="16" color="#999"></uv-icon>
+						<uv-icon name="arrow-right" size="16" color="#333"></uv-icon>
 					</view>
 				</view>
 				
@@ -64,7 +64,7 @@
 					<text class="item-label">{{userInfo.has_pay_password ? '修改支付密码' : '设置支付密码'}}</text>
 					<view class="item-content">
 						<text class="item-value">{{userInfo.has_pay_password ? '修改支付密码' : '设置支付密码'}}</text>
-						<uv-icon name="arrow-right" size="16" color="#999"></uv-icon>
+						<uv-icon name="arrow-right" size="16" color="#333"></uv-icon>
 					</view>
 				</view>
 				
@@ -73,7 +73,7 @@
 					<text class="item-label">找回支付密码</text>
 					<view class="item-content">
 						<text class="item-value">忘记支付密码</text>
-						<uv-icon name="arrow-right" size="16" color="#999"></uv-icon>
+						<uv-icon name="arrow-right" size="16" color="#333"></uv-icon>
 					</view>
 				</view>
 				
@@ -107,7 +107,7 @@
 		<uv-popup ref="nicknamePopup" mode="center" :round="20">
 			<view class="popup-content">
 				<view class="popup-title">修改昵称</view>
-		<uv-input 
+				<uv-input 
 					v-model="editData.nickname" 
 					placeholder="请输入昵称"
 					color="#e0e0e0"
@@ -768,16 +768,16 @@ export default {
 
 .section {
 	margin: 20rpx;
-	background-color: #1f1f1f;
+	background-color: #ffffff;
 	border-radius: 35rpx 35rpx 0 0;
 	padding: 30rpx;
-	border: 1px solid #333;
+	border: 1px solid #e9ecef;
 }
 
 .section-title {
 	font-size: 32rpx;
 	font-weight: 600;
-	color: #e1e1e1;
+	color: #333;
 	margin-bottom: 30rpx;
 }
 
@@ -786,7 +786,7 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	padding: 20rpx 0;
-	border-bottom: 1px solid #333;
+	border-bottom: 1px solid #e9ecef;
 	margin-bottom: 20rpx;
 }
 
@@ -797,7 +797,7 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	padding: 30rpx 0;
-	border-bottom: 1px solid #333;
+	border-bottom: 1px solid #e9ecef;
 	transition: all 0.3s ease;
 }
 
@@ -806,7 +806,7 @@ export default {
 }
 
 .setting-item:active {
-	background-color: #252525;
+	background-color: #f8f9fa;
 	border-radius: 12rpx;
 	margin: 0 -20rpx;
 	padding: 30rpx 20rpx;
@@ -814,7 +814,7 @@ export default {
 
 .item-label {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	flex: 1;
 }
 
@@ -869,7 +869,7 @@ export default {
 /* 弹窗样式 */
 .popup-content {
 	width: 600rpx;
-	background-color: #252525;
+	background-color: #fff;
 	border-radius: 20rpx;
 	padding: 40rpx;
 }
@@ -877,7 +877,7 @@ export default {
 .popup-title {
 	font-size: 32rpx;
 	font-weight: 600;
-	color: #e1e1e1;
+	color: #333;
 	text-align: center;
 	margin-bottom: 30rpx;
 }
@@ -893,8 +893,8 @@ export default {
 .popup-cancel-btn {
 	flex: 1;
 	width: 48% !important;
-	background-color: #666 !important;
-	color: #e1e1e1 !important;
+	background-color: #f8f9fa !important;
+	color: #666 !important;
 	border-radius: 12rpx;
 	height: 80rpx;
 	line-height: 80rpx;

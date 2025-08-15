@@ -57,6 +57,7 @@ class RechargeOrder extends Model
         'amount'             => 'decimal',
         'actual_amount'      => 'decimal',
         'fee_amount'         => 'decimal',
+        'gift_amount'        => 'decimal',
         'status'             => 'string',
         'payment_method'     => 'string',
         'payment_channel'    => 'string',

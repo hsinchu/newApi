@@ -13,6 +13,7 @@ use app\common\model\UserMoneyLog;
 use app\common\model\BetOrder;
 use app\common\model\RechargeGift;
 use app\common\library\MoneyLogTypeHelper;
+use app\common\model\WithdrawRecord;
 use Exception;
 use think\middleware\Throttle;
 
@@ -592,11 +593,11 @@ class Agent extends Frontend
             // 5. 下级会员提现金额（下级会员在指定时间范围内的提现）
             $memberWithdrawAmount = 0;
             if (!empty($memberIds)) {
-                $memberWithdrawAmount = UserMoneyLog::whereIn('user_id', $memberIds)
-                    ->where('type', 'WITHDRAW_DEDUCT')
+                $memberWithdrawAmount = WithdrawRecord::whereIn('user_id', $memberIds)
+                    ->where('status', 2)
                     ->where('create_time', 'between', [$startTime, $endTime])
-                    ->sum('money');
-                $memberWithdrawAmount = abs(bcdiv($memberWithdrawAmount, 100, 2));
+                    ->sum('amount');
+                $memberWithdrawAmount = abs($memberWithdrawAmount);
             }
             $statistics['member_withdraw_amount'] = $memberWithdrawAmount;
             

@@ -41,7 +41,7 @@ class FinanceService
         // 增加不可提现余额的操作类型
         $freezeIncreaseTypes = [
             'COMMISSION_ADD',        // 佣金收入
-            'ADMIN_ADD',             // 管理员充值
+            // 'ADMIN_ADD',             // 管理员充值
             'RECHARGE_ADD',          // 用户充值
             'RECHARGE_GIFT_ADD',     // 充值赠送
             'BET_REFUND_ADD',        // 用户投注退款
@@ -68,7 +68,11 @@ class FinanceService
         
         // 计算不可提现金额变动
         if (in_array($type, $freezeIncreaseTypes)) {
-            $frozenAmount = abs($amount); // 不可提现金额增加
+            if($user->is_agent == 1 && $type == 'COMMISSION_ADD'){
+                $frozenAmount = 0; //代理商佣金不增加不可提现金额
+            }else{
+                $frozenAmount = abs($amount); // 不可提现金额增加
+            }
         } elseif (in_array($type, $freezeDecreaseTypes)) {
             $frozenAmount = -abs($amount); // 不可提现金额减少
         } elseif (in_array($type, $noFreezeTypes)) {

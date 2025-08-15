@@ -18,9 +18,7 @@
 
 <script setup lang="ts">
 import { ref, provide, onMounted } from 'vue'
-import { ElMessageBox, ElMessage } from 'element-plus'
 import baTableClass from '/@/utils/baTable'
-import { defaultOptButtons } from '/@/components/table'
 import { baTableApi } from '/@/api/common'
 import PopupForm from './popupForm.vue'
 import Table from '/@/components/table/index.vue'
@@ -44,31 +42,31 @@ const optButtons: OptButton[] = [
       baTable.onTableAction('edit', { row })
     },
   },
-  {
-    render: 'tipButton',
-    name: 'delete',
-    title: 'Delete',
-    text: '',
-    type: 'danger',
-    icon: 'fa fa-trash',
-    class: 'table-row-delete',
-    disabledTip: false,
-    click: (row: TableRow, field: TableColumn) => {
-      ElMessageBox.confirm(
-        `确定要删除支付通道 "${row.external_name}" 吗？此操作不可恢复！`,
-        '删除确认',
-        {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
-      ).then(() => {
-        baTable.onTableAction('delete', { row })
-      }).catch(() => {
-        // 用户取消删除
-      })
-    },
-  },
+  // {
+  //   render: 'tipButton',
+  //   name: 'delete',
+  //   title: 'Delete',
+  //   text: '',
+  //   type: 'danger',
+  //   icon: 'fa fa-trash',
+  //   class: 'table-row-delete',
+  //   disabledTip: false,
+  //   click: (row: TableRow, field: TableColumn) => {
+  //     ElMessageBox.confirm(
+  //       `确定要删除支付通道 "${row.external_name}" 吗？此操作不可恢复！`,
+  //       '删除确认',
+  //       {
+  //         confirmButtonText: '确定删除',
+  //         cancelButtonText: '取消',
+  //         type: 'warning',
+  //       }
+  //     ).then(() => {
+  //       baTable.onTableAction('delete', { row })
+  //     }).catch(() => {
+  //       // 用户取消删除
+  //     })
+  //   },
+  // },
   {
     render: 'tipButton',
     name: 'toggleStatus',
@@ -112,7 +110,7 @@ const baTable = new baTableClass(
       {
         label: '操作',
         align: 'center',
-        width: 180,
+        width: 95,
         render: 'buttons',
         fixed: 'right',
         buttons: optButtons,

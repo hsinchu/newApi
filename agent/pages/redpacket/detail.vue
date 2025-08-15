@@ -452,7 +452,7 @@ export default {
 
 <style scoped>
 .container {
-	background-color: #252525;
+	background-color: #f8f9fa;
 	min-height: 100vh;
 }
 
@@ -477,10 +477,11 @@ export default {
 }
 
 .redpacket-card {
-	background: linear-gradient(135deg, #DC143C 0%, #B22222 50%, #8B0000 100%);
+	background: #fff;
+	border: 1px solid #e9ecef;
 	border-radius: 55rpx 55rpx 0 0;
 	padding: 30rpx 25rpx;
-	box-shadow: 0 15rpx 35rpx rgba(220, 20, 60, 0.6), 0 8rpx 25rpx rgba(178, 34, 34, 0.4);
+	box-shadow: 0 15rpx 35rpx rgba(0, 0, 0, 0.1);
 	position: relative;
 	overflow: hidden;
 }
@@ -515,18 +516,21 @@ export default {
 }
 
 .redpacket-card.card-finished {
-	background: linear-gradient(135deg, #4a5568 0%, #2d3748 50%, #1a202c 100%);
-	box-shadow: 0 20rpx 60rpx rgba(74, 85, 104, 0.4), 0 8rpx 25rpx rgba(45, 55, 72, 0.2);
+	background: #f8f9fa;
+	border-color: #dee2e6;
+	box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.05);
 }
 
 .redpacket-card.card-cancelled {
-	background: linear-gradient(135deg, #718096 0%, #4a5568 50%, #2d3748 100%);
-	box-shadow: 0 20rpx 60rpx rgba(113, 128, 150, 0.4), 0 8rpx 25rpx rgba(74, 85, 104, 0.2);
+	background: #f8f9fa;
+	border-color: #dee2e6;
+	box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.05);
 }
 
 .redpacket-card.card-expired {
-	background: linear-gradient(135deg, #a0aec0 0%, #718096 50%, #4a5568 100%);
-	box-shadow: 0 20rpx 60rpx rgba(160, 174, 192, 0.4), 0 8rpx 25rpx rgba(113, 128, 150, 0.2);
+	background: #f8f9fa;
+	border-color: #dee2e6;
+	box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.05);
 }
 
 .card-header {
@@ -564,11 +568,11 @@ export default {
 }
 
 .redpacket-title {
-	font-size: 36rpx;
+	font-size: 32rpx;
 	font-weight: bold;
-	color: #FFD700;
+	color: #333;
 	margin-bottom: 8rpx;
-	text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.5);
+	text-shadow: none;
 	letter-spacing: 1rpx;
 }
 
@@ -608,22 +612,21 @@ export default {
 
 .create-time {
 	font-size: 20rpx;
-	color: rgba(255, 215, 0, 0.8);
-	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+	color: #666;
+	text-shadow: none;
 }
 
 .blessing-section {
 	display: flex;
 	align-items: center;
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+	background: #f8f9fa;
 	border-radius: 55rpx 55rpx 0 0;
 	padding: 24rpx;
 	margin-bottom: 15rpx;
 	position: relative;
 	z-index: 1;
-	backdrop-filter: blur(15rpx);
-	border: 1rpx solid rgba(255, 255, 255, 0.2);
-	box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.1);
+	border: 1rpx solid #e9ecef;
+	box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 
 .blessing-icon {
@@ -634,11 +637,11 @@ export default {
 
 .redpacket-blessing {
 	font-size: 28rpx;
-	color: #FFD700;
+	color: #333;
 	flex: 1;
 	line-height: 1.5;
 	font-weight: 500;
-	text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
+	text-shadow: none;
 }
 
 .amount-section {
@@ -652,11 +655,10 @@ export default {
 	flex-direction: column;
 	align-items: center;
 	padding: 24rpx;
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+	background: #fff;
 	border-radius: 12rpx;
-	backdrop-filter: blur(15rpx);
-	border: 1rpx solid rgba(255, 255, 255, 0.2);
-	box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.1);
+	border: 1rpx solid #e9ecef;
+	box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 
 .main-amount {
@@ -666,7 +668,8 @@ export default {
 .main-amount .amount-value {
 	font-size: 52rpx;
 	font-weight: bold;
-	text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
+	color: #333;
+	text-shadow: none;
 	letter-spacing: 1rpx;
 }
 
@@ -678,26 +681,26 @@ export default {
 
 .amount-label {
 	font-size: 22rpx;
-	color: rgba(255, 215, 0, 0.9);
+	color: #666;
 	margin-bottom: 8rpx;
-	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+	text-shadow: none;
 }
 
 .amount-value {
 	font-size: 30rpx;
 	font-weight: 600;
-	color: #FFD700;
-	text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
+	color: #333;
+	text-shadow: none;
 }
 
 .amount-value.received {
-	color: #90EE90;
-	text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
+	color: #28a745;
+	text-shadow: none;
 }
 
 .amount-value.remaining {
-	color: #FFD700;
-	text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
+	color: #ffc107;
+	text-shadow: none;
 }
 
 .progress-section {
@@ -715,15 +718,15 @@ export default {
 
 .progress-label {
 	font-size: 24rpx;
-	color: rgba(255, 215, 0, 0.9);
-	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+	color: #666;
+	text-shadow: none;
 }
 
 .progress-text {
 	font-size: 24rpx;
 	font-weight: 600;
-	color: #FFD700;
-	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+	color: #333;
+	text-shadow: none;
 }
 
 .progress-stats {
@@ -735,33 +738,33 @@ export default {
 
 .stat-item {
 	font-size: 20rpx;
-	color: rgba(255, 215, 0, 0.8);
-	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+	color: #666;
+	text-shadow: none;
 }
 
 .condition-section {
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: #f8f9fa;
+	border: 1px solid #e9ecef;
 	border-radius: 16rpx;
 	padding: 20rpx;
 	margin-bottom: 30rpx;
 	position: relative;
 	z-index: 1;
-	backdrop-filter: blur(10rpx);
 }
 
 .condition-title {
 	font-size: 22rpx;
-	color: rgba(255, 215, 0, 0.9);
+	color: #666;
 	margin-bottom: 8rpx;
 	display: block;
-	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+	text-shadow: none;
 }
 
 .condition-text {
 	font-size: 26rpx;
-	color: #FFD700;
+	color: #333;
 	font-weight: 500;
-	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+	text-shadow: none;
 }
 
 .action-buttons {
@@ -784,21 +787,19 @@ export default {
 	font-size: 28rpx;
 	font-weight: 500;
 	border-radius: 40rpx;
-	backdrop-filter: blur(15rpx);
 	transition: all 0.3s ease;
-	box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15);
-	text-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.2);
+	box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.1);
+	text-shadow: none;
 }
 
 .cancel-btn {
-	background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.15) 100%);
-	color: #FFD700;
-	border: 2rpx solid rgba(255, 215, 0, 0.4);
+	background: #f8f9fa;
+	color: #666;
+	border: 2rpx solid #e9ecef;
 }
 
 .cancel-btn:active {
-	background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.08) 100%);
-	transform: translateY(2rpx);
+	background: #e9ecef;
 }
 
 .share-btn {
@@ -827,7 +828,7 @@ export default {
 /* 详细信息 */
 .details-section {
 	margin: 20rpx 25rpx;
-	background-color: #1a1a1a;
+	background-color: #fff;
 	border-radius: 30rpx;
 	padding: 30rpx;
 	border: 1px solid #333;
@@ -842,7 +843,7 @@ export default {
 
 .title-text {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 	margin-left: 12rpx;
 }
@@ -863,7 +864,7 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	padding: 20rpx 0;
-	border-bottom: 1px solid #333;
+	border-bottom: 1px solid #e9ecef;
 }
 
 .detail-item:last-child {
@@ -877,7 +878,7 @@ export default {
 
 .detail-value {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333;
 }
 
 .detail-value.amount {
@@ -890,11 +891,11 @@ export default {
 /* 领取记录 */
 .records-section {
 	margin: 20rpx 25rpx;
-	background-color: #1a1a1a;
+	background-color: #fff;
 	border-radius: 30rpx;
 	padding: 30rpx;
-	border: 1px solid #333;
-	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+	border: 1px solid #e9ecef;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 
 .record-list {
@@ -929,7 +930,7 @@ export default {
 
 .record-name {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333;
 	margin-bottom: 4rpx;
 	display: block;
 	overflow: hidden;

@@ -6,7 +6,7 @@
 			<view class="avatar-section">
 				<view class="user-basic-info" @click="openSettings">
 					<view class="user-info-row">
-						<uv-avatar :src="userInfo.avatar" size="55" shape="circle"></uv-avatar>
+						<uv-avatar src="/static/images/avatar.jpg" size="55" shape="circle"></uv-avatar>
 						<text class="username">{{ userInfo.nickname || userInfo.username }}</text>
 						<text>（#1）</text>
 					</view>
@@ -47,7 +47,7 @@
 			<view class="grid-title">常用功能</view>
 			<uv-grid :col="4" @click="toDetail">
 				<uv-grid-item v-for="(item,index) in baseList" :key="index" class="grid-item">
-					<uv-icon :name="item.name" :size="28" color="#e1e1e1" class="grid-icon"></uv-icon>
+					<uv-icon :name="item.name" :size="28" color="#333" class="grid-icon"></uv-icon>
 					<text class="grid-text">{{item.title}}</text>
 				</uv-grid-item>
 			</uv-grid>
@@ -457,9 +457,9 @@
 
 <style scoped lang="scss">
 	.profile-container {
-		background: linear-gradient(180deg, #252525 0%, #0b0b0b 100%);
+		background-color: #f8f9fa;
 		padding-bottom:25rpx;
-		color: #e1e1e1;
+		color: #333;
 	}
 	
 	.header {
@@ -469,10 +469,10 @@
 			justify-content: space-between;
 			align-items: center;
 			.score {
-				color: #e1e1e1;
-				font-size: 32rpx;
-				font-weight: bold;
-			}
+			color: #333;
+			font-size: 32rpx;
+			font-weight: bold;
+		}
 		}
 	}
 	
@@ -506,7 +506,7 @@
 				}
 				
 				.username {
-					color: #e1e1e1;
+					color: #333;
 					font-size: 32rpx;
 					font-weight: bold;
 				}
@@ -538,7 +538,7 @@
 					}
 					
 					.stat-label {
-						color: #999;
+						color: #666;
 						font-size: 28rpx;
 					}
 				}
@@ -583,14 +583,15 @@
 	.grid-container {
 		padding: 0 16rpx;
 		margin: 20rpx 0;
-		background-color: #1a1a1a;
+		background-color: #fff;
+		border: 1px solid #e9ecef;
 		border-radius: 38rpx;
 		padding: 24rpx 16rpx;
 		margin: 16rpx;
 	}
 	
 	.grid-title {
-		color: #989898;
+		color: #666;
 		font-size: 28rpx;
 		font-weight: 600;
 		margin-bottom: 30rpx;
@@ -598,19 +599,18 @@
 	}
 	
 	.grid-item {
-		background-color: #252525 !important;
+		background-color: #f8f9fa !important;
 		padding: 30rpx 20rpx;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		transition: all 0.3s ease;
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 	}
 	
 	.grid-item:active {
 		transform: scale(0.95);
-		background-color: #2a2a2a !important;
+		background-color: #e9ecef !important;
 	}
 	
 	.grid-icon {
@@ -623,14 +623,15 @@
 	}
 	
 	.grid-text {
-		color: #e1e1e1;
+		color: #333;
 		font-size: 24rpx;
 		text-align: center;
 		font-weight: 500;
 	}
 	
 	.list-container {
-		background-color: #1a1a1a;
+		background-color: #fff;
+		border: 1px solid #e9ecef;
 		border-radius: 38rpx;
 		margin: 16rpx;
 		padding: 8rpx 0;
@@ -642,8 +643,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 32rpx 40rpx;
-		background-color: #1a1a1a;
-		border-bottom: 1px solid #2a2a2a;
+		background-color: #fff;
+		border-bottom: 1px solid #e9ecef;
 		transition: background-color 0.2s ease;
 		cursor: pointer;
 	}
@@ -653,11 +654,11 @@
 	}
 	
 	.list-item:active {
-		background-color: #252525;
+		background-color: #f8f9fa;
 	}
 	
 	.list-text {
-		color: #e1e1e1;
+		color: #333;
 		font-size: 28rpx;
 		font-weight: 500;
 		flex: 1;

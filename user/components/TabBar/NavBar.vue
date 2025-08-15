@@ -15,9 +15,9 @@
 				<!-- 返回按钮 -->
 				<template v-if="showBack">
 					<view class="back-button">
-						<uv-icon name="arrow-left" :size="iconSize" color="#ffffff" @click="handleBackClick"></uv-icon>
+						<uv-icon name="arrow-left" :size="iconSize" color="#333333" @click="handleBackClick"></uv-icon>
 					</view>
-					<uv-line direction="column" :hairline="false" :length="lineLength" margin="0 8px" color="rgba(255,255,255,0.3)"></uv-line>
+					<uv-line direction="column" :hairline="false" :length="lineLength" margin="0 8px" color="rgba(0,0,0,0.3)"></uv-line>
 				</template>
 				
 				<!-- Logo图片或首页图标 -->
@@ -28,7 +28,7 @@
 				</template>
 				<template v-else>
 					<view class="home-button">
-						<uv-icon name="home" :size="iconSize" color="#ffffff" @click="handleHomeClick"></uv-icon>
+						<uv-icon name="home" :size="iconSize" color="#333333" @click="handleHomeClick"></uv-icon>
 					</view>
 				</template>
 			</view>
@@ -74,20 +74,20 @@ export default {
 		// 背景颜色
 		bgColor: {
 			type: String,
-			default: '#000000'
+			default: '#ffffff'
 		},
 		// 标题样式
 		titleStyle: {
 			type: Object,
 			default: () => ({
-				color: '#ffffff'
+				color: '#333333'
 			})
 		},
 		// 左侧文字样式
 		leftTextStyle: {
 			type: Object,
 			default: () => ({
-				color: '#ffffff'
+				color: '#333333'
 			})
 		},
 		// 右侧文字
@@ -99,7 +99,6 @@ export default {
 		rightTextStyle: {
 			type: Object,
 			default: () => ({
-				color: '#ffffff',
 				fontSize: '28rpx'
 			})
 		}
@@ -261,11 +260,11 @@ export default {
 
 .back-button:active {
 	/* #ifdef APP-PLUS */
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(0, 0, 0, 0.1);
 	/* #endif */
 	
 	/* #ifdef H5 */
-	background-color: rgba(255, 255, 255, 0.08);
+	background-color: rgba(0, 0, 0, 0.08);
 	/* #endif */
 }
 
@@ -296,11 +295,11 @@ export default {
 
 .home-button:active {
 	/* #ifdef APP-PLUS */
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(0, 0, 0, 0.1);
 	/* #endif */
 	
 	/* #ifdef H5 */
-	background-color: rgba(255, 255, 255, 0.08);
+	background-color: rgba(0, 0, 0, 0.08);
 	/* #endif */
 }
 
@@ -336,12 +335,12 @@ export default {
 	width: 60rpx;
 	height: 60rpx;
 	border-radius: 50%;
-	border: 2rpx solid rgba(255, 255, 255, 0.2);
+	border: 2rpx solid rgba(0, 0, 0, 0.2);
 	/* #ifdef APP-PLUS-NVUE */
 	width: 68rpx;
 	height: 68rpx;
 	border-radius: 8rpx;
-	border: 3rpx solid rgba(255, 255, 255, 0.25);
+	border: 3rpx solid rgba(0, 0, 0, 0.25);
 	/* #endif */
 	/* #endif */
 	
@@ -349,14 +348,14 @@ export default {
 	width: 56rpx;
 	height: 56rpx;
 	border-radius: 50%;
-	border: 1rpx solid rgba(255, 255, 255, 0.15);
+	border: 1rpx solid rgba(0, 0, 0, 0.15);
 	/* #endif */
 	
 	/* #ifdef MP */
 	width: 58rpx;
 	height: 58rpx;
 	border-radius: 50%;
-	border: 1rpx solid rgba(255, 255, 255, 0.18);
+	border: 1rpx solid rgba(0, 0, 0, 0.18);
 	/* #endif */
 	
 	/* #ifndef APP-PLUS || H5 || MP */
@@ -375,7 +374,7 @@ export default {
 
 .right-text {
 	color: #ffffff;
-	background:#4f46e5 ;
+	background:#4f46e5;
 	padding:0 8rpx 5rpx 8rpx;
 	border-radius:12rpx;
 	font-size: 18rpx;

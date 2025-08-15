@@ -179,7 +179,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, inject, onMounted, computed, watch } from 'vue'
+import { reactive, ref, inject, onMounted, computed, watch, nextTick } from 'vue'
 import type baTableClass from '/@/utils/baTable'
 import FormItem from '/@/components/formItem/index.vue'
 import type { ElForm, FormItemRule } from 'element-plus'
@@ -262,13 +262,20 @@ watch(
   }
 )
 
+// 防止循环更新的标志
+const isUpdatingFromForm = ref(false)
+const isUpdatingFromConfig = ref(false)
+
 // 监听表单数据变化，确保编辑时数据正确填充
 watch(
-  () => baTable.form.items,
+  () => baTable.form.items?.channel_params,
   (newVal) => {
-    if (newVal && baTable.form.operate === 'Edit' && newVal.channel_params && Array.isArray(newVal.channel_params)) {
+    if (isUpdatingFromConfig.value) return // 防止循环调用
+    
+    if (newVal && baTable.form.operate === 'Edit' && Array.isArray(newVal)) {
+      isUpdatingFromForm.value = true
       // 将后端返回的channel_params数组转换为前端需要的格式
-      channelConfigs.value = newVal.channel_params.map((param: any) => ({
+      channelConfigs.value = newVal.map((param: any) => ({
         method_id: param.method_id ? Number(param.method_id) : '',
         channel_code: param.channel_code || '',
         min_amount: param.min_amount ? Number(param.min_amount) : null,
@@ -276,17 +283,26 @@ watch(
         fee_rate: param.fee_rate ? Number(param.fee_rate) : null,
         is_enabled: param.is_enabled === '1' || param.is_enabled === 1 || param.is_enabled === true
       }))
+      nextTick(() => {
+        isUpdatingFromForm.value = false
+      })
     }
   },
-  { deep: true, immediate: true }
+  { deep: true }
 )
 
 // 监听通道配置变化，同步到表单数据
 watch(
   () => channelConfigs.value,
   (newVal) => {
-    if (baTable.form.items) {
-      baTable.form.items.channel_params = newVal
+    if (isUpdatingFromForm.value || !baTable.form.operate) return // 防止循环调用和初始化时触发
+    
+    if (baTable.form.items && newVal && newVal.length > 0) {
+      isUpdatingFromConfig.value = true
+      baTable.form.items.channel_params = [...newVal] // 使用浅拷贝避免引用问题
+      nextTick(() => {
+        isUpdatingFromConfig.value = false
+      })
     }
   },
   { deep: true }
@@ -294,11 +310,23 @@ watch(
 
 const loadFormData = async () => {
   try {
+    console.log('开始加载表单数据...')
+    
     // 加载支付方式选项
     const methodApi = new baTableApi('/admin/finance.PaymentMethod/')
+    console.log('调用支付方式API...')
+    
     const methodRes = await methodApi.postData('getOptions', {})
-    if (methodRes.code === 1) {
+    console.log('支付方式API响应:', methodRes)
+    
+    if (methodRes && methodRes.code === 1) {
       paymentMethods.value = methodRes.data || []
+      paymentMethodOptions.value = {}
+      console.log('支付方式数据加载成功:', paymentMethods.value)
+    } else {
+      console.warn('支付方式API返回异常:', methodRes)
+      // 设置默认空数据，避免页面卡死
+      paymentMethods.value = []
       paymentMethodOptions.value = {}
     }
     
@@ -315,8 +343,27 @@ const loadFormData = async () => {
         }
       ]
     }
+    
+    console.log('表单数据加载完成')
   } catch (error) {
     console.error('加载表单数据失败:', error)
+    // 设置默认空数据，避免页面卡死
+    paymentMethods.value = []
+    paymentMethodOptions.value = {}
+    
+    // 如果是添加模式，重置为默认配置
+    if (baTable.form.operate === 'Add') {
+      channelConfigs.value = [
+        {
+          method_id: '',
+          channel_code: '',
+          min_amount: null,
+          max_amount: null,
+          fee_rate: null,
+          is_enabled: true
+        }
+      ]
+    }
   }
 }
 

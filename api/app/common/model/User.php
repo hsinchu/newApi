@@ -25,9 +25,12 @@ class User extends Model
         'id'                   => 'int',
         'group_id'             => 'int',
         'parent_id'            => 'int',
+        'game_ids'             => 'string',
         'username'             => 'string',
         'is_agent'             => 'int',
         'user_tag'             => 'string',
+        'level_id'             => 'int',
+        'total_bet_amount'     => 'float',
         'nickname'             => 'string',
         'real_name'            => 'string',
         'id_card'              => 'string',
@@ -138,6 +141,16 @@ class User extends Model
     }
 
     public function setUserTagAttr($value): string
+    {
+        return is_array($value) ? implode(',', $value) : $value;
+    }
+
+    public function getGameIdsAttr($value): array
+    {
+        return $value ? explode(',', $value) : [];
+    }
+
+    public function setGameIdsAttr($value): string
     {
         return is_array($value) ? implode(',', $value) : $value;
     }
@@ -338,44 +351,6 @@ class User extends Model
     }
     
     /**
-     * 获取用户统计信息
-     */
-    public function getUserStats(): array
-    {
-        $today = date('Y-m-d');
-        $thisMonth = date('Y-m');
-        
-        // 投注统计
-        $betStats = $this->betOrders()
-            ->field([
-                'COUNT(*) as total_bets',
-                'SUM(bet_amount) as total_bet_amount',
-                'SUM(CASE WHEN status = "WINNING" THEN win_amount ELSE 0 END) as total_win_amount'
-            ])
-            ->find();
-            
-        // 今日投注
-        $todayBets = $this->betOrders()
-            ->whereTime('create_time', 'today')
-            ->count();
-            
-        // 本月投注
-        $monthBets = $this->betOrders()
-            ->whereTime('create_time', 'month')
-            ->count();
-            
-        return [
-            'total_bets' => $betStats['total_bets'] ?? 0,
-            'total_bet_amount' => bcdiv($betStats['total_bet_amount'] ?? 0, 100, 2),
-            'total_win_amount' => bcdiv($betStats['total_win_amount'] ?? 0, 100, 2),
-            'today_bets' => $todayBets,
-            'month_bets' => $monthBets,
-            'win_rate' => $betStats['total_bets'] > 0 ? 
-                round(($betStats['total_win_amount'] / $betStats['total_bet_amount']) * 100, 2) : 0
-        ];
-    }
-    
-    /**
      * 生成邀请码
      */
     public static function generateInviteCode(): string
@@ -393,5 +368,90 @@ class User extends Model
     public static function findByInviteCode(string $code): ?User
     {
         return self::where('invite_code', $code)->find();
+    }
+    
+    /**
+     * 关联用户等级
+     * @return BelongsTo
+     */
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(UserLevel::class, 'level_id', 'id');
+    }
+    
+    /**
+     * 更新投注额并检查升级
+     * @param float $betAmount 投注金额
+     * @return bool
+     */
+    public function updateBetAmountAndCheckUpgrade(float $betAmount): bool
+    {
+        // 更新累计投注额
+        $this->total_bet_amount = bcadd($this->total_bet_amount, $betAmount, 2);
+        
+        // 检查是否需要升级
+        $newLevel = UserLevel::getLevelByBetAmount($this->total_bet_amount);
+        if ($newLevel && $newLevel['id'] != $this->level_id) {
+            $this->level_id = $newLevel['id'];
+        }
+        
+        return $this->save();
+    }
+    
+    /**
+     * 获取当前等级信息
+     * @return array|null
+     */
+    public function getCurrentLevel(): ?array
+    {
+        return $this->level ? $this->level->toArray() : null;
+    }
+    
+    /**
+     * 获取下一个等级信息
+     * @return UserLevel|null
+     */
+    public function getNextLevel(): ?UserLevel
+    {
+        // 直接通过level_id查询当前等级
+        if (!$this->level_id) {
+            return null;
+        }
+        
+        $currentLevel = UserLevel::find($this->level_id);
+        if (!$currentLevel) {
+            return null;
+        }
+        
+        return UserLevel::where('level', '>', $currentLevel->level)
+            ->order('level', 'asc')
+            ->find();
+    }
+    
+    /**
+     * 获取升级进度百分比
+     * @return float
+     */
+    public function getUpgradeProgress(): float
+    {
+        $nextLevel = $this->getNextLevel();
+        if (!$nextLevel || !is_object($nextLevel)) {
+            return 100.0; // 已达到最高等级
+        }
+        
+        // 直接通过level_id查询当前等级
+        $currentCondition = 0;
+        if ($this->level_id) {
+            $currentLevel = UserLevel::find($this->level_id);
+            $currentCondition = $currentLevel ? $currentLevel->upgrade_condition : 0;
+        }
+        $nextCondition = $nextLevel->upgrade_condition;
+        
+        if ($nextCondition <= $currentCondition) {
+            return 100.0;
+        }
+        
+        $progress = (($this->total_bet_amount - $currentCondition) / ($nextCondition - $currentCondition)) * 100;
+        return max(0, min(100, $progress));
     }
 }

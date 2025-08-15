@@ -4,13 +4,13 @@
 			<uv-drop-down 
 				sign="orderFilter" 
 				:default-value="[0, 'all', 'search']"
-				text-color="#e1e1e1"
-				text-size="30rpx"
-				text-active-color="#ff6b35"
-				text-active-size="30rpx"
-				:extra-icon="{name: 'arrow-down', size: '28rpx', color: '#e1e1e1'}"
-				:extra-active-icon="{name: 'arrow-up', size: '28rpx', color: '#ff6b35'}"
-				custom-style="line-height:55rpx;background-color: #252525;border-bottom:1px solid #252525"
+				text-color="#333"
+			text-size="30rpx"
+			text-active-color="#ff6b35"
+			text-active-size="30rpx"
+			:extra-icon="{name: 'arrow-down', size: '28rpx', color: '#333'}"
+			:extra-active-icon="{name: 'arrow-up', size: '28rpx', color: '#ff6b35'}"
+			custom-style="line-height:55rpx;background-color: #ffffff;border-bottom:1px solid #e0e0e0"
 				@click="onSelectMenu">
 				
 				<!-- 订单状态筛选 -->
@@ -89,10 +89,10 @@
 				<!-- 订单头部 -->
 				<view class="order-header">
 					<view class="lottery-info">
-						<view class="lottery-icon">
+						<!-- <view class="lottery-icon">
 							<image v-if="order.typeicon" :src="order.typeicon" mode="aspectFill" class="type-icon"></image>
 							<uv-icon v-else name="list" size="24" color="#ff6b35"></uv-icon>
-						</view>
+						</view> -->
 						<view class="lottery-details">
 							<text class="lottery-name">{{ order.typename }}</text>
 							<text class="period-no">第{{ order.periodNo }}期</text>
@@ -121,6 +121,7 @@
 				<!-- 底部信息 -->
 				<view class="order-footer">
 					<view class="member-info">
+						<text class="member-nickname">用户：{{ order.nickname }}</text>
 						<text class="order-time">{{ order.createTime }}</text>
 					</view>
 					<view class="result-info">
@@ -159,7 +160,7 @@
 			mode="bottom" 
 			border-radius="50"
 			:safe-area-inset-bottom="true"
-			custom-style="background-color: #252525; max-height: 85vh;"
+			custom-style="background-color: #fff; max-height: 85vh;"
 			@change="onPopupChange">
 			
 			<view class="popup-header">
@@ -299,7 +300,7 @@
 			:show="showSearchPopup"
 			mode="center" 
 			border-radius="20"
-			custom-style="background-color: #252525; width: 80%; max-width: 400px;"
+			custom-style="background-color: #fff; width: 80%; max-width: 400px;"
 			@change="onSearchPopupChange">
 			
 			<view class="search-popup">
@@ -310,7 +311,7 @@
 				</view>
 				
 				<view class="search-content">
-					<uv-search placeholder="请输入订单号|期号" bgColor="#3e3e3e" :inputStyle="{color:'#e1e1e1'}" :actionStyle="{color:'#ff6b35'}" v-model="searchKeyword" actionText="搜索" @custom="searchOrder" @search="searchOrder"></uv-search>
+					<uv-search placeholder="请输入订单号|期号" bgColor="#f5f5f5" :inputStyle="{color:'#333'}" :actionStyle="{color:'#ff6b35'}" v-model="searchKeyword" actionText="搜索" @custom="searchOrder" @search="searchOrder"></uv-search>
 				</view>
 			</view>
 		</uv-popup>
@@ -418,20 +419,21 @@ import { formatOrderBetContent } from '@/api/order.js';
 			processOrderData(orders) {
 				return orders.map(order => {
 					// 映射字段
-				order.orderNo = order.order_no;
-				order.memberUsername = order.member_username;
-				order.memberNickname = order.member_nickname;
-				order.periodNo = order.period_no;
-				order.betTypeName = order.bet_type_name;
-				order.drawResult = order.draw_result || [];
-				order.price = order.bet_amount;
-				order.jiang_price = order.win_amount;
-				order.odds = order.odds;
-				order.createTime = this.formatTime(order.create_time);
-				order.productName = `${order.lottery_code} - ${order.bet_type_name}`;
-				order.productImage = '/static/images/202.png';
-				// 添加彩种图标
-				order.typeicon = order.typeicon || '';
+			order.orderNo = order.order_no;
+			order.memberUsername = order.member_username;
+			order.memberNickname = order.member_nickname;
+			order.nickname = order.nickname; // 添加昵称字段映射
+			order.periodNo = order.period_no;
+			order.betTypeName = order.bet_type_name;
+			order.drawResult = order.draw_result || [];
+			order.price = order.bet_amount;
+			order.jiang_price = order.win_amount;
+			order.odds = order.odds;
+			order.createTime = this.formatTime(order.create_time);
+			order.productName = `${order.lottery_code} - ${order.bet_type_name}`;
+			order.productImage = '/static/images/202.png';
+			// 添加彩种图标
+			order.typeicon = order.typeicon || '';
 					
 					// 处理状态显示
 					switch(order.status) {
@@ -876,8 +878,8 @@ import { formatOrderBetContent } from '@/api/order.js';
 <style scoped lang="scss">
 	.container {
 		min-height: 100vh;
-		background-color: #252525;
-		color: #e1e1e1;
+		background-color: #f8f9fa;
+		color: #333;
 		position: relative;
 	}
 
@@ -887,18 +889,17 @@ import { formatOrderBetContent } from '@/api/order.js';
 		box-sizing: border-box;
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
-		background-color: #2d2d2d;
+		background-color: #f8f9fa;
 		position: relative;
 	}
 	
 	.order-item {
-		background: #1d1d1d;
+		background: #fff;
 		margin-bottom: 15rpx;
 		border-radius: 45rpx 0 45rpx 0;
 		padding: 24rpx;
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		backdrop-filter: blur(20rpx);
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+		border: 1px solid #e9ecef;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 		position: relative;
 		transition: all 0.2s ease;
 		cursor: pointer;
@@ -951,13 +952,13 @@ import { formatOrderBetContent } from '@/api/order.js';
 	
 	.lottery-name {
 		font-size: 28rpx;
-		color: #e1e1e1;
+		color: orangered;
 		font-weight: 600;
 	}
 	
 	.period-no {
 		font-size: 23rpx;
-		color: #989898;
+		color: #666;
 		font-weight: 400;
 	}
 	
@@ -973,27 +974,39 @@ import { formatOrderBetContent } from '@/api/order.js';
 	}
 	
 	.status-pending {
-		background: rgba(108, 117, 125, 0.15);
-		color: #c4c4c4;
-		border: 1px solid rgba(108, 117, 125, 0.3);
+		background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.05));
+		color: #ffc107;
+		border: 1px solid rgba(255, 193, 7, 0.3);
 	}
 	
-	.status-won {
-		background: rgba(40, 167, 69, 0.15);
+	.status-winning {
+		background: linear-gradient(135deg, rgba(40, 167, 69, 0.15), rgba(40, 167, 69, 0.05));
 		color: #28a745;
 		border: 1px solid rgba(40, 167, 69, 0.3);
 	}
 	
+	.status-paid {
+		background: linear-gradient(135deg, rgba(23, 162, 184, 0.15), rgba(23, 162, 184, 0.05));
+		color: #17a2b8;
+		border: 1px solid rgba(23, 162, 184, 0.3);
+	}
+	
 	.status-lost {
-		background: rgba(108, 117, 125, 0.15);
+		background: linear-gradient(135deg, rgba(108, 117, 125, 0.15), rgba(108, 117, 125, 0.05));
 		color: #6c757d;
 		border: 1px solid rgba(108, 117, 125, 0.3);
 	}
 	
 	.status-cancelled {
-		background: rgba(220, 53, 69, 0.15);
+		background: linear-gradient(135deg, rgba(220, 53, 69, 0.15), rgba(220, 53, 69, 0.05));
 		color: #dc3545;
 		border: 1px solid rgba(220, 53, 69, 0.3);
+	}
+	
+	.status-default {
+		background: linear-gradient(135deg, rgba(108, 117, 125, 0.15), rgba(108, 117, 125, 0.05));
+		color: #6c757d;
+		border: 1px solid rgba(108, 117, 125, 0.3);
 	}
 	
 	.bet-info {
@@ -1002,7 +1015,7 @@ import { formatOrderBetContent } from '@/api/order.js';
 		align-items: center;
 		margin-bottom: 16rpx;
 		padding: 12rpx 0;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		border-bottom: 1px solid #e9ecef;
 	}
 	
 	.bet-details {
@@ -1041,14 +1054,15 @@ import { formatOrderBetContent } from '@/api/order.js';
 	
 	.order-number {
 		font-size: 25rpx;
-		color: #7a7a7a;
+		color: #666;
 		font-weight: 500;
 		flex: 1;
 	}
 	
 	.copy-btn {
 		padding: 8rpx 12rpx;
-		background-color: rgba(255, 255, 255, 0.1);
+		background-color: #f8f9fa;
+		border: 1px solid #e9ecef;
 		border-radius: 8rpx;
 		margin-left: 20rpx;
 		display: flex;
@@ -1057,9 +1071,10 @@ import { formatOrderBetContent } from '@/api/order.js';
 		min-width: 60rpx;
 		height: 40rpx;
 		transition: all 0.2s ease;
+		color: #666;
 		
 		&:active {
-			background-color: rgba(255, 255, 255, 0.2);
+			background-color: #e9ecef;
 			transform: scale(0.95);
 		}
 	}
@@ -1084,7 +1099,7 @@ import { formatOrderBetContent } from '@/api/order.js';
 	
 	.multiple {
 		font-size: 20rpx;
-		color: #fff;
+		color: #333;
 		background: #ff6b35;
 		padding: 4rpx 12rpx;
 		border-radius: 8rpx;
@@ -1104,6 +1119,12 @@ import { formatOrderBetContent } from '@/api/order.js';
 		display: flex;
 		flex-direction: column;
 		gap: 6rpx;
+	}
+	
+	.member-nickname {
+		font-size: 28rpx;
+		color: #747474;
+		font-weight: 500;
 	}
 	
 	.order-time {
@@ -1158,21 +1179,21 @@ import { formatOrderBetContent } from '@/api/order.js';
 		align-items: center;
 		padding: 24rpx 32rpx;
 		border-bottom: 1px solid rgba(255, 107, 53, 0.15);
-		background: #252525;
+		background: #fff;
 	}
 	
 	.popup-title {
 		font-size: 30rpx;
-		color: #e1e1e1;
+		color: #333;
 		font-weight: 600;
-		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
 	}
 	
 	.popup-content {
 		max-height: 70vh;
 		width:96%;
 		padding:15rpx 2%;
-		background: #252525;
+		background: #fff;
 	}
 	
 	// 状态卡片样式
@@ -1256,7 +1277,7 @@ import { formatOrderBetContent } from '@/api/order.js';
 		
 		text {
 			font-size: 28rpx;
-			color: #e1e1e1;
+			color: #333;
 			font-weight: 500;
 		}
 	}
@@ -1282,7 +1303,7 @@ import { formatOrderBetContent } from '@/api/order.js';
 	
 	.value {
 		font-size: 26rpx;
-		color: #cccccc;
+		color: #666;
 		font-weight: 500;
 		flex: 1;
 		text-align: right;
@@ -1350,7 +1371,7 @@ import { formatOrderBetContent } from '@/api/order.js';
 	
 	.bet-content-text {
 		font-size: 26rpx;
-		color: #e1e1e1;
+		color: #333;
 		line-height: 1.4;
 		word-break: break-all;
 	}
@@ -1401,31 +1422,31 @@ import { formatOrderBetContent } from '@/api/order.js';
 	// 筛选选项样式
 	.filter-options {
 		padding: 20rpx;
-		background-color: #252525;
+		background-color: #fff;
 	}
-
+	
 	.filter-option {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		padding: 20rpx 15rpx;
 		margin-bottom: 12rpx;
-		background: rgba(255, 255, 255, 0.02);
+		background: #f8f9fa;
 		border-radius: 12rpx;
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		border: 1px solid #e9ecef;
 		transition: all 0.2s ease;
-
+		
 		&.active {
 			background: rgba(255, 107, 53, 0.1);
 			border-color: rgba(255, 107, 53, 0.3);
 		}
-
+		
 		text {
 			font-size: 28rpx;
-			color: #e1e1e1;
+			color: #333;
 			font-weight: 500;
 		}
-
+		
 		&.active text {
 			color: #ff6b35;
 		}
@@ -1434,20 +1455,20 @@ import { formatOrderBetContent } from '@/api/order.js';
 	// 搜索弹窗样式
 	.search-popup {
 		padding: 40rpx;
-		background-color: #252525;
+		background-color: #fff;
 		border-radius: 20rpx;
 	}
-
+	
 	.search-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 30rpx;
 	}
-
+	
 	.search-title {
 		font-size: 27rpx;
-		color: #e1e1e1;
+		color: #333;
 		font-weight: 600;
 	}
 
@@ -1458,18 +1479,18 @@ import { formatOrderBetContent } from '@/api/order.js';
 	}
 
 	.search-input-wrapper {
-		background-color: #444;
+		background-color: #f8f9fa;
 		border-radius: 12rpx;
 		padding: 0 25rpx;
 		height: 100rpx;
-		border: 2rpx solid #555;
+		border: 2rpx solid #e9ecef;
 		transition: border-color 0.3s ease;
 		display: flex;
 		align-items: center;
 		
 		&:focus-within {
 			border-color: #007AFF;
-			background-color: #333;
+			background-color: #fff;
 		}
 	}
 
@@ -1487,9 +1508,9 @@ import { formatOrderBetContent } from '@/api/order.js';
 		}
 		
 		:deep(.uv-button--info) {
-			background-color: rgba(255, 255, 255, 0.1) !important;
-			border: 2rpx solid #666 !important;
-			color: #d8d8d8 !important;
+			background-color: #f8f9fa !important;
+			border: 2rpx solid #e9ecef !important;
+			color: #666 !important;
 		}
 		
 		:deep(.uv-button--primary) {

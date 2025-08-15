@@ -307,7 +307,7 @@ class LotteryType extends Backend
         $validate = Validate::rule([
             'type_code' => 'require|regex:/^[a-zA-Z0-9_]+$/|length:2,20',
             'type_name' => 'require|length:2,50',
-            'category' => 'require|in:SPORTS,WELFARE,SPORTS_SINGLE',
+            'category' => 'require|in:SPORTS,WELFARE,SPORTS_SINGLE,QUICK',
             'max_bet_amount' => 'require|regex:/^\d+(\.\d{1,2})?$/|gt:0',
             'min_bet_amount' => 'require|regex:/^\d+(\.\d{1,2})?$/|gt:0',
             'status' => 'in:0,1',
@@ -400,7 +400,8 @@ class LotteryType extends Backend
         return [
             'SPORTS' => '体育彩票',
             'WELFARE' => '福利彩票',
-            'SPORTS_SINGLE' => '竞彩单场'
+            'SPORTS_SINGLE' => '竞彩单场',
+            'QUICK' => '快速彩'
         ];
     }
 

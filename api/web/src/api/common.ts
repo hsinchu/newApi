@@ -361,7 +361,7 @@ export class baTableApi {
             },
             {
                 showSuccessMessage: true,
-                showCodeMessage: false, // 禁用自动错误通知，让页面自己处理错误消息
+                showCodeMessage: true, // 启用自动错误通知
             }
         )
     }

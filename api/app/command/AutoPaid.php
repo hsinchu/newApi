@@ -8,6 +8,7 @@ use think\console\Output;
 use think\facade\Db;
 use think\facade\Log;
 use think\facade\Cache;
+use app\common\model\LotteryType;
 use app\common\model\BetOrder;
 use app\common\model\LotteryDraw;
 use app\service\FinanceService;
@@ -18,6 +19,9 @@ class AutoPaid extends Command
 {
     protected function configure()
     {
+        // 设置内存限制，防止段错误
+        ini_set('memory_limit', '512M');
+        
         $this->setName('autopaid')
             ->setDescription('自动派奖 - 从redis队列中取出待派奖订单，查询订单状态，更新订单状态为已派奖')
             ->addOption('max-jobs', 'm', \think\console\input\Option::VALUE_OPTIONAL, '最大处理任务数', 100)
@@ -102,12 +106,7 @@ class AutoPaid extends Command
             $output->writeln("派奖任务完成 - 处理总数: {$processedCount}, 成功: {$successCount}, 失败: {$failCount}");
             
             // 记录日志
-            Log::info("自动派奖任务完成", [
-                'processed_count' => $processedCount,
-                'success_count' => $successCount,
-                'fail_count' => $failCount,
-                'execution_time' => time() - $startTime
-            ]);
+            Log::info("自动派奖任务完成 - 处理总数: {$processedCount}, 成功: {$successCount}, 失败: {$failCount}, 执行时间: " . (time() - $startTime) . "秒");
             
         } catch (Exception $e) {
             Log::error('自动派奖任务失败: ' . $e->getMessage());
@@ -179,7 +178,7 @@ class AutoPaid extends Command
             $winAmountInYuan = $this->calculateWinAmount($order, $lotteryDraw->draw_numbers);
             
             if ($winAmountInYuan <= 0) {
-                $output->writeln("订单 {$order->order_no} 中奖金额计算错误: {$winAmountInYuan}");
+                $output->writeln("订单 {$order->lottery_code}  {$order->order_no} 中奖金额计算错误: {$winAmountInYuan}");
                 Db::rollback();
                 return false;
             }
@@ -199,6 +198,10 @@ class AutoPaid extends Command
                 "派奖奖金",
                 'PRIZE_ADD'
             );
+            
+            // 更新开奖表的中奖统计数据
+            $winAmountInCents = (int)round($winAmountInYuan * 100); // 转换为分并避免精度问题
+            $this->updateDrawWinStatistics($order->lottery_code, $order->period_no, $winAmountInCents);
             
             // 提交事务
             Db::commit();
@@ -226,18 +229,12 @@ class AutoPaid extends Command
     private function calculateWinAmount(BetOrder $order, string $drawNumbers): float
     {
         try {
-            // 根据彩种类型处理不同的bet_content格式
-            switch ($order->lottery_code) {
-                case 'ff3d':
-                    // 快彩使用简单的中奖金额计算
-                    return $this->calculateQuickLotteryWinAmount($order, $drawNumbers);
-                case '5f3d':
-                    // 快彩使用简单的中奖金额计算
-                    return $this->calculateQuickLotteryWinAmount($order, $drawNumbers);
-                case '3d':
-                default:
-                    // 福彩3D等使用专业计算服务
-                    return $this->calculateComplexLotteryWinAmount($order, $drawNumbers);
+            $lotteryTypeCategory = LotteryType::where('type_code', $order->lottery_code)->value('category');
+        
+            if($lotteryTypeCategory == 'QUICK'){
+                return $this->calculateQuickLotteryWinAmount($order, $drawNumbers);
+            }else{
+                return $this->calculateComplexLotteryWinAmount($order, $drawNumbers);
             }
             
         } catch (Exception $e) {
@@ -252,7 +249,7 @@ class AutoPaid extends Command
      * @param string $drawNumbers
      * @return float 中奖金额（元）
      */
-    private function calculateQuickLotteryWinAmount(BetOrder $order, string $drawNumbers): float
+    private function calculateQuickLotteryWinAmount(BetOrder $order): float
     {
         try {
             // 快彩的bet_content是简单字符串，直接使用赔率计算
@@ -325,13 +322,41 @@ class AutoPaid extends Command
     }
     
     /**
-     * 当Redis不可用时，直接从数据库处理派奖
+     * 更新开奖表的中奖统计数据
+     * @param string $lotteryCode
+     * @param string $periodNo
+     * @param int $winAmountInCents 中奖金额（分）
+     */
+    private function updateDrawWinStatistics(string $lotteryCode, string $periodNo, int $winAmountInCents): void
+    {
+        try {
+            // 使用原生SQL更新，避免并发问题
+            Db::execute(
+                "UPDATE fa_lottery_draw SET 
+                    total_win_amount = total_win_amount + ?, 
+                    win_count = win_count + 1,
+                    settle_time = ?
+                WHERE lottery_code = ? AND period_no = ?",
+                [$winAmountInCents, time(), $lotteryCode, $periodNo]
+            );
+            
+            Log::info("更新开奖表中奖统计 - 彩种: {$lotteryCode}, 期号: {$periodNo}, 中奖金额: {$winAmountInCents}");
+        } catch (Exception $e) {
+            Log::error('更新开奖表中奖统计失败: ' . $e->getMessage(), [
+                'lottery_code' => $lotteryCode,
+                'period_no' => $periodNo,
+                'win_amount' => $winAmountInCents
+            ]);
+        }
+    }
+    
+    /**
+     * 从数据库处理派奖任务
      * @param Output $output
      * @param int $maxJobs
      * @param int $timeout
      */
-    private function processFromDatabase(Output $output, int $maxJobs, int $timeout)
-    {
+    private function processFromDatabase(Output $output, int $maxJobs, int $timeout): void{
         $processedCount = 0;
         $startTime = time();
         

@@ -3,18 +3,18 @@
 namespace app\api\controller;
 
 use Throwable;
-use think\facade\Config;
 use app\common\controller\Frontend;
 use app\common\model\PaymentMethod;
 use app\common\model\PaymentChannel;
 use app\common\model\RechargeGift;
-use app\common\model\RechargeOrder;
-use app\common\model\User as UserModel;
-use app\service\FinanceService;
+use think\facade\Db;
 use Exception;
 
 class Charge extends Frontend
 {
+
+    protected array $noNeedLogin = ['payNotify'];
+
     public function initialize(): void
     {
         parent::initialize();
@@ -132,8 +132,10 @@ class Charge extends Frontend
     public function mockPaySuccess(): void
     {
         try {
+            // 获取前端传递的参数
             $params = $this->request->post(['amount', 'payment_method', 'payment_channel']);
             
+            // 参数验证
             if (empty($params['amount']) || $params['amount'] <= 0) {
                 throw new Exception('充值金额不能为空或小于等于0');
             }
@@ -146,160 +148,104 @@ class Charge extends Frontend
                 throw new Exception('请选择支付通道');
             }
             
-            // 生成订单号
-            $orderNo = 'R' . date('YmdHis') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
-            
-            // 解析支付通道ID
-            $channelInfo = explode('_', $params['payment_channel']);
-            $channelCode = $channelInfo[0] ?? '';
-            $methodId = $channelInfo[1] ?? 0;
-            
-            // 查找支付通道
-            $channel = PaymentChannel::where('channel_code', $channelCode)
-                ->where('is_enabled', 1)
-                ->find();
-                
-            if (!$channel) {
-                throw new Exception('支付通道不存在或已禁用');
+            // 验证用户登录状态
+            if (!$this->auth || !$this->auth->id) {
+                throw new Exception('用户未登录');
             }
             
-            // 验证金额限制
-            $channelParams = $channel['channel_params'];
-            $minAmount = 1;
-            $maxAmount = 50000;
-            $feeRate = 0;
-            
-            if (is_array($channelParams)) {
-                foreach ($channelParams as $param) {
-                    if (isset($param['method_id']) && $param['method_id'] == $methodId) {
-                        $minAmount = floatval($param['min_amount'] ?? 1);
-                        $maxAmount = floatval($param['max_amount'] ?? 50000);
-                        $feeRate = floatval($param['fee_rate'] ?? 0);
-                        break;
-                    }
-                }
-            }
-            
-            if ($params['amount'] < $minAmount) {
-                throw new Exception('充值金额不能小于¥' . $minAmount);
-            }
-
-            if ($params['amount'] > $maxAmount) {
-                throw new Exception('充值金额不能大于¥' . $maxAmount);
-            }
-
-            // 计算手续费
-            $feeAmount = $params['amount'] * ($feeRate / 100);
-            $actualAmount = $params['amount'];
-            
-            // 计算赠送金额
-            $giftAmount = 0;
-            $agentId = $this->auth->parent_id;
-            if ($agentId) {
-                $rechargeGift = RechargeGift::getGiftByAmount($agentId, $params['amount']);
-                if ($rechargeGift) {
-                    $giftAmount = floatval($rechargeGift['bonus_amount']);
-                }
-            }
-            
-            // 创建充值订单
-            $orderData = [
-                'order_no' => $orderNo,
+            // 调用支付服务处理充值
+            $payService = new \app\service\pay\PayService();
+            $result = $payService->processRecharge([
                 'user_id' => $this->auth->id,
-                'amount' => $params['amount'],
-                'actual_amount' => $actualAmount,
-                'fee_amount' => $feeAmount,
-                'gift_amount' => $giftAmount,
-                'status' => 'SUCCESS', // 模拟成功
+                'agent_id' => $this->auth->parent_id ?? 0,
+                'amount' => floatval($params['amount']),
                 'payment_method' => $params['payment_method'],
                 'payment_channel' => $params['payment_channel'],
-                'payment_code' => $channelCode,
-                'method_id' => $methodId,
-                'channel_id' => $channel['id'],
                 'client_ip' => $this->request->ip(),
-                'user_agent' => $this->request->header('user-agent'),
-                'success_time' => time(),
-                'create_time' => time(),
-                'update_time' => time()
-            ];
-            
-            $order = RechargeOrder::create($orderData);
-            
-            if (!$order) {
-                throw new Exception('创建充值订单失败');
+                'user_agent' => $this->request->header('user-agent') ?? ''
+            ]);
+            if (!$result['success']) {
+                throw new Exception($result['message'] ?? '支付处理失败');
             }
+
+            $payment_channel = explode('_', $params['payment_channel']);
             
-            // 添加充值金额的资金变动记录
-            $userId = $this->auth->id;
-            $financeService = new FinanceService();
-            
-            // 记录充值金额
-            $financeService->adjustUserBalance(
-                $userId,
-                $actualAmount,
-                '用户充值，订单号：' . $orderNo,
-                'RECHARGE_ADD'
-            );
-            
-            // 如果有赠送金额，检查代理余额并处理赠送
-            if ($giftAmount > 0 && $agentId) {
-                // 获取代理信息
-                $agent = UserModel::find($agentId);
-                if (!$agent) {
-                    throw new Exception('代理商信息不存在');
-                }
+            // 如果是模拟支付通道，直接调用支付成功回调
+            if ($payment_channel[0] === 'moni') {
+                // 构造模拟回调数据
+                $mockNotifyData = [
+                    'order_no' => $result['data']['order_no'],
+                    'out_trade_no' => $result['data']['order_no'],
+                    'trade_no' => $result['data']['trade_no'],
+                    'amount' => $result['data']['amount'],
+                    'status' => 'SUCCESS'
+                ];
+                // 调用支付成功回调处理
+                $notifyResult = $payService->handlePaymentNotify($mockNotifyData);
                 
-                // 检查代理余额是否充足（转换为分进行比较）
-                $agentBalance = $agent->money;
-                $giftAmountCents = $giftAmount;
-                
-                if (bccomp($agentBalance, $giftAmountCents) >= 0) {
-                    // 代理余额充足，先扣除代理余额
-                    $financeService->adjustUserBalance(
-                        $agentId,
-                        -$giftAmount,
-                        '充值赠送扣款，会员：' . $this->auth->id,
-                        'RECHARGE_GIFT_DEDUCT'
-                    );
-                    
-                    // 再给会员充值赠送
-                    $financeService->adjustUserBalance(
-                        $userId,
-                        $giftAmount,
-                        '充值赠送，订单号：' . $orderNo,
-                        'RECHARGE_GIFT_ADD',
-                        true  // 更新gift_money字段
-                    );
-                } else {
-                    // 代理余额不足，关闭该代理所有的充值赠送活动
-                    RechargeGift::where('agent_id', $agentId)
-                        ->where('status', RechargeGift::STATUS_ENABLED)
-                        ->update(['status' => RechargeGift::STATUS_DISABLED]);
-                    
-                    // 重置赠送金额为0，不进行赠送操作
-                    $giftAmount = 0;
+                if (!$notifyResult['success']) {
+                    throw new Exception($notifyResult['message'] ?? '模拟支付回调处理失败');
                 }
             }
             
-            // 获取更新后的用户信息
-            $user = $this->auth->getUser();
-            $totalAmount = $actualAmount + $giftAmount;
-            
-            $result = [
-                'order_no' => $orderNo,
-                'amount' => $params['amount'],
-                'actual_amount' => $actualAmount,
-                'fee_amount' => $feeAmount,
-                'gift_amount' => $giftAmount,
-                'total_amount' => $totalAmount,
-                'new_balance' => $user->money
+            // 返回支付结果，包含前端需要的字段
+            $responseData = [
+                'order_no' => $result['data']['order_no'] ?? '',
+                'pay_url' => $result['data']['pay_url'] ?? '',
+                'qr_code' => $result['data']['qr_code'] ?? '',
+                'amount' => $result['data']['amount'] ?? 0,
+                'actual_amount' => $result['data']['actual_amount'] ?? 0,
+                'gift_amount' => $result['data']['gift_amount'] ?? 0,
+                'trade_no' => $result['data']['trade_no'] ?? '',
+                'is_popup' => $result['data']['is_popup'] ?? false,
+                'expire_time' => $result['data']['expire_time'] ?? ''
             ];
             
         } catch (Throwable $e) {
             $this->error('充值失败：' . $e->getMessage());
         }
+            
+        $this->success('支付订单创建成功', $responseData);
+    }
+
+    /**
+     * 支付回调处理
+     */
+    public function payNotify(): void
+    {
+        try {
+            // 获取回调数据
+            $notifyData = $this->request->param();
+            Db::name('test')->insert(['info'=>json_encode($notifyData)]);
+            // $notifyData = json_decode('{"server":"1","extend":"\u6269\u5c55\u5b57\u6bb5","merchant_no":"696265672","order_money":"1000","order_no":"R202508101520155915","order_state":"82002","pay_money":"1000","pay_time":"20250810152126","platform_order_no":"TT250810152016545703","sign":"B18DE1C75412B4E5989B476DDE3ADF91"}', true);
+            // 记录回调日志
+            \think\facade\Log::info('支付回调数据', [
+                'notify_data' => $notifyData,
+                'headers' => $this->request->header(),
+                'ip' => $this->request->ip()
+            ]);
+            
+            // 调用支付服务处理回调
+            $payService = new \app\service\pay\PayService();
+            $result = $payService->handlePaymentNotify($notifyData);
+            
+            if ($result['success']) {
+                // 回调处理成功，返回成功响应
+                echo 'success';
+            } else {
+                // 回调处理失败，返回失败响应
+                echo 'fail';
+            }
+            
+        } catch (Throwable $e) {
+            \think\facade\Log::error('支付回调处理异常', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            echo 'fail';
+        }
         
-        $this->success('充值成功', $result);
+        exit;
     }
 
     /**
@@ -403,10 +349,10 @@ class Charge extends Frontend
                 throw new \Exception('提现金额必须大于0');
             }
             
-            // 获取系统配置
-            $minAmount = 50; // 最小提现金额
-            $maxAmount = 10000; // 最大提现金额
-            $feeRate = 0; // 手续费率
+            // 从fa_config表动态获取系统配置
+            $minAmount = get_sys_config('withdraw_min_amount', 50); // 最小提现金额
+            $maxAmount = get_sys_config('withdraw_max_amount', 10000); // 最大提现金额
+            $feeRate = get_sys_config('withdraw_fee_rate', 0); // 手续费率
             
             if ($amount < $minAmount) {
                 throw new \Exception('提现金额不能少于' . $minAmount . '元');
@@ -426,8 +372,42 @@ class Charge extends Frontend
                 throw new \Exception('提现账户不存在或已禁用');
             }
             
-            // 检查余额
+            // 实名认证检查逻辑
+            $isRealNameRequired = false;
+            $realnameThreshold = get_sys_config('withdraw_realname_threshold', 5000);
+            
+            // 提现大于阈值金额必须实名认证
+            if ($amount > $realnameThreshold && $account->type != 2) {
+                $isRealNameRequired = true;
+            }
+            
+            // 银行卡提现必须实名认证（无论金额大小）
+            if ($account->type == 2) { // 2=银行卡
+                $isRealNameRequired = true;
+            }
+            
+            // 检查是否需要实名认证
             $user = $this->auth->getUser();
+            if ($isRealNameRequired && $user->is_verified != 1) {
+                throw new \Exception('该提现方式需要完成实名认证后才能操作', 403);
+            }
+            
+            // 检查实名信息是否匹配
+            if ($isRealNameRequired && $account->account_name != $user->real_name) {
+                throw new \Exception('请使用实名的身份证提现', 403);
+            }
+            
+            // 检查每日提现次数限制
+            $dailyLimit = get_sys_config('withdraw_daily_limit', 3);
+            $todayWithdrawCount = \app\common\model\WithdrawRecord::where('user_id', $this->auth->id)
+                ->whereTime('create_time', 'today')
+                ->count();
+            
+            if ($todayWithdrawCount >= $dailyLimit) {
+                throw new \Exception('今日已提现' . $dailyLimit . '次，请明日再试');
+            }
+            
+            // 检查余额
             if ($user->money < $amount) {
                 throw new \Exception('余额不足');
             }

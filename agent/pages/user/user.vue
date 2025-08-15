@@ -6,8 +6,8 @@
 				v-model="searchKeyword" 
 				placeholder="搜索会员ID/用户名/姓名/昵称" 
 				:showAction="false"
-				bgColor="#252525"
-				color="#e1e1e1"
+				bgColor="#f7f7f7"
+				color="#333"
 				placeholderColor="#999"
 				@search="handleSearch"
 				@input="handleInput"
@@ -27,7 +27,7 @@
 			<scroll-view class="favorite-scroll" scroll-x="true" show-scrollbar="false">
 				<view class="favorite-list">
 					<view class="favorite-item" v-for="(member, index) in favoriteMembers" :key="member.id" @tap="viewMemberDetail(member)">
-				<uv-avatar :src="member.avatar || '/static/images/default-avatar.png'" :text="(member.nickname || member.username || '').charAt(0)" size="45" shape="circle" bgColor="#393939"></uv-avatar>
+				<uv-avatar src="/static/images/avatar.jpg" size="45" shape="circle"></uv-avatar>
 				<text class="member-name">{{member.nickname || member.username}}</text>
 				<!-- <view class="member-status" :class="member.last_bet_time > (Date.now()/1000 - 86400) ? 'online' : 'offline'">
 					{{member.last_bet_time > (Date.now()/1000 - 86400) ? '活跃' : ''}}
@@ -39,18 +39,18 @@
 		
 			<!-- 会员索引列表 -->
 			<view class="member-list-section" v-if="!loading || memberList.length > 0">
-				<uv-index-list :index-list="indexList" :customNavHeight="customNavHeight" v-if="indexList.length > 0">
+				<uv-index-list :index-list="indexList" :customNavHeight="customNavHeight" sticky="true" v-if="indexList.length > 0">
 					<template v-for="(item, index) in itemArr">
 						<!-- #ifdef APP-NVUE -->
 						<uv-index-anchor :text="indexList[index]"></uv-index-anchor>
 						<!-- #endif -->
 						<uv-index-item>
 							<!-- #ifndef APP-NVUE -->
-							<uv-index-anchor :text="indexList[index]" style="background:#333;"></uv-index-anchor>
+							<uv-index-anchor :text="indexList[index]" bgColor="#f7f7f7"></uv-index-anchor>
 							<!-- #endif -->
 							<view class="list-cell" v-for="(member, cellIndex) in item" :key="member.id" @tap="selectMember(member)">
 								<view class="member-info">
-									<uv-avatar :src="member.avatar || '/static/images/default-avatar.png'" :text="(member.nickname || member.username || '').charAt(0)" size="25" shape="circle" bgColor="#252525"></uv-avatar>
+									<uv-avatar src="/static/images/avatar.jpg" size="45" shape="circle"></uv-avatar>
 									<view class="member-details">
 										<text class="member-name-text">{{member.nickname || member.username}}</text>
 										<text class="member-info-text">余额: ¥{{member.money}} | 本月投注: ¥{{(member.month_bet_amount / 100).toFixed(2)}}</text>
@@ -337,7 +337,7 @@
 		left: 0;
 		right: 0;
 		padding: 20rpx 30rpx;
-		background-color: #252525;
+		background-color: #fff;
 		z-index: 99;
 	}	
 	
@@ -348,12 +348,12 @@
 	
 	/* 收藏会员区域 */
 	.favorite-section {
-		background-color: #252525;
+		background-color: #fff;
 		margin: 12rpx 25rpx;
 		border-radius: 55rpx;
 		padding: 20rpx 25rpx;
-		border: 1px solid #333;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+		border: 1px solid #e9ecef;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 	}
 	
 	.section-header {
@@ -365,13 +365,13 @@
 	.section-title {
 		font-size: 25rpx;
 		font-weight: 600;
-		color: #e1e1e1;
+		color: #333;
 		margin-left: 12rpx;
 	}
 	
 	.member-count {
 		font-size: 24rpx;
-		color: #e1e1e1;
+		color: #333;
 		margin-left: 8rpx;
 	}
 	
@@ -403,7 +403,7 @@
 	
 	.member-name {
 		font-size: 24rpx;
-		color: #e1e1e1;
+		color: #333;
 		margin-top: 12rpx;
 		text-align: center;
 		max-width: 100rpx;
@@ -425,8 +425,8 @@
 	}
 	
 	.member-status.offline {
-		background-color: #333;
-		color: #e1e1e1;
+		background-color: #f8f9fa;
+		color: #666;
 	}
 	
 	.add-favorite {
@@ -436,20 +436,20 @@
 		justify-content: center;
 		min-width: 120rpx;
 		height: 140rpx;
-		border: 2rpx dashed #555;
+		border: 2rpx dashed #e9ecef;
 		border-radius: 12rpx;
-		background-color: #1a1a1a;
+		background-color: #f8f9fa;
 		transition: all 0.3s ease;
 	}
 	
 	.add-favorite:active {
-		background-color: #333;
-		border-color: #777;
+		background-color: #e9ecef;
+		border-color: #dee2e6;
 	}
 	
 	.add-text {
 		font-size: 24rpx;
-		color: #e1e1e1;
+		color: #666;
 		margin-top: 8rpx;
 	}
 	
@@ -458,9 +458,9 @@
 		margin: 20rpx 30rpx;
 		border-radius: 40rpx;
 		overflow: hidden;
-		background-color: #252525;
-		border: 1px solid #333;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+		background-color: #fff;
+		border: 1px solid #e9ecef;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 	}
 	
 	.list-cell {
@@ -471,10 +471,10 @@
 		width: 100%;
 		padding: 30rpx;
 		overflow: hidden;
-		color: #e1e1e1;
+		color: #333;
 		font-size: 28rpx;
 		line-height: 40rpx;
-		border-bottom: 1px solid #333;
+		border-bottom: 1px solid #e9ecef;
 		background-color: transparent;
 		transition: all 0.3s ease;
 		/* 确保在安卓设备上不换行 */
@@ -482,7 +482,7 @@
 	}
 	
 	.list-cell:active {
-		background-color: #252525;
+		background-color: #f8f9fa;
 	}
 	
 	.list-cell:last-child {
@@ -507,7 +507,7 @@
 	
 	.member-name-text {
 		font-size: 30rpx;
-		color: #e1e1e1;
+		color: #333;
 		font-weight: 500;
 		margin-bottom: 8rpx;
 		overflow: hidden;
@@ -518,7 +518,7 @@
 	
 	.member-info-text {
 		font-size: 22rpx;
-		color: #999;
+		color: #666;
 		margin-bottom: 4rpx;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -528,7 +528,7 @@
 	
 	.member-time-text {
 		font-size: 20rpx;
-		color: #666;
+		color: #999;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;

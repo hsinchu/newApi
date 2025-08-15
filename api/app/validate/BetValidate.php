@@ -63,7 +63,7 @@ class BetValidate extends Validate
      * 最大投注金额
      * @var float
      */
-    protected $maxBetAmount = 10000.0;
+    protected $maxBetAmount = 99999.0;
 
     /**
      * 最大投注项数
@@ -245,11 +245,11 @@ class BetValidate extends Validate
                 // return $this->buildErrorResponse("{$itemLabel}此玩法投注金额必须为{$bonusMinPrice}元，不能更改，只能通过倍数调整总金额");
             }
         } else {
-            // bonus_type=1时，按照原逻辑验证
-            // 最小投注金额取较小值
-            $minBetAmount = min($bonusMinPrice, $lotteryMinBet);
-            // 最大投注金额取较大值
-            $maxBetAmount = max($bonusMaxPrice, $lotteryMaxBet);
+            // bonus_type!=1时，按照层级限额验证规则
+            // 最小投注金额：取玩法限额和彩种限额中的较高值（更严格的最小限制）
+            $minBetAmount = $this->getEffectiveMinBetAmount($bonusMinPrice, $lotteryMinBet);
+            // 最大投注金额：取玩法限额和彩种限额中的较低值（更严格的最大限制）
+            $maxBetAmount = $this->getEffectiveMaxBetAmount($bonusMaxPrice, $lotteryMaxBet);
             
             if ($money < $minBetAmount) {
                 return $this->buildErrorResponse("{$itemLabel}单注金额不能低于{$minBetAmount}元");
@@ -284,7 +284,8 @@ class BetValidate extends Validate
         if ($bonusType == 1) {
             $maxSingleAmount = $bonusMinPrice;
         } else {
-            $maxSingleAmount = max($bonusMaxPrice, $lotteryMaxBet);
+            // 使用相同的限额计算逻辑
+            $maxSingleAmount = $this->getEffectiveMaxBetAmount($bonusMaxPrice, $lotteryMaxBet);
         }
         
         $maxTotalAmount = $maxSingleAmount * $note * $multiplier;
@@ -341,6 +342,56 @@ class BetValidate extends Validate
             Log::error("validateTypeKeyAndName error: " . $e->getMessage());
             return $this->buildErrorResponse('验证投注类型时发生错误');
         }
+    }
+
+    /**
+     * 获取有效的最小投注金额
+     * 规则：取玩法限额和彩种限额中的较高值（更严格的最小限制）
+     * 如果某个限额为0，则表示不限制，使用另一个限额
+     * 
+     * @param float $bonusMinPrice 玩法最小限额
+     * @param float $lotteryMinBet 彩种最小限额
+     * @return float 有效的最小投注金额
+     */
+    private function getEffectiveMinBetAmount(float $bonusMinPrice, float $lotteryMinBet): float
+    {
+        // 如果玩法限额为0，使用彩种限额
+        if ($bonusMinPrice <= 0) {
+            return $lotteryMinBet > 0 ? $lotteryMinBet : $this->minBetAmount;
+        }
+        
+        // 如果彩种限额为0，使用玩法限额
+        if ($lotteryMinBet <= 0) {
+            return $bonusMinPrice;
+        }
+        
+        // 两个都有值时，取较高的（更严格的限制）
+        return max($bonusMinPrice, $lotteryMinBet);
+    }
+    
+    /**
+     * 获取有效的最大投注金额
+     * 规则：取玩法限额和彩种限额中的较低值（更严格的最大限制）
+     * 如果某个限额为0，则表示不限制，使用另一个限额
+     * 
+     * @param float $bonusMaxPrice 玩法最大限额
+     * @param float $lotteryMaxBet 彩种最大限额
+     * @return float 有效的最大投注金额
+     */
+    private function getEffectiveMaxBetAmount(float $bonusMaxPrice, float $lotteryMaxBet): float
+    {
+        // 如果玩法限额为0，使用彩种限额
+        if ($bonusMaxPrice <= 0) {
+            return $lotteryMaxBet > 0 ? $lotteryMaxBet : $this->maxBetAmount;
+        }
+        
+        // 如果彩种限额为0，使用玩法限额
+        if ($lotteryMaxBet <= 0) {
+            return $bonusMaxPrice;
+        }
+        
+        // 两个都有值时，取较低的（更严格的限制）
+        return min($bonusMaxPrice, $lotteryMaxBet);
     }
 
     /**

@@ -16,6 +16,17 @@
 					<view class="number-group">
 						<text v-for="(number, numIndex) in parseNumbers(item.open_code)" :key="numIndex" class="number" :data-number="number">{{ number }}</text>
 					</view>
+					<!-- 大小和、单双显示 -->
+					<view v-if="thisCategory == 'QUICK' && parseNumbers(item.open_code).length > 0" class="lottery-stats">
+						<view class="stat-item">
+							<text class="stat-label">和值:</text>
+							<text class="stat-value">{{ calculateSum(item.open_code) }}</text>
+							<text class="stat-tag" :class="getSizeClass(item.open_code)">{{ getSizeText(item.open_code) }}</text>
+						</view>
+						<view class="stat-item">
+							<text class="stat-tag" :class="getOddEvenClass(item.open_code)">{{ getOddEvenText(item.open_code) }}</text>
+						</view>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -47,6 +58,7 @@
 				lotteryCode: '',
 				lotteryName: '',
 				historyList: [],
+				thisCategory: '',
 				loading: false,
 				loadingMore: false,
 				page: 1,
@@ -111,6 +123,8 @@
 						} else {
 							this.historyList.push(...list);
 						}
+
+						this.thisCategory = response.data.category;
 						
 						this.total = total;
 						this.hasMore = this.historyList.length < total;
@@ -191,6 +205,36 @@
 				return formatDateTime(timestamp);
 			},
 			
+			// 计算和值
+			calculateSum(openCode) {
+				const numbers = this.parseNumbers(openCode);
+				return numbers.reduce((acc, num) => acc + parseInt(num), 0);
+			},
+			
+			// 获取大小和文本
+			getSizeText(openCode) {
+				const sum = this.calculateSum(openCode);
+				return sum > 18 ? '大' : sum < 9 ? '小' : '和';
+			},
+			
+			// 获取大小和样式类
+			getSizeClass(openCode) {
+				const sum = this.calculateSum(openCode);
+				return sum > 18 ? 'size-big' : sum < 9 ? 'size-small' : 'size-middle';
+			},
+			
+			// 获取单双文本
+			getOddEvenText(openCode) {
+				const sum = this.calculateSum(openCode);
+				return sum % 2 === 0 ? '双' : '单';
+			},
+			
+			// 获取单双样式类
+			getOddEvenClass(openCode) {
+				const sum = this.calculateSum(openCode);
+				return sum % 2 === 0 ? 'even' : 'odd';
+			},
+			
 			// 获取彩种名称
 			getLotteryName(code) {
 				const nameMap = {
@@ -213,8 +257,8 @@
 <style scoped lang="scss">
 	.history-container {
 		min-height: 100vh;
-		background: #252525;
-		color: #e1e1e1;
+		background: #f7f7f7;
+		color: #333;
 		padding: 20rpx;
 	}
 	
@@ -237,11 +281,11 @@
 	}
 	
 	.history-item {
-		background-color: #1a1a1a;
+		background-color: #fff;
 		border-radius: 55rpx 0 55rpx 0;
-		margin: 25rpx 0;
-		padding: 30rpx;
-		border: 1px solid #2a2a2a;
+		margin: 15rpx 0;
+		padding: 25rpx;
+		border: 1px solid #e9ecef;
 		transition: all 0.3s ease;
 		
 		&:active {
@@ -257,7 +301,7 @@
 			
 			.period {
 				font-size: 25rpx;
-				color: #e1e1e1;
+				color: #333;
 				font-weight: 350;
 				line-height: 55rpx;
 			}
@@ -269,11 +313,68 @@
 			}
 		}
 		
-		.numbers-container {
-			.number-group {
+		.lottery-stats {
+				margin-top: 20rpx;
+				margin-left: 25rpx;
 				display: flex;
-				flex-wrap: wrap;
-				gap: 15rpx;
+				gap: 30rpx;
+				align-items: center;
+			}
+			
+			.stat-item {
+				display: flex;
+				align-items: center;
+				gap: 18rpx;
+			}
+			
+			.stat-label {
+				font-size: 24rpx;
+				color: #666;
+			}
+			
+			.stat-value {
+				font-size: 28rpx;
+				font-weight: bold;
+				color: #333;
+			}
+			
+			.stat-tag {
+				font-size: 20rpx;
+				padding: 4rpx 12rpx;
+				border-radius: 12rpx;
+				font-weight: bold;
+			}
+			
+			.size-big {
+				background: #ff4757;
+				color: white;
+			}
+			
+			.size-small {
+				background: #3742fa;
+				color: white;
+			}
+			
+			.size-middle {
+				background: #2ed573;
+				color: white;
+			}
+			
+			.odd {
+				background: #ffa502;
+				color: white;
+			}
+			
+			.even {
+				background: #5352ed;
+				color: white;
+			}
+			
+			.numbers-container {
+				.number-group {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 15rpx;
 				
 				.number {
 					width: 60rpx;

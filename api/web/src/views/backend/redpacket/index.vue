@@ -76,7 +76,6 @@
 <script setup lang="ts">
 import { ref, provide, onMounted } from 'vue'
 import baTableClass from '/@/utils/baTable'
-import { defaultOptButtons } from '/@/components/table'
 import { baTableApi } from '/@/api/common'
 import PopupForm from './popupForm.vue'
 import Table from '/@/components/table/index.vue'

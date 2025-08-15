@@ -135,34 +135,6 @@ const optButtons: OptButton[] = [
       handleFailed(row)
     },
   },
-  {
-    render: 'tipButton',
-    name: 'cancelOrder',
-    title: '取消',
-    text: '',
-    type: 'warning',
-    icon: 'fa fa-ban',
-    class: 'table-row-cancel',
-    disabledTip: false,
-    display: (row: TableRow) => row.status === 'PENDING',
-    click: (row: TableRow, field: TableColumn) => {
-      cancelOrder(row)
-    },
-  },
-  {
-    render: 'tipButton',
-    name: 'delete',
-    title: '删除',
-    text: '',
-    type: 'danger',
-    icon: 'fa fa-trash',
-    class: 'table-row-delete',
-    disabledTip: false,
-    display: (row: TableRow) => row.status === 'PENDING',
-    click: (row: TableRow, field: TableColumn) => {
-      baTable.onTableAction('delete', { row })
-    },
-  },
 ]
 
 const baTable = new baTableClass(
@@ -208,7 +180,7 @@ const baTable = new baTableClass(
       {
         label: '操作',
         align: 'center',
-        width: 240,
+        width: 95,
         fixed: 'right',
         render: 'buttons',
         buttons: optButtons,

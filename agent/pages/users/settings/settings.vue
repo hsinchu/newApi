@@ -959,16 +959,16 @@ export default {
 
 .section {
 	margin: 20rpx;
-	background-color: #1f1f1f;
+	background-color: #fff;
 	border-radius: 35rpx 35rpx 0 0;
 	padding: 30rpx;
-	border: 1px solid #333;
+	border: 1px solid #e9ecef;
 }
 
 .section-title {
 	font-size: 32rpx;
 	font-weight: 600;
-	color: #e1e1e1;
+	color: #333;
 	margin-bottom: 30rpx;
 }
 
@@ -977,7 +977,7 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	padding: 20rpx 0;
-	border-bottom: 1px solid #333;
+	border-bottom: 1px solid #e9ecef;
 	margin-bottom: 20rpx;
 }
 
@@ -988,7 +988,7 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	padding: 30rpx 0;
-	border-bottom: 1px solid #333;
+	border-bottom: 1px solid #e9ecef;
 	transition: all 0.3s ease;
 }
 
@@ -997,7 +997,7 @@ export default {
 }
 
 .setting-item:active {
-	background-color: #252525;
+	background-color: #f8f9fa;
 	border-radius: 12rpx;
 	margin: 0 -20rpx;
 	padding: 30rpx 20rpx;
@@ -1005,7 +1005,7 @@ export default {
 
 .item-label {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	flex: 1;
 }
 
@@ -1017,7 +1017,7 @@ export default {
 
 .item-value {
 	font-size: 26rpx;
-	color: #999;
+	color: #666;
 }
 
 .certified {
@@ -1060,7 +1060,7 @@ export default {
 /* 弹窗样式 */
 .popup-content {
 	width: 600rpx;
-	background-color: #252525;
+	background-color: #fff;
 	border-radius: 20rpx;
 	padding: 40rpx;
 }
@@ -1068,7 +1068,7 @@ export default {
 .popup-title {
 	font-size: 32rpx;
 	font-weight: 600;
-	color: #e1e1e1;
+	color: #333;
 	text-align: center;
 	margin-bottom: 30rpx;
 }
@@ -1082,41 +1082,42 @@ export default {
 
 /* 弹窗输入框样式 */
 .popup-content ::v-deep(.uv-input__content) {
-	color: #e1e1e1 !important;
-	background-color: #2a2a2a !important;
-	border-color: #444 !important;
+	color: #333 !important;
+	background-color: #f8f9fa !important;
+	border-color: #e9ecef !important;
 }
 
 .popup-content ::v-deep(.uv-input__content input) {
-	color: #e1e1e1 !important;
+	color: #333 !important;
 	background-color: transparent !important;
 }
 
 .popup-content ::v-deep(.uv-input__content input::placeholder) {
-	color: #757575 !important;
+	color: #999 !important;
 }
 
 .popup-content ::v-deep(.uv-textarea__content) {
-	color: #e1e1e1 !important;
-	background-color: #2a2a2a !important;
-	border-color: #444 !important;
+	color: #333 !important;
+	background-color: #f8f9fa !important;
+	border-color: #e9ecef !important;
 }
 
 .popup-content ::v-deep(.uv-textarea__content textarea) {
-	color: #e1e1e1 !important;
+	color: #333 !important;
 	background-color: transparent !important;
 }
 
 .popup-content ::v-deep(.uv-textarea__content textarea::placeholder) {
-	color: #757575 !important;
+	color: #999 !important;
 }
 
 /* 弹窗按钮样式 */
 .popup-cancel-btn {
 	flex: 1;
 	width: 48% !important;
-	background-color: #666 !important;
-	color: #e1e1e1 !important;
+	background-color: #f8f9fa !important;
+	color: #666 !important;
+	border: 1px solid #e9ecef !important;
 	border-radius: 12rpx;
 	height: 80rpx;
 	line-height: 80rpx;

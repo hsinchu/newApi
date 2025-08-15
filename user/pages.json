@@ -1,9 +1,16 @@
 {
 	"pages": [ 
 		{
+			"path": "pages/guidepage",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "加载中"
+			}
+		},
+		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "购彩大厅"
+				"navigationBarTitleText": "BNB游戏大厅"
 			}
 		},
 		{
@@ -124,19 +131,25 @@
 				"enablePullDownRefresh": true,
 				"onReachBottomDistance": 50
 			}
+		},
+		{
+			"path": "pages/other/webview",
+			"style": {
+				"navigationBarTitleText": "支付页面"
+			}
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "white",
+		"navigationBarTextStyle": "#555",
 		"navigationBarTitleText": "myApp",
-		"navigationBarBackgroundColor": "#252525",
-		"backgroundColor": "#252525"
+		"navigationBarBackgroundColor": "#f7f7f7",
+		"backgroundColor": "#f7f7f7"
 	},
 	"tabBar": {
 		"color": "#999999",
 		"selectedColor": "#fea61c",
-		"backgroundColor": "#1a1a1a",
-		"borderStyle": "black",
+		"backgroundColor": "#f7f7f7",
+		"borderStyle": "#f7f7f7",
 		"list": [
 			{
 				"pagePath": "pages/index/index",

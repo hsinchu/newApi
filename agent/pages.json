@@ -135,16 +135,16 @@
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "white",
+		"navigationBarTextStyle": "#555",
 		"navigationBarTitleText": "myApp",
-		"navigationBarBackgroundColor": "#252525",
-		"backgroundColor": "#252525"
+		"navigationBarBackgroundColor": "#f7f7f7",
+		"backgroundColor": "#f7f7f7"
 	},
 	"tabBar": {
 		"color": "#999999",
 		"selectedColor": "#fea61c",
-		"backgroundColor": "#1a1a1a",
-		"borderStyle": "black",
+		"backgroundColor": "#f7f7f7",
+		"borderStyle": "#f7f7f7",
 		"list": [
 			{
 				"pagePath": "pages/order/order",

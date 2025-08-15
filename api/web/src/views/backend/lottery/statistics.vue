@@ -4,7 +4,7 @@
     <el-row :gutter="20" class="mb-4">
       <el-col :span="6">
         <el-card class="stat-card">
-          <el-statistic title="总彩票类型" :value="overviewStats.total_lottery_types" />
+          <el-statistic title="总彩种类型" :value="overviewStats.total_lottery_types" />
         </el-card>
       </el-col>
       <el-col :span="6">
@@ -44,7 +44,7 @@
                 />
               </el-col>
               <el-col :span="4">
-                <el-select v-model="userStatsFilter.lottery_type_id" placeholder="选择彩票类型" clearable @change="loadUserStats">
+                <el-select v-model="userStatsFilter.lottery_type_id" placeholder="选择彩种类型" clearable @change="loadUserStats">
                   <el-option label="全部" value="" />
                   <el-option
                     v-for="item in lotteryTypes"
@@ -121,7 +121,7 @@
                 />
               </el-col>
               <el-col :span="4">
-                <el-select v-model="drawStatsFilter.lottery_type_id" placeholder="选择彩票类型" clearable @change="loadDrawStats">
+                <el-select v-model="drawStatsFilter.lottery_type_id" placeholder="选择彩种类型" clearable @change="loadDrawStats">
                   <el-option label="全部" value="" />
                   <el-option
                     v-for="item in lotteryTypes"
@@ -139,7 +139,7 @@
           </div>
           
           <el-table v-loading="drawStatsLoading" :data="drawStatsData" border>
-            <el-table-column prop="lottery_type_name" label="彩票类型" />
+            <el-table-column prop="lottery_type_name" label="彩种类型" />
             <el-table-column prop="draw_no" label="期号" />
             <el-table-column prop="draw_time" label="开奖时间" />
             <el-table-column prop="total_bets" label="投注笔数" />
@@ -199,7 +199,7 @@
                 />
               </el-col>
               <el-col :span="4">
-                <el-select v-model="betStatsFilter.lottery_type_id" placeholder="选择彩票类型" clearable @change="loadBetStats">
+                <el-select v-model="betStatsFilter.lottery_type_id" placeholder="选择彩种类型" clearable @change="loadBetStats">
                   <el-option label="全部" value="" />
                   <el-option
                     v-for="item in lotteryTypes"
@@ -249,7 +249,7 @@
           
           <el-table v-loading="betStatsLoading" :data="betStatsData" border>
             <el-table-column prop="date" label="日期" />
-            <el-table-column prop="lottery_type_name" label="彩票类型" />
+            <el-table-column prop="lottery_type_name" label="彩种类型" />
             <el-table-column prop="total_bets" label="投注笔数" />
             <el-table-column prop="total_amount" label="投注金额">
               <template #default="{ row }">
@@ -372,7 +372,7 @@ const loadOverviewStats = async () => {
   }
 }
 
-// 加载彩票类型
+// 加载彩种类型
 const loadLotteryTypes = async () => {
   try {
     const res = await api.postData('lotteryTypes')
@@ -380,7 +380,7 @@ const loadLotteryTypes = async () => {
       lotteryTypes.value = res.data
     }
   } catch (error) {
-    console.error('加载彩票类型失败:', error)
+    console.error('加载彩种类型失败:', error)
   }
 }
 

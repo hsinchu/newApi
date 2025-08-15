@@ -15,7 +15,7 @@
 			<!-- 电子邮箱输入 -->
 			<view class="input-group">
 				<view class="input-wrapper">
-					<uv-icon name="email-fill" size="20" color="#e1e1e1"></uv-icon>
+					<uv-icon name="email-fill" size="20" color="#333"></uv-icon>
 					<input 
 						v-model="formData.email" 
 						type="text"
@@ -29,7 +29,7 @@
 			<!-- 邮箱验证码输入 -->
 			<view class="input-group">
 				<view class="input-wrapper">
-					<uv-icon name="eye" size="20" color="#e1e1e1"></uv-icon>
+					<uv-icon name="eye" size="20" color="#333"></uv-icon>
 					<input 
 						v-model="formData.code" 
 						type="text"
@@ -49,7 +49,7 @@
 			<!-- 新密码输入 -->
 			<view class="input-group">
 				<view class="input-wrapper">
-					<uv-icon name="lock-fill" size="20" color="#e1e1e1"></uv-icon>
+					<uv-icon name="lock-fill" size="20" color="#333"></uv-icon>
 					<input 
 						v-model="formData.password" 
 						:password="!showPassword"
@@ -66,12 +66,12 @@
 			<!-- 确认新密码输入 -->
 			<view class="input-group">
 				<view class="input-wrapper">
-					<uv-icon name="lock-fill" size="20" color="#e1e1e1"></uv-icon>
+					<uv-icon name="lock-fill" size="20" color="#333"></uv-icon>
 					<input 
 						v-model="formData.confirmPassword" 
 						:password="!showConfirmPassword"
 						placeholder="请确认新密码" 
-						placeholder-style="color: #b9b9b9;"
+						placeholder-style="color: #999;"
 						class="input-field"
 					/>
 					<view class="eye-icon" @tap="toggleConfirmPassword">
@@ -350,7 +350,7 @@ export default {
 <style lang="scss">
 .container {
 	min-height: 100vh;
-	background-color: #000;
+	background-color: #f8f9fa;
 	position: relative;
 	/* #ifdef APP-PLUS */
 	padding-top: var(--status-bar-height);
@@ -390,7 +390,7 @@ export default {
 .welcome-text {
 	font-size: 36rpx;
 	font-weight: 500;
-	color: #e1e1e1;
+	color: #333;
 }
 
 .form-section {
@@ -408,8 +408,8 @@ export default {
 .input-wrapper {
 	display: flex;
 	align-items: center;
-	background-color: #1a1a1a;
-	border: 2rpx solid #333;
+	background-color: #fff;
+	border: 2rpx solid #e9ecef;
 	border-radius: 20rpx;
 	padding: 0 30rpx;
 	height: 100rpx;
@@ -419,7 +419,7 @@ export default {
 .input-field {
 	flex: 1;
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	height: 100%;
 	background-color: transparent;
 }
@@ -468,7 +468,7 @@ export default {
 
 .login-text {
 	font-size: 26rpx;
-	color: #b9b9b9;
+	color: #666;
 }
 
 .login-link {
@@ -479,6 +479,6 @@ export default {
 
 /* 全局输入框样式覆盖 */
 .uni-input-input {
-	color: #e1e1e1 !important;
+	color: #333 !important;
 }
 </style>

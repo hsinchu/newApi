@@ -116,7 +116,7 @@ class Statistics extends Backend
                     'SUM(bo.bet_amount) as total_amount',
                     'SUM(CASE WHEN bo.status = "WINNING" THEN bo.win_amount ELSE 0 END) as win_amount',
                     'ROUND(COUNT(CASE WHEN bo.status = "WINNING" THEN 1 END) * 100.0 / COUNT(CASE WHEN bo.status IN ("WINNING", "LOSING") THEN 1 END), 2) as win_rate',
-                    'SUM(CASE WHEN bo.status IN ("WINNING", "LOSING") THEN bo.win_amount - bo.bet_amount ELSE 0 END) as profit_loss',
+                    'SUM(CASE WHEN bo.status IN ("WINNING", "LOSING") THEN CAST(bo.win_amount AS SIGNED) - CAST(bo.bet_amount AS SIGNED) ELSE 0 END) as profit_loss',
                     'MAX(bo.create_time) as last_bet_time'
                 ])
                 ->group('bo.user_id');
@@ -206,7 +206,7 @@ class Statistics extends Backend
                     'SUM(bo.bet_amount) as total_amount',
                     'COUNT(CASE WHEN bo.status = "WINNING" THEN 1 END) as win_bets',
                     'SUM(CASE WHEN bo.status = "WINNING" THEN bo.win_amount ELSE 0 END) as win_amount',
-                    'SUM(CASE WHEN bo.status IN ("WINNING", "LOSING") THEN bo.bet_amount - bo.win_amount ELSE 0 END) as profit_amount'
+                    'SUM(CASE WHEN bo.status IN ("WINNING", "LOSING") THEN CAST(bo.bet_amount AS SIGNED) - CAST(bo.win_amount AS SIGNED) ELSE 0 END) as profit_amount'
                 ])
                 ->leftJoin('bet_order bo', 'ld.id = bo.lottery_type_id')
                 ->group('ld.id');

@@ -9,7 +9,7 @@
 				:chain="false"
 				key-name="name"
 				bar-width="220rpx"
-				:bar-bg-color="'#333'"
+				:bar-bg-color="'#f8f9fa'"
 				:bar-item-style="barItemStyle"
 				:bar-item-active-style="barItemActiveStyle"
 				:content-style="contentStyle"
@@ -127,19 +127,21 @@ export default {
 			selectedPaymentMethod: '',
 			currentPaymentIndex: 0,
 			barItemStyle: {
-				backgroundColor: '#333',
-				color: '#e1e1e1',
+				backgroundColor: 'transparent',
+				color: '#666',
 				borderRadius: '0',
-				padding: '15rpx 15rpx'
+				textAlign: 'center',
+				padding: '20rpx 15rpx',
 			},
 			barItemActiveStyle: {
-				backgroundColor: '#007AFF',
-				padding: '15rpx 15rpx',
+				backgroundColor: '#3c9cff',
+				padding: '20rpx 15rpx',
 				fontWeight: 'bold',
-				color: '#ffffff'
+				textAlign: 'center',
+				color: '#fff'
 			},
 			contentStyle: {
-				backgroundColor: '#252525',
+				backgroundColor: '#fff',
 			},
 			
 			// 支付通道
@@ -155,6 +157,7 @@ export default {
 			
 			// 快捷金额
 			quickAmounts: [],
+			rechargeGifts: [],
 			selectedAmount: 0,
 			
 			// 输入金额
@@ -382,10 +385,14 @@ export default {
 			this.submitting = true;
 			
 			try {
+				// 获取当前选中通道的channel_code
+				const selectedChannelInfo = this.paymentChannels.find(ch => ch.id === this.selectedChannel);
+				const channelCode = selectedChannelInfo ? selectedChannelInfo.channel_code : '';
+				
 				// 构建支付参数
 				const paymentData = {
 					amount: this.finalAmount,
-					payment_method: this.selectedPaymentMethod,
+					payment_method: channelCode, // 使用channel_code而不是支付方式ID
 					payment_channel: this.selectedChannel
 				};
 				
@@ -415,7 +422,7 @@ export default {
 			} catch (error) {
 				console.error('充值失败:', error);
 				uni.showToast({
-					title: error.message || '充值失败，请重试',
+					title: error.msg || '充值失败，请重试',
 					icon: 'none'
 				});
 			} finally {
@@ -442,8 +449,8 @@ export default {
 
 <style lang="scss">
 .charge-container {
-	background-color: #252525;
-	color: #e1e1e1;
+	background-color: #f8f9fa;
+	color: #333;
 }
 
 .recharge-info {
@@ -461,7 +468,7 @@ export default {
 .nav-title {
 	font-size: 32rpx;
 	font-weight: 500;
-	color: #e1e1e1;
+	color: #333;
 }
 
 // 余额区域
@@ -470,7 +477,7 @@ export default {
 }
 
 .balance-card {
-	background: linear-gradient(135deg, #333 0%, #444 100%);
+	background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
 	border-radius: 0 55rpx 0 0;
 	padding: 30rpx 20rpx;
 	position: relative;
@@ -485,7 +492,7 @@ export default {
 
 .balance-label {
 	font-size: 28rpx;
-	color: #999;
+	color: #fff;
 }
 
 .header-actions {
@@ -522,7 +529,7 @@ export default {
 .balance-amount {
 	font-size: 48rpx;
 	font-weight: bold;
-	color: #e1e1e1;
+	color: #fff;
 }
 // 内容区域
 .content-section {
@@ -548,8 +555,8 @@ export default {
 
 .channel-item {
 	position: relative;
-	background: #2a2a2a;
-	border: 1px solid #444;
+	background: #fff;
+	border: 1px solid #e9ecef;
 	padding: 24rpx;
 	width: calc(50% - 25rpx);
 	transition: all 0.3s ease;
@@ -569,7 +576,7 @@ export default {
 
 .channel-name {
 	font-size: 28rpx;
-	color: #ffffff;
+	color: #555555;
 	font-weight: 500;
 	text-align: center;
 }
@@ -609,11 +616,11 @@ export default {
 
 // 通道信息
 .channel-info {
-	background-color: #2a2a2a;
+	background-color: #f8f9fa;
 	border-radius: 12rpx;
 	padding: 20rpx;
 	margin-top: 20rpx;
-	border: 1rpx solid #444;
+	border: 1rpx solid #e9ecef;
 }
 
 .info-item {
@@ -634,7 +641,7 @@ export default {
 
 .info-value {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 }
 
@@ -649,12 +656,12 @@ export default {
 	flex: 1;
 	min-width: 140rpx;
 	height: 100rpx;
-	background-color: #444;
+	background-color: #fff;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	border: 2rpx solid #555;
+	border: 2rpx solid #e9ecef;
 	transition: all 0.3s ease;
 
 	&.active {
@@ -663,24 +670,24 @@ export default {
 	}
 
 	&.disabled {
-		background-color: #333;
-		border-color: #444;
+		background-color: #f8f9fa;
+		border-color: #e9ecef;
 		opacity: 0.5;
 		pointer-events: none;
 		
 		.amount-text {
-			color: #666;
+			color: #ccc;
 		}
 		
 		.gift-text {
-			color: #666;
+			color: #ccc;
 		}
 	}
 }
 
 .amount-text {
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	font-weight: 500;
 	margin-bottom: 5rpx;
 }
@@ -695,22 +702,22 @@ export default {
 .amount-input-wrapper {
 	display: flex;
 	align-items: center;
-	background-color: #444;
+	background-color: #fff;
 	border-radius: 12rpx;
 	padding: 0 25rpx;
 	height: 100rpx;
-	border: 2rpx solid #555;
+	border: 2rpx solid #e9ecef;
 	transition: border-color 0.3s ease;
 
 	&:focus-within {
 		border-color: #007AFF;
-		background-color: #333;
+		background-color: #f8f9fa;
 	}
 }
 
 .currency-symbol {
 	font-size: 32rpx;
-	color: #e1e1e1;
+	color: #666;
 	margin-right: 15rpx;
 	font-weight: 500;
 }
@@ -718,7 +725,7 @@ export default {
 .amount-input {
 	flex: 1;
 	font-size: 32rpx;
-	color: #e1e1e1;
+	color: #333;
 	height: 100%;
 	background-color: transparent;
 	border: none;
@@ -733,7 +740,7 @@ export default {
 
 .tip-text {
 	font-size: 24rpx;
-	color: #e1e1e1;
+	color: #999;
 }
 
 // 提交按钮
@@ -747,17 +754,17 @@ export default {
 	margin-top: 20rpx;
 
 	&[disabled] {
-		background: #666 !important;
+		background: #ccc !important;
 		color: #999 !important;
 	}
 }
 
 // 支付说明
 .notice-content {
-	background-color: #444;
+	background-color: #f8f9fa;
 	border-radius: 12rpx;
 	padding: 25rpx;
-	border: 1rpx solid #555;
+	border: 1rpx solid #e9ecef;
 }
 
 .notice-item {

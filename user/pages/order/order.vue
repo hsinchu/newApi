@@ -4,13 +4,13 @@
 			<uv-drop-down 
 				sign="orderFilter" 
 				:default-value="[0, 'all', 'search']"
-				text-color="#e1e1e1"
-				text-size="30rpx"
-				text-active-color="#ff6b35"
-				text-active-size="30rpx"
-				:extra-icon="{name: 'arrow-down', size: '28rpx', color: '#e1e1e1'}"
-				:extra-active-icon="{name: 'arrow-up', size: '28rpx', color: '#ff6b35'}"
-				custom-style="line-height:55rpx;background-color: #252525;border-bottom:1px solid #252525"
+				text-color="#333"
+			text-size="30rpx"
+			text-active-color="#ff6b35"
+			text-active-size="30rpx"
+			:extra-icon="{name: 'arrow-down', size: '28rpx', color: '#333'}"
+			:extra-active-icon="{name: 'arrow-up', size: '28rpx', color: '#ff6b35'}"
+			custom-style="line-height:55rpx;background-color: #ffffff;border-bottom:1px solid #e0e0e0"
 				@click="onSelectMenu">
 				
 				<!-- 订单状态筛选 -->
@@ -89,10 +89,9 @@
 				<!-- 订单头部 -->
 				<view class="order-header">
 					<view class="lottery-info">
-						<view class="lottery-icon">
-							<image v-if="order.typeicon" :src="order.typeicon" mode="aspectFill" class="type-icon"></image>
-							<uv-icon v-else name="list" size="24" color="#ff6b35"></uv-icon>
-						</view>
+						<!-- <view class="lottery-icon">
+							<image :src="order.typeicon" mode="aspectFill" class="type-icon"></image>
+						</view> -->
 						<view class="lottery-details">
 							<text class="lottery-name">{{ order.typename }}</text>
 							<text class="period-no">第{{ order.periodNo }}期</text>
@@ -133,7 +132,6 @@
 			<!-- 空状态 -->
 			<uv-empty v-if="orderList.length === 0 && !loading" 
 				text="暂无订单数据" 
-				icon="/static/images/empty-state.svg"
 				textColor="#bbb"
 				iconSize="120">
 			</uv-empty>
@@ -159,7 +157,7 @@
 			mode="bottom" 
 			border-radius="50"
 			:safe-area-inset-bottom="true"
-			custom-style="background-color: #252525; max-height: 85vh;"
+			custom-style="background-color: #fff; max-height: 85vh;"
 			@change="onPopupChange">
 			
 			<view class="popup-header">
@@ -299,7 +297,7 @@
 			:show="showSearchPopup"
 			mode="center" 
 			border-radius="20"
-			custom-style="background-color: #252525; width: 80%; max-width: 400px;"
+			custom-style="background-color: #fff; width: 80%; max-width: 400px;"
 			@change="onSearchPopupChange">
 			
 			<view class="search-popup">
@@ -310,7 +308,7 @@
 				</view>
 				
 				<view class="search-content">
-					<uv-search placeholder="请输入订单号|期号" bgColor="#3e3e3e" :inputStyle="{color:'#e1e1e1'}" :actionStyle="{color:'#ff6b35'}" v-model="searchKeyword" actionText="搜索" @custom="searchOrder" @search="searchOrder"></uv-search>
+					<uv-search placeholder="请输入订单号|期号" bgColor="#f8f9fa" :inputStyle="{color:'#333'}" :actionStyle="{color:'#ff6b35'}" v-model="searchKeyword" actionText="搜索" @custom="searchOrder" @search="searchOrder"></uv-search>
 				</view>
 			</view>
 		</uv-popup>
@@ -904,8 +902,8 @@ import { formatDateTime } from '@/utils/common.js';
 <style scoped lang="scss">
 	.container {
 		min-height: 100vh;
-		background-color: #252525;
-		color: #e1e1e1;
+		background-color: #ffffff;
+		color: #333333;
 		position: relative;
 	}
 
@@ -915,18 +913,18 @@ import { formatDateTime } from '@/utils/common.js';
 		box-sizing: border-box;
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
-		background-color: #2d2d2d;
+		background-color: #f8f9fa;
 		position: relative;
 	}
 	
 	.order-item {
-		background: #1d1d1d;
+		background: #ffffff;
 		margin-bottom: 15rpx;
 		border-radius: 45rpx 0 45rpx 0;
 		padding: 24rpx;
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(0, 0, 0, 0.08);
 		backdrop-filter: blur(20rpx);
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
 		position: relative;
 		transition: all 0.2s ease;
 		cursor: pointer;
@@ -989,13 +987,13 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.lottery-name {
 		font-size: 28rpx;
-		color: #e1e1e1;
+		color: #333333;
 		font-weight: 600;
 	}
 	
 	.period-no {
 		font-size: 23rpx;
-		color: #989898;
+		color: #666666;
 		font-weight: 400;
 	}
 	
@@ -1011,27 +1009,39 @@ import { formatDateTime } from '@/utils/common.js';
 	}
 	
 	.status-pending {
-		background: rgba(108, 117, 125, 0.15);
-		color: #c4c4c4;
-		border: 1px solid rgba(108, 117, 125, 0.3);
+		background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.05));
+		color: #ffc107;
+		border: 1px solid rgba(255, 193, 7, 0.3);
 	}
 	
-	.status-won {
-		background: rgba(40, 167, 69, 0.15);
+	.status-winning {
+		background: linear-gradient(135deg, rgba(40, 167, 69, 0.15), rgba(40, 167, 69, 0.05));
 		color: #28a745;
 		border: 1px solid rgba(40, 167, 69, 0.3);
 	}
 	
+	.status-paid {
+		background: linear-gradient(135deg, rgba(23, 162, 184, 0.15), rgba(23, 162, 184, 0.05));
+		color: #17a2b8;
+		border: 1px solid rgba(23, 162, 184, 0.3);
+	}
+	
 	.status-lost {
-		background: rgba(108, 117, 125, 0.15);
+		background: linear-gradient(135deg, rgba(108, 117, 125, 0.15), rgba(108, 117, 125, 0.05));
 		color: #6c757d;
 		border: 1px solid rgba(108, 117, 125, 0.3);
 	}
 	
 	.status-cancelled {
-		background: rgba(220, 53, 69, 0.15);
+		background: linear-gradient(135deg, rgba(220, 53, 69, 0.15), rgba(220, 53, 69, 0.05));
 		color: #dc3545;
 		border: 1px solid rgba(220, 53, 69, 0.3);
+	}
+	
+	.status-default {
+		background: linear-gradient(135deg, rgba(108, 117, 125, 0.15), rgba(108, 117, 125, 0.05));
+		color: #6c757d;
+		border: 1px solid rgba(108, 117, 125, 0.3);
 	}
 	
 	.bet-info {
@@ -1040,7 +1050,7 @@ import { formatDateTime } from '@/utils/common.js';
 		align-items: center;
 		margin-bottom: 16rpx;
 		padding: 12rpx 0;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 	}
 	
 	.bet-details {
@@ -1060,7 +1070,7 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.bet-numbers {
 		font-size: 26rpx;
-		color: #999;
+		color: #666;
 		font-weight: 400;
 		margin-left:15rpx;
 		letter-spacing: 0.2rpx;
@@ -1079,14 +1089,14 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.order-number {
 		font-size: 25rpx;
-		color: #7a7a7a;
+		color: #666666;
 		font-weight: 500;
 		flex: 1;
 	}
 	
 	.copy-btn {
 		padding: 8rpx 12rpx;
-		background-color: rgba(255, 255, 255, 0.1);
+		background-color: rgba(0, 0, 0, 0.05);
 		border-radius: 8rpx;
 		margin-left: 20rpx;
 		display: flex;
@@ -1095,9 +1105,10 @@ import { formatDateTime } from '@/utils/common.js';
 		min-width: 60rpx;
 		height: 40rpx;
 		transition: all 0.2s ease;
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		
 		&:active {
-			background-color: rgba(255, 255, 255, 0.2);
+			background-color: rgba(0, 0, 0, 0.1);
 			transform: scale(0.95);
 		}
 	}
@@ -1146,7 +1157,7 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.order-time {
 		font-size: 26rpx;
-		color: #999;
+		color: #666;
 		font-weight: 400;
 	}
 	
@@ -1173,7 +1184,7 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.no-more-text {
 		font-size: 28rpx;
-		color: #bbb;
+		color: #666;
 		padding: 12rpx 20rpx;
 		border-radius: 8rpx;
 		font-weight: 500;
@@ -1181,11 +1192,11 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.pull-up-text {
 		font-size: 28rpx;
-		color: #bbb;
+		color: #666;
 		padding: 12rpx 20rpx;
-		background: rgba(255, 255, 255, 0.05);
+		background: rgba(0, 0, 0, 0.02);
 		border-radius: 8rpx;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		font-weight: 400;
 	}
 	
@@ -1195,22 +1206,22 @@ import { formatDateTime } from '@/utils/common.js';
 		justify-content: space-between;
 		align-items: center;
 		padding: 24rpx 32rpx;
-		border-bottom: 1px solid rgba(255, 107, 53, 0.15);
-		background: #252525;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+		background: #ffffff;
 	}
 	
 	.popup-title {
 		font-size: 30rpx;
-		color: #e1e1e1;
+		color: #333333;
 		font-weight: 600;
-		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
 	}
 	
 	.popup-content {
 		max-height: 70vh;
 		width:96%;
 		padding:15rpx 2%;
-		background: #252525;
+		background: #ffffff;
 	}
 	
 	// 状态卡片样式
@@ -1277,12 +1288,12 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	// 信息卡片样式
 	.info-card {
-		background: rgba(255, 255, 255, 0.02);
+		background: rgba(0, 0, 0, 0.02);
 		border-radius: 12rpx;
 		padding: 16rpx;
 		margin-bottom: 22rpx;
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 		position: relative;
 	}
 	
@@ -1296,7 +1307,7 @@ import { formatDateTime } from '@/utils/common.js';
 		
 		text {
 			font-size: 28rpx;
-			color: #e1e1e1;
+			color: #333333;
 			font-weight: 500;
 		}
 	}
@@ -1306,7 +1317,7 @@ import { formatDateTime } from '@/utils/common.js';
 		align-items: center;
 		justify-content: space-between;
 		padding: 10rpx 0;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 		
 		&:last-child {
 			border-bottom: none;
@@ -1315,14 +1326,14 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.label {
 		font-size: 26rpx;
-		color: #bbb;
+		color: #666;
 		font-weight: 500;
 		min-width: 100rpx;
 	}
 	
 	.value {
 		font-size: 26rpx;
-		color: #cccccc;
+		color: #333;
 		font-weight: 500;
 		flex: 1;
 		text-align: right;
@@ -1366,7 +1377,7 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.bet-label {
 		font-size: 28rpx;
-		color: #bbb;
+		color: #666;
 		font-weight: 500;
 		margin-bottom: 12rpx;
 		display: block;
@@ -1394,7 +1405,7 @@ import { formatDateTime } from '@/utils/common.js';
 	
 	.draw-label {
 		font-size: 26rpx;
-		color: #999;
+		color: #666;
 		font-weight: 500;
 		margin-bottom: 10rpx;
 		display: block;
@@ -1435,7 +1446,7 @@ import { formatDateTime } from '@/utils/common.js';
 	// 筛选选项样式
 	.filter-options {
 		padding: 20rpx;
-		background-color: #252525;
+		background-color: #ffffff;
 		// H5环境下确保正确显示
 		/* #ifdef H5 */
 		min-height: 200rpx;
@@ -1450,9 +1461,9 @@ import { formatDateTime } from '@/utils/common.js';
 		justify-content: space-between;
 		padding: 20rpx 15rpx;
 		margin-bottom: 12rpx;
-		background: rgba(255, 255, 255, 0.02);
+		background: rgba(0, 0, 0, 0.02);
 		border-radius: 12rpx;
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(0, 0, 0, 0.08);
 		transition: all 0.2s ease;
 
 		&.active {
@@ -1462,7 +1473,7 @@ import { formatDateTime } from '@/utils/common.js';
 
 		text {
 			font-size: 28rpx;
-			color: #e1e1e1;
+			color: #333333;
 			font-weight: 500;
 		}
 
@@ -1474,7 +1485,7 @@ import { formatDateTime } from '@/utils/common.js';
 	// 搜索弹窗样式
 	.search-popup {
 		padding: 40rpx;
-		background-color: #252525;
+		background-color: #ffffff;
 		border-radius: 20rpx;
 	}
 
@@ -1487,7 +1498,7 @@ import { formatDateTime } from '@/utils/common.js';
 
 	.search-title {
 		font-size: 27rpx;
-		color: #e1e1e1;
+		color: #333333;
 		font-weight: 600;
 	}
 
@@ -1498,18 +1509,18 @@ import { formatDateTime } from '@/utils/common.js';
 	}
 
 	.search-input-wrapper {
-		background-color: #444;
+		background-color: #ffffff;
 		border-radius: 12rpx;
 		padding: 0 25rpx;
 		height: 100rpx;
-		border: 2rpx solid #555;
+		border: 2rpx solid #e0e0e0;
 		transition: border-color 0.3s ease;
 		display: flex;
 		align-items: center;
 		
 		&:focus-within {
 			border-color: #007AFF;
-			background-color: #333;
+			background-color: #f8f9fa;
 		}
 	}
 
@@ -1527,9 +1538,9 @@ import { formatDateTime } from '@/utils/common.js';
 		}
 		
 		:deep(.uv-button--info) {
-			background-color: rgba(255, 255, 255, 0.1) !important;
-			border: 2rpx solid #666 !important;
-			color: #d8d8d8 !important;
+			background-color: #f8f9fa !important;
+			border: 2rpx solid #e0e0e0 !important;
+			color: #333 !important;
 		}
 		
 		:deep(.uv-button--primary) {
@@ -1548,18 +1559,18 @@ import { formatDateTime } from '@/utils/common.js';
 		align-items: center;
 		gap: 8rpx;
 		padding: 12rpx 16rpx;
-		background: rgba(255, 255, 255, 0.05);
+		background: rgba(0, 0, 0, 0.02);
 		border-radius: 8rpx;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		transition: all 0.2s ease;
 
 		text {
 			font-size: 26rpx;
-			color: #999;
+			color: #666;
 		}
 
 		&:active {
-			background: rgba(255, 255, 255, 0.1);
+			background: rgba(0, 0, 0, 0.05);
 			transform: scale(0.98);
 		}
 	}

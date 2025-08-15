@@ -70,10 +70,10 @@
 					></uv-icon>
 				</view>
 				<text class="agreement-text">
-					为保障您的合法权益，请阅读并同意
-					<text class="link-text" @tap="showUserAgreement">《用户协议》</text>
+					为保障您的合法权益，请阅读并同意《用户协议》和《隐私政策》
+					<!-- <text class="link-text" @tap="showUserAgreement">《用户协议》</text>
 					和
-					<text class="link-text" @tap="showPrivacyPolicy">《隐私政策》</text>
+					<text class="link-text" @tap="showPrivacyPolicy">《隐私政策》</text> -->
 				</text>
 			</view>
 			
@@ -355,7 +355,7 @@ export default {
 <style lang="scss">
 .container {
 	min-height: 100vh;
-	background-color: #000;
+	background-color: #f8f9fa;
 	position: relative;
 	/* #ifdef APP-PLUS */
 	padding-top: var(--status-bar-height);
@@ -397,7 +397,7 @@ export default {
 .welcome-text {
 	font-size: 36rpx;
 	font-weight: 500;
-	color: #e1e1e1;
+	color: #333;
 }
 
 .form-section {
@@ -415,8 +415,8 @@ export default {
 .input-wrapper {
 	display: flex;
 	align-items: center;
-	background-color: #1a1a1a;
-	border: 2rpx solid #333;
+	background-color: #fff;
+	border: 2rpx solid #e9ecef;
 	border-radius: 20rpx;
 	padding: 0 30rpx;
 	height: 100rpx;
@@ -426,7 +426,7 @@ export default {
 .input-field {
 	flex: 1;
 	font-size: 28rpx;
-	color: #e1e1e1;
+	color: #333;
 	height: 100%;
 	background-color: transparent;
 }
@@ -453,7 +453,7 @@ export default {
 
 .agreement-text {
 	font-size: 24rpx;
-	color: #b9b9b9;
+	color: #666;
 	line-height: 1.6;
 	flex: 1;
 }
@@ -473,7 +473,7 @@ export default {
 
 .register-text {
 	font-size: 26rpx;
-	color: #b9b9b9;
+	color: #666;
 }
 
 .register-link {
@@ -486,7 +486,7 @@ export default {
 .popup-content {
 	width: 640rpx;
 	max-height: 80vh;
-	background-color: #1a1a1a;
+	background-color: #fff;
 	border-radius: 20rpx;
 	padding: 0;
 	overflow: hidden;
@@ -497,13 +497,13 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	padding: 40rpx 40rpx 20rpx;
-	border-bottom: 1px solid #333;
+	border-bottom: 1px solid #e9ecef;
 }
 
 .popup-title {
 	font-size: 32rpx;
 	font-weight: 600;
-	color: #e1e1e1;
+	color: #333;
 }
 
 .popup-close {
@@ -521,19 +521,19 @@ export default {
 
 .popup-text {
 	font-size: 26rpx;
-	color: #e1e1e1;
+	color: #333;
 	line-height: 1.8;
 	white-space: pre-line;
 }
 
 .popup-footer {
 	padding: 20rpx 40rpx 40rpx;
-	border-top: 1px solid #333;
+	border-top: 1px solid #e9ecef;
 }
 
 .popup-agree-btn {
 	background-color: orangered !important;
-	color: #e1e1e1 !important;
+	color: #fff !important;
 	border-radius: 12rpx;
 	height: 80rpx;
 	line-height: 80rpx;

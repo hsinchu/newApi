@@ -36,7 +36,7 @@ return [
             // 密码
             'password'   => env('redis.password', ''),
             // 数据库
-            'database'   => env('redis.database', 0),   
+            'database'   => env('redis.database', 11),   
         ],  
     ],
 ];

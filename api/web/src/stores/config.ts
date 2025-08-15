@@ -12,7 +12,7 @@ export const useConfig = defineStore(
             shrink: false,
             layoutMode: 'Default',
             mainAnimation: 'slide-right',
-            isDark: false,
+            isDark: true,
 
             // 侧边栏
             menuBackground: ['#ffffff', '#1d1e1f'],
@@ -20,7 +20,7 @@ export const useConfig = defineStore(
             menuActiveBackground: ['#ffffff', '#1d1e1f'],
             menuActiveColor: ['#409eff', '#3375b9'],
             menuTopBarBackground: ['#fcfcfc', '#1d1e1f'],
-            menuWidth: 260,
+            menuWidth: 200,
             menuDefaultIcon: 'fa fa-circle-o',
             menuCollapse: false,
             menuUniqueOpened: false,

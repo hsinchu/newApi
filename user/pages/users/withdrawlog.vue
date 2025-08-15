@@ -260,7 +260,7 @@ export default {
 
 <style lang="scss" scoped>
 .withdraw-log-container {
-	background-color: #0a0a0a;
+	background-color: #f8f9fa;
 	min-height: 100vh;
 }
 
@@ -282,9 +282,9 @@ export default {
 	display: inline-block;
 	padding: 8rpx 15rpx;
 	margin-right: 20rpx;
-	background-color: #2a2a2a;
+	background-color: #fff;
+	border: 2rpx solid #e9ecef;
 	border-radius: 25rpx;
-	border: 2rpx solid transparent;
 	transition: all 0.3s;
 	
 	&.active {
@@ -299,7 +299,7 @@ export default {
 
 .status-text {
 	font-size: 28rpx;
-	color: #cccccc;
+	color: #666;
 	transition: color 0.3s;
 }
 
@@ -313,11 +313,11 @@ export default {
 }
 
 .withdraw-item {
-	background-color: #1a1a1a;
+	background-color: #fff;
 	border-radius: 16rpx;
 	padding: 24rpx;
 	margin-bottom: 20rpx;
-	border: 2rpx solid #2a2a2a;
+	border: 2rpx solid #e9ecef;
 }
 
 .withdraw-header {
@@ -333,7 +333,7 @@ export default {
 
 .order-no {
 	font-size: 32rpx;
-	color: #ffffff;
+	color: #333;
 	font-weight: 600;
 	display: block;
 	margin-bottom: 8rpx;
@@ -341,7 +341,7 @@ export default {
 
 .create-time {
 	font-size: 24rpx;
-	color: #888888;
+	color: #666;
 }
 
 .status-badge {
@@ -396,21 +396,21 @@ export default {
 
 .account-name {
 	font-size: 26rpx;
-	color: #ffffff;
+	color: #333;
 	display: block;
 	margin-bottom: 6rpx;
 }
 
 .account-number {
 	font-size: 24rpx;
-	color: #cccccc;
+	color: #666;
 	display: block;
 	margin-bottom: 6rpx;
 }
 
 .bank-name {
 	font-size: 24rpx;
-	color: #888888;
+	color: #666;
 	display: block;
 }
 
@@ -427,13 +427,13 @@ export default {
 
 .amount-label {
 	font-size: 24rpx;
-	color: #888888;
+	color: #666;
 	margin-right: 10rpx;
 }
 
 .amount-value {
 	font-size: 28rpx;
-	color: #ffffff;
+	color: #333;
 	font-weight: 600;
 }
 
@@ -451,7 +451,8 @@ export default {
 // 备注样式
 .remark-section {
 	padding: 16rpx;
-	background-color: #2a2a2a;
+	background-color: #f8f9fa;
+	border: 1px solid #e9ecef;
 	border-radius: 12rpx;
 	margin-bottom: 16rpx;
 }
@@ -466,20 +467,20 @@ export default {
 
 .remark-label {
 	font-size: 24rpx;
-	color: #888888;
+	color: #666;
 	margin-right: 10rpx;
 }
 
 .remark-text {
 	font-size: 26rpx;
-	color: #cccccc;
+	color: #333;
 	line-height: 1.4;
 }
 
 // 时间样式
 .time-section {
 	padding-top: 16rpx;
-	border-top: 2rpx solid #2a2a2a;
+	border-top: 2rpx solid #e9ecef;
 }
 
 .time-item {
@@ -494,11 +495,11 @@ export default {
 
 .time-label {
 	font-size: 24rpx;
-	color: #888888;
+	color: #666;
 }
 
 .time-text {
 	font-size: 24rpx;
-	color: #cccccc;
+	color: #333;
 }
 </style>

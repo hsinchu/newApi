@@ -63,6 +63,7 @@
 
 <script>
 import { getUserInfo } from '@/api/user.js';
+import config from '@/utils/config.js';
 
 export default {
 	data() {
@@ -71,7 +72,7 @@ export default {
 				invite_code: ''
 			},
 			inviteUrl: '',
-			baseUrl: 'https://test.example.cn/register?invite=', // 邀请注册链接
+			baseUrl: '', // 邀请注册链接
 			qrcodeOptions: {
 				size: 200,
 				margin: 8,
@@ -82,6 +83,18 @@ export default {
 		}
 	},
 	methods: {
+		// 更新邀请链接
+		updateInviteUrl() {
+			if (this.userInfo.invite_code) {
+				const appConfig = config.getConfig();
+				// 从API地址提取域名，构建注册链接
+				const apiUrl = appConfig.baseURL;
+				const baseHost = apiUrl.replace('/api', ''); // 移除/api后缀
+				this.baseUrl = `${baseHost}/register?invite=`;
+				this.inviteUrl = this.baseUrl + this.userInfo.invite_code;
+			}
+		},
+		
 		// 获取用户信息
 		async fetchUserInfo() {
 			try {
@@ -89,7 +102,7 @@ export default {
 				if (response.code === 1) {
 					this.userInfo = response.data;
 					// 生成邀请链接
-					this.inviteUrl = this.baseUrl + this.userInfo.invite_code;
+					this.updateInviteUrl();
 				} else {
 					uni.showToast({
 						title: '获取用户信息失败',
@@ -232,7 +245,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.content-wrapper{background:#252525;padding:25rpx;}
+.content-wrapper{background:#f8f9fa;padding:25rpx;}
 .main-content {
 	display: flex;
 	align-items: flex-start;
@@ -254,7 +267,7 @@ export default {
 	}
 	
 	.qrcode-tip {
-		color: #999;
+		color: #666;
 		font-size: 24rpx;
 		text-align: center;
 	}
@@ -268,7 +281,7 @@ export default {
 	
 	.invite-title {
 		.title-text {
-			color: #e1e1e1;
+			color: #333;
 			font-size: 32rpx;
 			font-weight: bold;
 			display: block;
@@ -276,7 +289,7 @@ export default {
 		}
 		
 		.subtitle-text {
-			color: #999;
+			color: #666;
 			font-size: 24rpx;
 			display: block;
 		}
@@ -284,7 +297,7 @@ export default {
 	
 	.code-item {
 		.label {
-			color: #999;
+			color: #666;
 			font-size: 24rpx;
 			margin-bottom: 10rpx;
 			display: block;
@@ -294,12 +307,13 @@ export default {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			background-color: #252525;
+			background-color: #fff;
+			border: 1px solid #e9ecef;
 			border-radius: 12rpx;
 			padding: 15rpx;
 			
 			.code-value {
-				color: #e1e1e1;
+				color: #333;
 				font-size: 26rpx;
 				font-weight: bold;
 				flex: 1;
@@ -310,7 +324,8 @@ export default {
 }
 
 .link-section {
-	background-color: #3d3d3d;
+	background-color: #fff;
+	border: 1px solid #e9ecef;
 	border-radius: 45rpx;
 	padding: 20rpx;
 	margin-bottom: 15rpx;
@@ -322,14 +337,14 @@ export default {
 		margin-bottom: 15rpx;
 		
 		.link-label {
-			color: #999;
+			color: #666;
 			font-size: 24rpx;
 			font-weight: 500;
 		}
 	}
 	
 	.link-text {
-		color: #e1e1e1;
+		color: #333;
 		font-size: 24rpx;
 		word-break: break-all;
 		line-height: 1.4;
@@ -385,8 +400,8 @@ export default {
 		}
 		
 		&.save-btn {
-			background: linear-gradient(135deg, #666, #555);
-			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+			background: linear-gradient(135deg, #6c757d, #5a6268);
+			box-shadow: 0 2rpx 8rpx rgba(108, 117, 125, 0.3);
 		}
 		
 		&.share-btn {

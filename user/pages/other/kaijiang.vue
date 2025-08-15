@@ -15,8 +15,17 @@
 				@click="goToHistory(lottery.code)"
 			>
 				<view class="lottery-header">
-					<text class="lottery-name">{{ lottery.name }} {{ lottery.issue }} {{ lottery.schedule }}</text>
-					<view v-if="lottery.isToday" class="today-tag">今日开奖</view>
+					<view class="lottery-logo-section">
+						<image v-if="lottery.typeIcon" :src="lottery.typeIcon" class="lottery-logo" mode="aspectFit"></image>
+						<view class="lottery-title-section">
+							<text class="lottery-name">{{ lottery.name }}</text>
+							<view class="period-info">
+								<text class="period-text">第<text class="period-number">{{ lottery.currentPeriod }}</text>期</text>
+								<text class="deadline-text" v-if="lottery.deadlineInfo">{{ lottery.deadlineInfo }}</text>
+							</view>
+						</view>
+					</view>
+					<!-- <view v-if="lottery.isToday" class="today-tag">今日开奖</view> -->
 					<uv-icon name="arrow-right" color="#999" size="16"></uv-icon>
 				</view>
 				<view class="lottery-numbers">
@@ -42,6 +51,18 @@
 						<!-- 暂无数据提示 -->
 						<text v-if="lottery.numbers.length === 0" class="no-data">暂无开奖数据</text>
 					</view>
+					<!-- 大小和、单双显示 -->
+					<view v-if="lottery.category == 'QUICK' && lottery.numbers.length > 0" class="lottery-stats">
+						<view class="stat-item">
+							<text class="stat-label">和值:</text>
+							<text class="stat-value">{{ lottery.sum }}</text>
+							<text class="stat-tag" :class="lottery.sizeClass">{{ lottery.sizeText }}</text>
+						</view>
+						<view class="stat-item">
+							<!-- <text class="stat-label">单双:</text> -->
+							<text class="stat-tag" :class="lottery.oddEvenClass">{{ lottery.oddEvenText }}</text>
+						</view>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -50,7 +71,7 @@
 
 <script>
 	import authMixin from '@/mixins/auth.js';
-	import { getAllLatestDraw } from '@/api/lottery/lottery.js';
+import { getAllLatestDraw, getCurrentPeriod } from '@/api/lottery/lottery.js';
 	
 	export default {
 		mixins: [authMixin],
@@ -85,23 +106,68 @@
 					const response = await getAllLatestDraw();
 					
 					if (response.code === 1 && response.data) {
-						// 直接使用API返回的数据
-						this.lotteryData = response.data.map(item => {
+						// 处理每个彩种数据并获取当前期数信息
+						const lotteryPromises = response.data.map(async (item) => {
 							// 判断是否有特殊号码（双色球、大乐透等）
 							const hasSpecial = ['ssq', 'dlt'].includes(item.lottery_code);
 							
-							return {
+							// 获取当前期数信息
+							let currentPeriod = '';
+							let deadlineInfo = '';
+							
+							try {
+								const periodResponse = await getCurrentPeriod(item.lottery_code);
+								if (periodResponse.code === 1 && periodResponse.data) {
+									const periodData = periodResponse.data;
+									currentPeriod = periodData.period_number || '';
+									
+									// 格式化截止时间信息
+									if (periodData.closing_time) {
+										const today = new Date();
+										const tomorrow = new Date(today);
+										tomorrow.setDate(tomorrow.getDate() + 1);
+										
+										// 判断是今天还是明天截止
+										const dayStr = periodData.remaining_minutes > 0 ? '今天' : '明天';
+										deadlineInfo = `${dayStr}${periodData.closing_time}截止`;
+									}
+								}
+							} catch (periodError) {
+								console.warn(`获取${item.lottery_name}期数信息失败:`, periodError);
+							}
+							
+							// 计算和值、大小和、单双
+								const numbers = item.latest_draw ? this.parseNumbers(item.latest_draw.open_code, hasSpecial) : [];
+								const sum = numbers.reduce((acc, num) => acc + parseInt(num), 0);
+								const sizeText = sum > 18 ? '大' : sum < 9 ? '小' : '和';
+								const sizeClass = sum > 18 ? 'size-big' : sum < 9 ? 'size-small' : 'size-middle';
+								const oddEvenText = sum % 2 === 0 ? '双' : '单';
+								const oddEvenClass = sum % 2 === 0 ? 'even' : 'odd';
+								
+								return {
 								code: item.lottery_code,
 								name: item.lottery_name,
+								typeIcon: item.type_icon,
+								category: item.lottery_category,
 								schedule: '',
 								hasSpecial: hasSpecial,
 								issue: item.latest_draw ? item.latest_draw.period_no + '期' : '暂无数据',
-								numbers: item.latest_draw ? this.parseNumbers(item.latest_draw.open_code, hasSpecial) : [],
+								numbers: numbers,
 								specialNumbers: item.latest_draw ? this.parseSpecialNumbers(item.latest_draw.open_code, hasSpecial) : [],
 								drawTime: item.latest_draw ? item.latest_draw.draw_time : null,
-								isToday: item.latest_draw ? this.isToday(item.latest_draw.draw_time) : false
+								isToday: item.latest_draw ? this.isToday(item.latest_draw.draw_time) : false,
+								currentPeriod: currentPeriod,
+								deadlineInfo: deadlineInfo,
+								sum: sum,
+								sizeText: sizeText,
+								sizeClass: sizeClass,
+								oddEvenText: oddEvenText,
+								oddEvenClass: oddEvenClass
 							};
 						});
+						
+						// 等待所有彩种数据处理完成
+						this.lotteryData = await Promise.all(lotteryPromises);
 					} else {
 						// 如果API调用失败，显示空数据提示
 						this.lotteryData = [];
@@ -170,8 +236,8 @@
 
 <style scoped lang="scss">
 	.container {
-		background: #252525;
-		color: #e1e1e1;
+		background: #f8f9fa;
+		color: #333;
 	}
 	
 	.announcement-header {
@@ -189,18 +255,18 @@
 	}
 	
 	.lottery-item {
-		background-color: #1a1a1a;
+		background-color: #fff;
 		border-radius: 55rpx 0 55rpx 0;
-		margin: 25rpx;
+		margin: 15rpx;
 		padding: 30rpx;
-		border: 1px solid #2a2a2a;
+		border: 1px solid #e9ecef;
 		transition: all 0.3s ease;
 		position: relative;
 		cursor: pointer;
 		
 		&:active {
 			transform: scale(0.98);
-			background-color: #252525;
+			background-color: #f8f9fa;
 		}
 	}
 	
@@ -219,24 +285,122 @@
 		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 20rpx;
-		
-		.lottery-name {
-			font-size: 25rpx;
-			color: #e1e1e1;
-			font-weight: 350;
-			line-height:55rpx;
-			flex: 1;
-		}
-		
-		.today-tag {
-			background: linear-gradient(135deg, #ff5555, #bc0000);
-			color: #fff;
-			font-size: 20rpx;
-			padding: 8rpx 15rpx;
-			border-radius: 20rpx;
-			margin-right: 20rpx;
-			font-weight: 330;
-		}
+	}
+	
+	.lottery-logo-section {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 20rpx;
+	}
+	
+	.lottery-logo {
+		width: 60rpx;
+		height: 60rpx;
+		border-radius: 8rpx;
+	}
+	
+	.lottery-title-section {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 8rpx;
+	}
+	
+	.lottery-name {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #333;
+	}
+	
+	.period-info {
+		display: flex;
+		align-items: center;
+		gap: 20rpx;
+	}
+	
+	.period-text {
+		font-size: 28rpx;
+		color: #666;
+	}
+	
+	.period-number {
+		color: #ff6b35;
+		font-weight: bold;
+	}
+	
+	.deadline-text {
+		font-size: 24rpx;
+		color: #999;
+		background: #f5f5f5;
+		padding: 4rpx 12rpx;
+		border-radius: 12rpx;
+	}
+	
+	.today-tag {
+		background: linear-gradient(135deg, #ff6b35, #f7931e);
+		color: white;
+		font-size: 20rpx;
+		padding: 8rpx 16rpx;
+		border-radius: 20rpx;
+		margin-left: 20rpx;
+	}
+	
+	.lottery-stats {
+		margin-top: 20rpx;
+		margin-left:25rpx;
+		display: flex;
+		gap: 30rpx;
+		align-items: center;
+	}
+	
+	.stat-item {
+		display: flex;
+		align-items: center;
+		gap: 18rpx;
+	}
+	
+	.stat-label {
+		font-size: 24rpx;
+		color: #666;
+	}
+	
+	.stat-value {
+		font-size: 28rpx;
+		font-weight: bold;
+		color: #333;
+	}
+	
+	.stat-tag {
+		font-size: 20rpx;
+		padding: 4rpx 12rpx;
+		border-radius: 12rpx;
+		font-weight: bold;
+	}
+	
+	.size-big {
+		background: #ff4757;
+		color: white;
+	}
+	
+	.size-small {
+		background: #3742fa;
+		color: white;
+	}
+	
+	.size-middle {
+		background: #2ed573;
+		color: white;
+	}
+	
+	.odd {
+		background: #ffa502;
+		color: white;
+	}
+	
+	.even {
+		background: #5352ed;
+		color: white;
 	}
 	
 	.lottery-numbers {

@@ -5,6 +5,7 @@ namespace app\api\controller;
 use Throwable;
 use app\common\model\User;
 use app\common\controller\Frontend;
+use app\common\model\UserLevel;
 use app\service\UserService;
 use Exception;
 
@@ -32,6 +33,7 @@ class Info extends Frontend
                 'id' => $userInfo['id'],
                 'username' => $userInfo['username'],
                 'nickname' => $userInfo['nickname'],
+                'game_ids' => $userInfo['game_ids'],
                 'avatar' => $userInfo['avatar'],
                 'email' => $userInfo['email'],
                 'mobile' => $userInfo['mobile'],
@@ -48,8 +50,45 @@ class Info extends Frontend
                 'rebate_rate' => $userInfo['rebate_rate'],
                 'default_rebate_rate' => $userInfo['default_rebate_rate'],
                 'status' => $userInfo['status'],
-                'has_pay_password' => !empty($userInfo['pay_password'])
+                'has_pay_password' => !empty($userInfo['pay_password']),
+                'level_id' => $userInfo['level_id'],
+                'total_bet_amount' => $userInfo['total_bet_amount']
             ];
+            
+            // 获取会员等级信息
+            if ($userInfo['level_id']) {
+                // 直接查询用户等级信息
+                $userLevel = \app\common\model\UserLevel::find($userInfo['level_id']);
+                if ($userLevel) {
+                    $agentData['level_info'] = [
+                        'id' => $userLevel->id,
+                        'name' => $userLevel->name,
+                        'level' => $userLevel->level,
+                        'min_bet_amount' => $userLevel->min_bet_amount,
+                        'max_bet_amount' => $userLevel->max_bet_amount,
+                        'bet_percentage' => $userLevel->bet_percentage,
+                        'upgrade_condition' => $userLevel->upgrade_condition,
+                        'description' => $userLevel->description
+                    ];
+                    
+                    // 获取用户对象来计算升级进度
+                    $user = User::find($userInfo['id']);
+                    if ($user) {
+                        $agentData['upgrade_progress'] = round($user->getUpgradeProgress(), 2);
+                        
+                        // 获取下一个等级信息
+                        $nextLevel = $user->getNextLevel();
+                        if ($nextLevel && is_object($nextLevel)) {
+                            $agentData['next_level'] = [
+                                'id' => $nextLevel->id,
+                                'name' => $nextLevel->name,
+                                'level' => $nextLevel->level,
+                                'upgrade_condition' => $nextLevel->upgrade_condition
+                            ];
+                        }
+                    }
+                }
+            }
 
             if($userInfo['is_agent'] == 0 && $userInfo['parent_id'] > 0){
                 $userBrokRate = UserService::getUserBrokRate($userInfo['id']);

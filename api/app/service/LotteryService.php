@@ -169,6 +169,9 @@ class LotteryService
                 case 'pl3':
                     $periodNumber = substr($dateStr, 2, 2) . str_pad((string)$usePeriodInfo['current_issue_number'], 2, '0', STR_PAD_LEFT);
                     break;
+                case 'day3d':
+                    $periodNumber = $this->buildPeriodNumber($usePeriodInfo['current_issue_number'], 'day3d', date('ymd', strtotime($targetDate)));
+                    break;
             }
             
             // 计算剩余时间（到截止时间的秒数）
@@ -239,6 +242,8 @@ class LotteryService
                     ->order('current_issue_number', 'asc')
                     ->find();
             }
+
+            
             
             if (!$periodInfo) {
                 return ['code' => 0, 'msg' => '未找到期号信息'];
@@ -270,7 +275,13 @@ class LotteryService
             $status = 'normal'; // 默认正常状态
             if ($remainingMinutes <= 0) {
                 $status = 'closed'; // 封盘状态
-            }
+                $remainingMinutes = 0; // 封盘时剩余时间设为0
+            }     
+            
+
+            
+            // 确保剩余时间不会超过期号间隔时间
+            $remainingMinutes = min($remainingMinutes, $periodInfo['issue_time_interval']);
             
             $result = [
                 'period_number' => $periodNumber, // 期号
@@ -283,6 +294,7 @@ class LotteryService
                 'issue_time_interval' => $periodInfo['issue_time_interval'], // 期时间间隔（秒）
                 'current_time' => $currentTime, // 当前时间
                 'current_date' => $currentDate, // 当前日期
+                'kj_time' => $this->calculateKjTime($closingTime, $periodInfo['next_issue_start_time']), // 开奖秒数，用于前端重置计时器
                 'lottery_name' => $lotteryName, // 彩种名称
                 'last_open_period_no' => $lastOpen['period_no'] ?? '', // 最近一期开奖期号
                 'last_open_code' => $lastOpen['draw_numbers'] ?? '', // 最近一期开奖号码
@@ -320,13 +332,13 @@ class LotteryService
                 // 获取昨天的最后一期
                 $yesterday = date('ymd', strtotime('-1 day'));
                 
-                // 查询昨天的最大期数
+                // 查询该彩种的最大期数（动态获取）
                 $maxIssue = Db::name('lottery_time')
                     ->where('lottery_name', $lotteryName)
                     ->where('status', 'active')
                     ->max('current_issue_number');
                 
-                $previousIssueNumber = $maxIssue ?: 1440; // 默认1440期（每分钟一期）
+                $previousIssueNumber = (int)($maxIssue ?: 1); // 如果查询不到则默认为1，强制转换为int
                 $dateStr = $yesterday;
             } else {
                 $dateStr = date('ymd');
@@ -372,7 +384,7 @@ class LotteryService
     public function validatePeriod(string $periodNumber, string $lotteryName = 'ff3d'): array
     {
         $lotteryTypeCategory = LotteryType::where('type_code', $lotteryName)->value('category');
-        if($lotteryTypeCategory == 'QUICK'){
+        if($lotteryTypeCategory == 'QUICK' && $lotteryName != 'day3d'){
             $currentPeriodResult = $this->getCurrentPeriod($lotteryName);
         }else{
             $currentPeriodResult = $this->getCurrentPeriodOther($lotteryName);
@@ -422,10 +434,10 @@ class LotteryService
     {
         $padLengthMap = [
             'ff3d' => 4,
+            '3f3d' => 3,
             '5f3d' => 3,
-            '30f3d' => 2,
-            '2s3d' => 2,
-            '12s3d' => 1,
+            '60f3d' => 2,
+            'day3d' => 1,
         ];
         
         return $padLengthMap[$lotteryName] ?? 4;
@@ -489,10 +501,19 @@ class LotteryService
             $draw = LotteryDraw::create($drawData);
             
             if ($draw) {
+                // 统计当期投注数据并更新到开奖表
+                $betStats = $this->calculateBetStatistics($lotteryCode, $periodNo);
+                $draw->save([
+                    'bet_count' => $betStats['bet_count'],
+                    'total_bet_amount' => $betStats['total_bet_amount']
+                ]);
+                
                 Log::info('手动开奖成功', [
                     'lottery_code' => $lotteryCode,
                     'period_no' => $periodNo,
-                    'draw_numbers' => $drawNumbers
+                    'draw_numbers' => $drawNumbers,
+                    'bet_count' => $betStats['bet_count'],
+                    'total_bet_amount' => $betStats['total_bet_amount']
                 ]);
                 return true;
             }
@@ -502,6 +523,30 @@ class LotteryService
             Log::error('手动开奖失败: ' . $e->getMessage());
             throw $e;
         }
+    }
+    
+    /**
+     * 统计投注数据
+     * @param string $lotteryCode 彩种代码
+     * @param string $periodNo 期号
+     * @return array
+     */
+    private function calculateBetStatistics(string $lotteryCode, string $periodNo): array
+    {
+        $betCount = \app\common\model\BetOrder::where('lottery_code', $lotteryCode)
+            ->where('period_no', $periodNo)
+            ->whereIn('status', ['pending', 'win', 'lose', 'paid'])
+            ->count();
+            
+        $totalBetAmount = \app\common\model\BetOrder::where('lottery_code', $lotteryCode)
+            ->where('period_no', $periodNo)
+            ->whereIn('status', ['pending', 'win', 'lose', 'paid'])
+            ->sum('bet_amount');
+            
+        return [
+            'bet_count' => $betCount,
+            'total_bet_amount' => $totalBetAmount ?: 0
+        ];
     }
     
     /**
@@ -666,4 +711,32 @@ class LotteryService
              return ['code' => 0, 'msg' => '获取游戏赔率失败：' . $e->getMessage()];
          }
      }
+
+    /**
+     * 计算开奖秒数（下一期开始时间减去当前封盘时间的秒数）
+     * @param string $closingTime 封盘时间 HH:MM:SS
+     * @param string $nextIssueStartTime 下期开始时间 HH:MM:SS
+     * @return int 开奖秒数
+     */
+    private function calculateKjTime(string $closingTime, string $nextIssueStartTime): int
+    {
+        try {
+            // 将时间字符串转换为时间戳
+            $closingTimestamp = strtotime($closingTime);
+            $nextStartTimestamp = strtotime($nextIssueStartTime);
+            
+            // 如果下期开始时间小于封盘时间，说明是第二天
+            if ($nextStartTimestamp < $closingTimestamp) {
+                $nextStartTimestamp += 24 * 60 * 60; // 加一天
+            }
+            
+            // 计算秒数差
+            $kjTime = $nextStartTimestamp - $closingTimestamp;
+            
+            return max(0, $kjTime); // 确保不返回负数
+        } catch (Exception $e) {
+            Log::error('计算开奖秒数失败: ' . $e->getMessage());
+            return 0; // 默认返回0
+        }
+    }
 }

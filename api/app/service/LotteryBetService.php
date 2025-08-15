@@ -5,6 +5,8 @@ namespace app\service;
 use app\common\model\BetOrder;
 use app\common\model\LotteryType;
 use app\common\model\LotteryBonus;
+use app\common\model\User;
+use app\common\model\UserLevel;
 use think\facade\Log;
 
 /**
@@ -14,8 +16,7 @@ use think\facade\Log;
 class LotteryBetService
 {
     
-    // 平台服务费率
-    private $service_fee_rate = 0.2; // 20%
+    // 平台服务费率将从lottery_type表的bonus_system_rate字段动态获取
     
     /**
      * 计算最大投注限额
@@ -55,16 +56,21 @@ class LotteryBetService
             // 获取用户在当期的投注统计
             $userPeriodStats = $this->getUserPeriodStats($lottery_code, $period_no, $user_id, $bet_type);
             
-            // 计算系统最大投注额（确保平台盈利20%）
-             $systemMaxBet = $this->calculateSystemMaxBet($actualBonusPool, $currentPeriodStats, $bet_type, $odds);
+            // 计算系统最大投注额（确保平台盈利）
+             $systemMaxBet = $this->calculateSystemMaxBet($actualBonusPool, $currentPeriodStats, $bet_type, $odds, $lotteryType);
             
             // 计算用户最大投注额（确保用户中奖不超过其净投注额）
-            $userMaxBet = $this->calculateUserMaxBet($userPeriodStats, $bet_type, $odds);
+            $userMaxBet = $this->calculateUserMaxBet($userPeriodStats, $bet_type, $odds, $lotteryType);
             
             // 获取彩种配置的投注限制
             $lotteryMinBet = $lotteryType->min_bet_amount ?? 200; // 转换为元
             $lotteryMaxBet = $lotteryType->max_bet_amount ?? 1000000; // 转换为元
             $lotteryDailyLimit = $lotteryType->daily_limit ?? 0; // 转换为元
+            
+            // 获取玩法限额信息
+            $playLimits = $this->getPlayTypeLimits($lotteryType->id, $bet_type);
+            $playMinBet = $playLimits['min_price'] ?? 0;
+            $playMaxBet = $playLimits['max_price'] ?? 0;
             
             // 获取用户今日已投注金额
             $userDailyBet = $this->getUserDailyBetAmount($lottery_code, $user_id);
@@ -72,15 +78,15 @@ class LotteryBetService
             // 计算日限额剩余额度
             $dailyRemaining = $lotteryDailyLimit > 0 ? max(0, $lotteryDailyLimit - $userDailyBet) : PHP_FLOAT_MAX;
             
-            // 应用彩种限制：小取小，大取大的原则
-            // 最小投注额：取较大值（更严格的限制）
-            $effectiveMinBet = $lotteryMinBet;
+            // 应用层级限额规则：最低取高的，最高取低的
+            $effectiveMinBet = $this->getEffectiveMinBetAmount($playMinBet, $lotteryMinBet);
+            $effectiveMaxBet = $this->getEffectiveMaxBetAmount($playMaxBet, $lotteryMaxBet);
             
-            // 最大投注额：取较小值（更严格的限制）
-            $effectiveMaxBet = min($systemMaxBet, $userMaxBet, $lotteryMaxBet, $dailyRemaining);
+            // 最终最大投注额：取系统计算、用户限制、有效最大限额、日限额中的最小值
+            $finalSystemMaxBet = min($systemMaxBet, $userMaxBet, $effectiveMaxBet, $dailyRemaining);
             
             // 确保最大投注额不小于最小投注额
-            $finalMaxBet = max($effectiveMinBet, $effectiveMaxBet);
+            $finalMaxBet = max($effectiveMinBet, $finalSystemMaxBet);
             
             // 如果计算结果小于最小投注额，则返回0（不允许投注）
             if ($finalMaxBet < $effectiveMinBet) {
@@ -95,6 +101,30 @@ class LotteryBetService
                 $systemMaxBet = $systemMaxBet * $lotteryType['max_pool_rate'] / 100;
                 $userMaxBet = $userMaxBet * $lotteryType['max_pool_rate'] / 100;
                 $actualBonusPool = $actualBonusPool * $lotteryType['max_pool_rate'] / 100;
+            }
+            
+            // 获取用户等级信息并应用bet_percentage
+            if ($user_id > 0) {
+                $user = User::find($user_id);
+                if ($user && $user->level_id) {
+                    $userLevel = UserLevel::find($user->level_id);
+                    if ($userLevel && $userLevel->bet_percentage > 0) {
+                        $betPercentage = floatval($userLevel->bet_percentage) / 100;
+                        $finalMaxBet = $finalMaxBet * $betPercentage;
+                        $systemMaxBet = $systemMaxBet * $betPercentage;
+                        $userMaxBet = $userMaxBet * $betPercentage;
+                        
+                        // 记录等级限制应用日志
+                        Log::info('应用用户等级投注限制', [
+                            'user_id' => $user_id,
+                            'level_id' => $user->level_id,
+                            'level_name' => $userLevel->name,
+                            'bet_percentage' => $userLevel->bet_percentage,
+                            'original_max_bet' => round($finalMaxBet / $betPercentage, 2),
+                            'final_max_bet' => round($finalMaxBet, 2)
+                        ]);
+                    }
+                }
             }
             
             return [
@@ -262,9 +292,10 @@ class LotteryBetService
      * @param array $currentPeriodStats 当期投注统计
      * @param string $newBetType 新投注类型
      * @param float $odds 新投注赔率
+     * @param object $lotteryType 彩种信息
      * @return float
      */
-    protected function calculateSystemMaxBet($actualBonusPool, $currentPeriodStats, $newBetType, $odds)
+    protected function calculateSystemMaxBet($actualBonusPool, $currentPeriodStats, $newBetType, $odds, $lotteryType)
     {
         // 根据用户需求：先从奖金池扣除当前投注玩法的潜在赔付，基于剩余奖金池计算最大投注额
         
@@ -321,7 +352,10 @@ class LotteryBetService
             $newTotalWinAmounts = $totalWinAmounts;
             $newTotalWinAmounts[$newBetType] += $testBet * $odds;
             
-            // 检查是否至少有一个开奖结果能保证平台20%盈利
+            // 获取彩种的服务费率
+            $serviceFeeRate = floatval($lotteryType->bonus_system_rate ?? 20) / 100; // 转换为小数
+            
+            // 检查是否至少有一个开奖结果能保证平台盈利
             $hasValidResult = false;
             
             foreach (['da', 'xiao', 'he'] as $resultType) {
@@ -329,7 +363,7 @@ class LotteryBetService
                 $platformPayout = $newTotalWinAmounts[$resultType];
                 $platformProfit = $platformIncome - $platformPayout;
                 $profitRate = $platformIncome > 0 ? $platformProfit / $platformIncome : 0;
-                if ($profitRate >= 0.2) {
+                if ($profitRate >= $serviceFeeRate) {
                     $hasValidResult = true;
                     break; // 找到一个满足条件的结果就足够了
                 }
@@ -350,9 +384,10 @@ class LotteryBetService
      * @param array $userPeriodStats 用户当期投注统计
      * @param string $newBetType 新投注类型
      * @param float $odds 投注赔率
+     * @param object $lotteryType 彩种信息
      * @return float
      */
-    protected function calculateUserMaxBet($userPeriodStats, $newBetType, $odds)
+    protected function calculateUserMaxBet($userPeriodStats, $newBetType, $odds, $lotteryType)
     {
         // 计算用户在当期的总投注额
         $userTotalBet = 0;
@@ -376,9 +411,11 @@ class LotteryBetService
         // 如果新投注类型中奖，中奖金额为 (currentBetTypeAmount + x) * odds
         // 净收益为 (currentBetTypeAmount + x) * odds - (userTotalBet + x)
         // 要求净收益不超过总投注的(1-服务费率)倍：
-        // (currentBetTypeAmount + x) * odds - (userTotalBet + x) <= (userTotalBet + x) * (1 - service_fee_rate)
+        // (currentBetTypeAmount + x) * odds - (userTotalBet + x) <= (userTotalBet + x) * (1 - bonus_system_rate)
         
-        $netRate = 1 - $this->service_fee_rate; // 0.8
+        // 获取彩种的服务费率
+        $serviceFeeRate = floatval($lotteryType->bonus_system_rate ?? 20) / 100; // 转换为小数
+        $netRate = 1 - $serviceFeeRate;
         
         // 整理公式：
         // (currentBetTypeAmount + x) * odds <= (userTotalBet + x) * (1 + netRate)
@@ -396,6 +433,84 @@ class LotteryBetService
         $maxBet = $rightSide / $coefficient;
         
         return max(0, $maxBet);
+    }
+    
+    /**
+     * 获取玩法类型的限额信息
+     * @param int $lotteryId 彩种ID
+     * @param string $betType 投注类型
+     * @return array
+     */
+    private function getPlayTypeLimits(int $lotteryId, string $betType): array
+    {
+        try {
+            $bonusRecord = LotteryBonus::where('lottery_id', $lotteryId)
+                ->where('type_key', $betType)
+                ->where('status', 1)
+                ->find();
+                
+            if (!$bonusRecord) {
+                return ['min_price' => 0, 'max_price' => 0];
+            }
+            
+            return [
+                'min_price' => (float)$bonusRecord->min_price,
+                'max_price' => (float)$bonusRecord->max_price
+            ];
+        } catch (\Exception $e) {
+            Log::error('获取玩法限额失败: ' . $e->getMessage());
+            return ['min_price' => 0, 'max_price' => 0];
+        }
+    }
+    
+    /**
+     * 获取有效的最小投注金额
+     * 规则：取玩法限额和彩种限额中的较高值（更严格的最小限制）
+     * 如果某个限额为0，则表示不限制，使用另一个限额
+     * 
+     * @param float $playMinBet 玩法最小限额
+     * @param float $lotteryMinBet 彩种最小限额
+     * @return float 有效的最小投注金额
+     */
+    private function getEffectiveMinBetAmount(float $playMinBet, float $lotteryMinBet): float
+    {
+        // 如果玩法限额为0，使用彩种限额
+        if ($playMinBet <= 0) {
+            return $lotteryMinBet > 0 ? $lotteryMinBet : 2.0;
+        }
+        
+        // 如果彩种限额为0，使用玩法限额
+        if ($lotteryMinBet <= 0) {
+            return $playMinBet;
+        }
+        
+        // 两个都有值时，取较高的（更严格的限制）
+        return max($playMinBet, $lotteryMinBet);
+    }
+    
+    /**
+     * 获取有效的最大投注金额
+     * 规则：取玩法限额和彩种限额中的较低值（更严格的最大限制）
+     * 如果某个限额为0，则表示不限制，使用另一个限额
+     * 
+     * @param float $playMaxBet 玩法最大限额
+     * @param float $lotteryMaxBet 彩种最大限额
+     * @return float 有效的最大投注金额
+     */
+    private function getEffectiveMaxBetAmount(float $playMaxBet, float $lotteryMaxBet): float
+    {
+        // 如果玩法限额为0，使用彩种限额
+        if ($playMaxBet <= 0) {
+            return $lotteryMaxBet > 0 ? $lotteryMaxBet : 10000.0;
+        }
+        
+        // 如果彩种限额为0，使用玩法限额
+        if ($lotteryMaxBet <= 0) {
+            return $playMaxBet;
+        }
+        
+        // 两个都有值时，取较低的（更严格的限制）
+        return min($playMaxBet, $lotteryMaxBet);
     }
     
     /**
@@ -451,11 +566,15 @@ class LotteryBetService
             $pool_amount = $bet_amount;
             $current_bonus_pool = floatval($lotteryType->bonus_pool ?? 0);
             $current_bonus_system = floatval($lotteryType->bonus_system ?? 0);
+            $current_default_pool = floatval($lotteryType->default_pool ?? 0);
             $new_bonus_pool = $current_bonus_pool + $pool_amount;
+            
+            // 获取彩种的服务费率
+            $serviceFeeRate = floatval($lotteryType->bonus_system_rate ?? 20) / 100; // 转换为小数
             
             // 更新彩种表的bonus_pool字段
             $lotteryType->bonus_pool = $new_bonus_pool;
-            $lotteryType->bonus_system = $current_bonus_system + ($bet_amount * $this->service_fee_rate);  // 累加投注额的服务费
+            $lotteryType->bonus_system = $current_bonus_system + ($bet_amount * $serviceFeeRate);  // 累加投注额的服务费
             $lotteryType->save();
             
             return true;
