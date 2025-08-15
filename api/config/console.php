@@ -10,6 +10,7 @@ return [
         'autopaid' => 'app\command\AutoPaid', //自动派奖，从redis队列中取出待派奖订单，查询订单状态，更新订单状态为已派奖（同时使用adjustUserBalance方法更新用户余额）
         'clearlock' => 'app\command\ClearLock', //清除自动开奖锁定状态
         'rebate' => 'app\command\Rebate', //测试代理返水功能
+        'autobak' => 'app\command\AutoBak', //自动备份数据库并发送邮件通知
     ],
     
 ];
