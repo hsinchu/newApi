@@ -215,16 +215,17 @@
 
 <script>
 	import authMixin from '@/mixins/auth.js';
-	import { getLotteryTypes } from '@/api/lottery/lottery.js';
-	import { getBannerList } from '@/api/banner/banner.js';
-	import { getDanoList } from '@/api/other.js';
+import { getLotteryTypes } from '@/api/lottery/lottery.js';
+import { getBannerList } from '@/api/banner/banner.js';
+import { getDanoList } from '@/api/other.js';
+import { getUserInfo } from '@/api/user.js';
 	
 	export default {
 		mixins: [authMixin],
 		data() {
 			return {
-				refreshing: false, // 刷新状态
 				activeTab: 'ware', // 当前激活的tab
+				hasLoaded: false, // 页面是否已加载过
 				
 				// 登录状态
 				isLoggedIn: false,
@@ -292,42 +293,54 @@
 		},
 		
 		onLoad() {
-			// 页面加载时获取数据
-			this.loadData();
-			// 检查登录状态
-			this.checkLoginStatus();
 			// 加载公告数据并显示弹窗
 			this.loadNoticeData();
 		},
 		
-		// 下拉刷新
-		onPullDownRefresh() {
-			// 重新加载数据
-			this.loadData();
-			// 延迟停止下拉刷新动画
-			setTimeout(() => {
-				uni.stopPullDownRefresh();
-			}, 1000);
+		// 页面显示时检查登录状态（仅在从其他页面返回时）
+		onShow() {
+			// 只有在页面已经加载过的情况下才重新检查登录状态
+			if (this.hasLoaded) {
+				this.checkLoginStatus();
+			}
+			this.hasLoaded = true;
 		},
 		
 		methods: {
 				// 检查登录状态
-				checkLoginStatus() {
-					// 使用正确的token键名'ba-user-token'
-					const token = uni.getStorageSync('ba-user-token');
-					const userInfo = uni.getStorageSync('userInfo');
-					// 检查token是否存在且不为空，同时检查用户信息
-					this.isLoggedIn = !!(token && token.trim() !== '' && token !== 'null' && token !== 'undefined');
-					// 如果已登录，获取用户信息
-					if (this.isLoggedIn && userInfo) {
-						this.userInfo = userInfo;
+			async checkLoginStatus() {
+				try {
+					// 静默调用接口获取用户信息来验证登录状态（不显示错误提示）
+					const response = await getUserInfo({ silentAuth: true });
+					if (response.code === 1 && response.data) {
+						// 接口调用成功，用户已登录
+						this.isLoggedIn = true;
+						this.userInfo = response.data;
+						// 同时更新本地存储的用户信息
+						uni.setStorageSync('userInfo', response.data);
+					} else {
+						// 接口返回失败，用户未登录或token已过期
+						this.isLoggedIn = false;
+						this.userInfo = {};
+						uni.removeStorageSync('ba-user-token');
+						uni.removeStorageSync('userInfo');
 					}
-					console.log('登录状态检查:', {
-						token: token,
-						userInfo: userInfo,
-						isLoggedIn: this.isLoggedIn
-					});
-				},
+				} catch (error) {
+					console.error('获取用户信息失败:', error);
+					// 接口调用失败，用户未登录
+					this.isLoggedIn = false;
+					this.userInfo = {};
+					uni.removeStorageSync('ba-user-token');
+					uni.removeStorageSync('userInfo');
+				}
+				// 页面加载时获取数据
+				this.loadData();
+				
+				console.log('登录状态检查:', {
+					userInfo: this.userInfo,
+					isLoggedIn: this.isLoggedIn
+				});
+			},
 				
 				// 根据时间获取问候语
 				getGreeting() {

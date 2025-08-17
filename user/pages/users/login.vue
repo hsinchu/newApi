@@ -197,7 +197,7 @@ export default {
 				// 如果有token和用户信息，且用户是代理商，则跳转到个人中心
 				if (token && userInfo && userInfo.is_agent === 0) {
 					uni.reLaunch({
-						url: '/pages/profile/profile'
+						url: '/pages/index/index'
 					});
 				}
 			},
@@ -263,7 +263,7 @@ export default {
 					// 登录成功后跳转到会员中心
 					setTimeout(() => {
 						uni.switchTab({
-							url: '/pages/profile/profile'
+							url: '/pages/index/index'
 						});
 					}, 1500);
 				} else {

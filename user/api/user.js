@@ -32,9 +32,11 @@ export function register(data) {
 
 /**
  * 获取用户信息
+ * @param {Object} options 请求选项
+ * @param {boolean} options.silentAuth 是否静默认证（不显示错误提示和跳转）
  */
-export function getUserInfo() {
-	return request.get('/info/info');
+export function getUserInfo(options = {}) {
+	return request.get('/info/info', {}, options);
 }
 
 /**

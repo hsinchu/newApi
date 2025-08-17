@@ -74,16 +74,19 @@ class Request {
 						// token过期，需要重新登录
 						if (code === 409 || code === 303) {
 							this.removeToken();
-							uni.showToast({
-								title: '登录已过期，请重新登录',
-								icon: 'none'
-							});
-							// 跳转到登录页
-							setTimeout(() => {
-								uni.reLaunch({
-									url: '/pages/users/login'
+							// 检查是否需要显示提示和跳转
+							if (options.silentAuth !== true) {
+								uni.showToast({
+									title: '登录已过期，请重新登录',
+									icon: 'none'
 								});
-							}, 1500);
+								// 跳转到登录页
+								setTimeout(() => {
+									uni.reLaunch({
+										url: '/pages/users/login'
+									});
+								}, 1500);
+							}
 							reject(response.data);
 							return;
 						}
