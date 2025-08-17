@@ -39,6 +39,13 @@
 			}
 		},
 		{
+			"path": "pages/other/webview",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "网页浏览"
+			}
+		},
+		{
 			"path": "pages/user/detail",
 			"style": {
 				"navigationBarTitleText": "会员详情",
@@ -135,7 +142,7 @@
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "#555",
+		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "myApp",
 		"navigationBarBackgroundColor": "#f7f7f7",
 		"backgroundColor": "#f7f7f7"

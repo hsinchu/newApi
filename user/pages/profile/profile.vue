@@ -200,9 +200,9 @@
 					});
 					break;
 					case 2:
-					// 邀请会员
+					// 在线客服
 					uni.navigateTo({
-						url: '/pages/users/share'
+						url: '/pages/other/webview?url=' + encodeURIComponent('http://192.168.1.18/chat/mobile?noCanClose=1&token=bce32bf270cc5a9afa20d8b5a1cbbce9&uid=' + this.userInfo.id + '&avatar=http://192.168.1.18/statics/images/avatar.jpg&nickName=' + this.userInfo.username + '&title=' + encodeURIComponent('在线客服'))
 					});
 					break;
 					case 3:

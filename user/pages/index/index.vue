@@ -262,7 +262,7 @@ import { getUserInfo } from '@/api/user.js';
 					name: '客服',
 					icon: '/static/icon/index/3.png',
 					color: '#fff',
-					url: '/pages/service/service'
+					url: '/pages/other/webview?url=' + encodeURIComponent('http://192.168.1.18/chat/mobile?noCanClose=1&token=bce32bf270cc5a9afa20d8b5a1cbbce9&uid=' + this.userInfo.id + '&avatar=http://192.168.1.18/statics/images/avatar.jpg&nickName=' + this.userInfo.username) + '&title=' + encodeURIComponent('在线客服')
 				},
 				/*{
 					id: 4,
@@ -662,6 +662,13 @@ import { getUserInfo } from '@/api/user.js';
 					default:
 						return [];
 				}
+			},
+			
+			// 联系客服
+			contactService() {
+				uni.navigateTo({
+					url: '/pages/other/webview?url=' + encodeURIComponent('http://192.168.1.18/chat/mobile?noCanClose=1&token=bce32bf270cc5a9afa20d8b5a1cbbce9&uid=' + this.userInfo.id + '&avatar=http://192.168.1.18/statics/images/avatar.jpg&nickName=' + this.userInfo.username) + '&title=' + encodeURIComponent('在线客服')
+				});
 			},
 			
 			// 获取tab配置信息

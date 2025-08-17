@@ -135,12 +135,13 @@
 		{
 			"path": "pages/other/webview",
 			"style": {
-				"navigationBarTitleText": "支付页面"
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "网页浏览"
 			}
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "#555",
+		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "myApp",
 		"navigationBarBackgroundColor": "#f7f7f7",
 		"backgroundColor": "#f7f7f7"

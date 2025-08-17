@@ -150,7 +150,7 @@
 				title: '红包管理'
 			}, {
 				name: 'share',
-				title: '邀请代理商'
+				title: '邀请用户'
 			}, {
 				name: 'coupon',
 				title: '资金变动'
@@ -268,6 +268,12 @@
 					// 跳转到充值活动页面
 					uni.navigateTo({
 						url: '/pages/activity/charge'
+					});
+					break;
+				case 'service':
+					// 跳转到在线客服
+					uni.navigateTo({
+						url: '/pages/other/webview?url=' + encodeURIComponent('http://192.168.1.18/chat/mobile?noCanClose=1&token=bce32bf270cc5a9afa20d8b5a1cbbce9&uid=' + this.userInfo.id + '&avatar=http://192.168.1.18/statics/images/avatar.jpg&nickName=' + this.userInfo.username) + '&title=' + encodeURIComponent('在线客服')
 					});
 					break;
 				case 'logout':
