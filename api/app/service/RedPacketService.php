@@ -54,7 +54,7 @@ class RedPacketService
                 'amount_list' => $amountList,
                 'condition_type' => $data['condition_type'] ?? RedPacket::CONDITION_NONE,
                 'condition_value' => $data['condition_value'] ?? '',
-                'expire_time' => isset($data['expire_time']) ? $data['expire_time'] : null,
+                'expire_time' => isset($data['expire_time']) ? $data['expire_time'] : 0,
                 'status' => RedPacket::STATUS_ACTIVE
             ]);
 
@@ -375,6 +375,50 @@ class RedPacketService
             'remaining_amount' => $redPacket->getRemainingAmount(),
             'remaining_count' => $redPacket->getRemainingCount(),
             'status' => $redPacket->status
+        ];
+    }
+
+    /**
+     * 获取红包领取记录
+     */
+    public function getRedPacketRecords(int $redPacketId, int $page = 1, int $limit = 20): array
+    {
+        $redPacket = RedPacket::find($redPacketId);
+        if (!$redPacket) {
+            throw new Exception('红包不存在');
+        }
+
+        $records = RedPacketRecord::alias('r')
+            ->leftJoin('user u', 'r.user_id = u.id')
+            ->where('r.red_packet_id', $redPacketId)
+            ->field('r.id,r.amount,r.create_time,u.username,u.nickname,u.avatar,r.ip,r.user_agent')
+            ->order('r.create_time', 'desc')
+            ->paginate([
+                'list_rows' => $limit,
+                'page' => $page
+            ]);
+
+        $list = [];
+        foreach ($records->items() as $item) {
+            $list[] = [
+                'id' => $item['id'],
+                'amount' => $item['amount'], // 转换为元
+                'create_time' => $item['create_time'],
+                'username' => $item['username'],
+                'nickname' => $item['nickname'],
+                'avatar' => $item['avatar'],
+                'ip' => $item['ip'],
+                'user_agent' => $item['user_agent'],
+                'time_text' => date('Y-m-d H:i:s', $item['create_time'])
+            ];
+        }
+
+        return [
+            'data' => $list,
+            'total' => $records->total(),
+            'page' => $page,
+            'limit' => $limit,
+            'stats' => $this->getRedPacketStats($redPacketId)
         ];
     }
 }

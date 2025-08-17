@@ -3,8 +3,6 @@
 		<!-- 状态栏占位 -->
 		<view class="status-bar"></view>
 		
-
-		
 		<!-- Logo区域 -->
 		<view class="logo-section">
 			<view class="logo">

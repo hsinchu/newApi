@@ -22,10 +22,10 @@
 									<text class="balance-label">当前余额</text>
 									<view class="header-actions">
 										<view class="refresh-btn" @tap="refreshBalance">
-											<uv-icon name="reload" size="16" color="#e1e1e1" :class="{ 'rotating': refreshing }"></uv-icon>
+											<uv-icon name="reload" size="16" color="#fff" :class="{ 'rotating': refreshing }"></uv-icon>
 										</view>
 										<view class="moneylog-btn" @tap="goToMoneyLog">
-											<uv-icon name="list" size="16" color="#e1e1e1"></uv-icon>
+											<uv-icon name="list" size="16" color="#fff"></uv-icon>
 										</view>
 									</view>
 								</view>
@@ -48,6 +48,26 @@
 									</view>
 								</view>
 							</view>
+							</view>
+						</view>
+						
+						<!-- 快捷金额选择 -->
+						<view class="content-section" v-if="rechargeGifts.length > 0">
+							<text class="section-title">充值赠送活动</text>
+							<view class="quick-amounts">
+								<view 
+									v-for="(gift, index) in rechargeGifts" 
+									:key="index"
+									class="amount-item"
+									:class="{ 
+										'active': selectedAmount === gift.charge_amount,
+										'disabled': gift.charge_amount > currentMaxAmount
+									}"
+									@tap="selectAmount(gift.charge_amount)"
+								>
+									<text class="amount-text">¥{{ gift.charge_amount }}</text>
+									<text class="gift-text">送¥{{ gift.bonus_amount }}</text>
+								</view>
 							</view>
 						</view>
 						
@@ -114,7 +134,7 @@
 
 <script>
 import { getUserInfo } from '@/api/user.js';
-import { getPayType, mockPaySuccess } from '@/api/charge.js';
+import { getPayType, getRechargeGiftList, mockPaySuccess } from '@/api/charge.js';
 export default {
 	data() {
 		return {
@@ -189,6 +209,7 @@ export default {
 	onLoad() {
 		this.loadUserBalance();
 		this.loadPaymentMethods();
+		this.loadRechargeGifts();
 	},
 	
 	methods: {
@@ -265,6 +286,27 @@ export default {
 					icon: 'none'
 				});
 			}
+		},
+		
+		// 加载代理充值赠送配置
+		async loadRechargeGifts() {
+			try {
+			const response = await getRechargeGiftList();
+			if (response.code === 1 && response.data && response.data.all_gifts && response.data.all_gifts.length > 0) {
+				this.rechargeGifts = response.data.all_gifts;
+				// 将充值金额设置为快捷金额
+				this.quickAmounts = this.rechargeGifts.map(gift => gift.charge_amount);
+			} else {
+				// 如果没有代理赠送配置，使用默认快捷金额
+				this.quickAmounts = [10, 50, 100, 200, 500, 1000];
+				this.rechargeGifts = [];
+			}
+		} catch (error) {
+			console.error('获取充值赠送配置失败:', error);
+			// 出错时使用默认快捷金额
+			this.quickAmounts = [10, 50, 100, 200, 500, 1000];
+			this.rechargeGifts = [];
+		}
 		},
 		
 		// 选择支付方式
@@ -400,21 +442,42 @@ export default {
 				const response = await mockPaySuccess(paymentData);
 				
 				if (response.code === 1) {
-				// 先显示成功提示
-				uni.showToast({
-					title: '充值成功',
-					icon: 'success',
-					duration: 2000
-				});
-				
-				// 延迟一下再刷新余额，确保提示能显示
-				setTimeout(async () => {
-					// 刷新余额
-					await this.loadUserBalance();
+				// 检查是否有支付链接
+				if (response.data && response.data.pay_url) {
+					// 显示订单创建成功提示
+					uni.showToast({
+						title: '订单创建成功，正在跳转支付...',
+						icon: 'success',
+						duration: 2000
+					});
 					
-					// 重置表单
-					this.resetForm();
-				}, 1000);
+					// 延迟一下再跳转，确保提示能显示
+					setTimeout(() => {
+						// 跳转到支付链接
+						uni.navigateTo({
+							url: `/pages/other/webview?url=${encodeURIComponent(response.data.pay_url)}&title=支付页面`
+						});
+						
+						// 重置表单
+						this.resetForm();
+					}, 1000);
+				} else {
+					// 没有支付链接，直接显示充值成功
+					uni.showToast({
+						title: '充值成功',
+						icon: 'success',
+						duration: 2000
+					});
+					
+					// 延迟一下再刷新余额，确保提示能显示
+					setTimeout(async () => {
+						// 刷新余额
+						await this.loadUserBalance();
+						
+						// 重置表单
+						this.resetForm();
+					}, 1000);
+				}
 			} else {
 				throw new Error(response.msg || '充值失败');
 			}

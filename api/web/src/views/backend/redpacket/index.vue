@@ -6,13 +6,7 @@
         <TableHeader
             :buttons="['refresh', 'add', 'comSearch', 'quickSearch', 'columnDisplay']"
             :quick-search-placeholder="'请输入红包标题、祝福语进行搜索'"
-        >
-            <template #refreshAppend>
-                <el-button @click="checkExpired" type="warning" plain>
-                    检查过期红包
-                </el-button>
-            </template>
-        </TableHeader>
+        />
 
         <!-- 表格 -->
         <Table ref="tableRef" />
@@ -28,11 +22,11 @@
             </div>
             <div v-else-if="statsDialog.data">
                 <el-descriptions :column="2" border class="mb-4">
-                    <el-descriptions-item label="红包总金额">{{ (statsDialog.data.total_amount / 100).toFixed(2) }}元</el-descriptions-item>
+                    <el-descriptions-item label="红包总金额">{{ statsDialog.data.total_amount }}元</el-descriptions-item>
                     <el-descriptions-item label="红包总个数">{{ statsDialog.data.total_count }}个</el-descriptions-item>
-                    <el-descriptions-item label="已领取金额">{{ (statsDialog.data.received_amount / 100).toFixed(2) }}元</el-descriptions-item>
+                    <el-descriptions-item label="已领取金额">{{ statsDialog.data.received_amount }}元</el-descriptions-item>
                     <el-descriptions-item label="已领取个数">{{ statsDialog.data.received_count }}个</el-descriptions-item>
-                    <el-descriptions-item label="剩余金额">{{ ((statsDialog.data.total_amount - statsDialog.data.received_amount) / 100).toFixed(2) }}元</el-descriptions-item>
+                    <el-descriptions-item label="剩余金额">{{ statsDialog.data.total_amount - statsDialog.data.received_amount }}元</el-descriptions-item>
                     <el-descriptions-item label="剩余个数">{{ statsDialog.data.remaining_count }}个</el-descriptions-item>
                     <el-descriptions-item label="领取条件" :span="2">
                         <el-tag type="info">{{ getConditionText(statsDialog.data.condition_type, statsDialog.data.condition_value) }}</el-tag>
@@ -50,15 +44,15 @@
                         <span class="ml-2">加载记录中...</span>
                     </div>
                     <el-table v-else :data="statsDialog.records" stripe style="width: 100%" max-height="300">
-                        <el-table-column prop="user.username" label="用户" width="120" />
+                        <el-table-column prop="username" label="用户" width="120" />
                         <el-table-column prop="amount" label="领取金额" width="100">
                             <template #default="scope">
-                                {{ (scope.row.amount / 100).toFixed(2) }}元
+                                {{ scope.row.amount }}元
                             </template>
                         </el-table-column>
                         <el-table-column prop="receive_time" label="领取时间" width="160">
                             <template #default="scope">
-                                {{ new Date(scope.row.receive_time).toLocaleString() }}
+                                {{ scope.row.time_text }}
                             </template>
                         </el-table-column>
                         <el-table-column prop="ip" label="IP地址" width="120" />
@@ -250,7 +244,7 @@ const showStats = async (id: number) => {
         
         // 获取领取记录
         const recordsRes = await createAxios({
-            url: '/admin/redpacket.RedPacketRecord/index',
+            url: '/admin/redpacket.RedPacket/record',
             method: 'GET',
             params: { 
                 red_packet_id: id,
@@ -259,7 +253,7 @@ const showStats = async (id: number) => {
         })
         
         if (recordsRes.code === 1) {
-            statsDialog.value.records = recordsRes.data.list || []
+            statsDialog.value.records = recordsRes.data.data || []
         }
         
     } catch (error) {
@@ -294,24 +288,7 @@ const cancelRedPacket = async (id: number) => {
     }
 }
 
-// 检查过期红包
-const checkExpired = async () => {
-    try {
-        const res = await createAxios({
-            url: '/admin/redpacket.RedPacket/checkExpired',
-            method: 'POST'
-        })
-        
-        if (res.code === 1) {
-            ElMessage.success(`已处理 ${res.data.count || 0} 个过期红包`)
-            baTable.onTableHeaderAction('refresh', {})
-        } else {
-            ElMessage.error(res.msg || '检查失败')
-        }
-    } catch (error) {
-        ElMessage.error('检查失败')
-    }
-}
+
 
 // 获取状态类型
 const getStatusType = (status: string) => {

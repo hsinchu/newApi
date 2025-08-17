@@ -1093,7 +1093,6 @@ class Agent extends Frontend
                 $rechargeGift->charge_amount = $chargeAmount;
                 $rechargeGift->bonus_amount = $bonusAmount;
                 $rechargeGift->status = $status;
-                
                 $result = $rechargeGift->save();
                 
                 if (!$result) {

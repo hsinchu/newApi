@@ -11,6 +11,7 @@ class RechargeGift extends Model
     // 设置字段信息
     protected $schema = [
         'id'            => 'int',
+        'agent_id'      => 'int',
         'charge_amount' => 'decimal',
         'bonus_amount'  => 'decimal',
         'status'        => 'int',

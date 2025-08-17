@@ -70,7 +70,18 @@ class AutoDraw extends Command
                 $periodNo = $currentPeriodResult['data']['period_number'];
             } else {
                 
-                if ($lotteryType && $lotteryType['category'] === 'QUICK') {
+                if ($lotteryCode === 'day3d') {
+                    // day3d：使用getPreviousPeriodOther方法获取上一期
+                    $output->writeln('day3d彩种，使用getPreviousPeriodOther方法获取期号');
+                    $previousPeriodResult = $lotteryService->getPreviousPeriodOther($lotteryCode);
+                    
+                    if ($previousPeriodResult['code'] != 1) {
+                        $output->writeln('获取上一期期号失败: ' . $previousPeriodResult['msg']);
+                        return;
+                    }
+                    
+                    $periodNo = $previousPeriodResult['data']['period_number'];
+                } elseif ($lotteryType && $lotteryType['category'] === 'QUICK') {
                     // 快彩：使用本地逻辑获取上一期
                     $output->writeln('快彩彩种，使用本地逻辑获取期号');
                     $previousPeriodResult = $lotteryService->getPreviousPeriod($lotteryCode);

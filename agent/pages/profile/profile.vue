@@ -17,7 +17,7 @@
 					plain 
 					shape="circle">
 				</uv-tags>
-				<uv-icon name="setting" size="20" color="#e1e1e1" @click="openSettings"></uv-icon>
+				<uv-icon name="setting" size="20" color="#555" @click="openSettings"></uv-icon>
 			</view>
 			
 			<!-- 统计数据 -->
@@ -95,10 +95,48 @@
 				</uv-form>
 			</view>
 		</uv-modal>
+		
+		<!-- 微信红包样式弹窗 -->
+		<view v-if="showRedPacket" class="red-packet-overlay" @click="closeRedPacket">
+			<view class="red-packet-container" @click.stop>
+				<view class="red-packet-header">
+					<view class="red-packet-close" @click="closeRedPacket">×</view>
+					<view class="red-packet-avatar">
+						<image src="/static/images/logo.png" class="avatar-img"></image>
+					</view>
+					<view class="red-packet-sender">BNB平台红包</view>
+					<view class="red-packet-title">{{ currentRedPacket.title || '恭喜发财，大吉大利' }}</view>
+				</view>
+				
+				<view class="red-packet-body">
+					<view class="red-packet-envelope" :class="{ 'opened': redPacketOpened }">
+						<view class="envelope-top"></view>
+						<view class="envelope-bottom">
+							<view v-if="!redPacketOpened" class="open-button" @click="openRedPacket">
+								<text class="open-text">开</text>
+							</view>
+							<view v-else class="red-packet-amount">
+								<text class="amount-text">{{ claimedAmount }}</text>
+								<text class="amount-unit">元</text>
+							</view>
+						</view>
+					</view>
+					
+					<view v-if="redPacketOpened" class="red-packet-blessing">
+						<text class="blessing-text">{{ currentRedPacket.blessing || '恭喜发财，大吉大利！' }}</text>
+					</view>
+				</view>
+				
+				<view class="red-packet-footer">
+					<text class="footer-text">红包来自BNB平台</text>
+				</view>
+			</view>
+		</view>
 	</view>
 </template>
 <script>
 	import { getUserInfo, getAgentStats } from '@/api/user.js';
+	import { getAvailableRedPackets, claimRedPacket } from '@/api/redpacket.js';
 	export default {
 		data() {
 			return {
@@ -155,7 +193,13 @@
 				oldPayPassword: '',
 				newPayPassword: '',
 				confirmPayPassword: ''
-			}
+			},
+			// 红包弹窗相关
+			showRedPacket: false,
+			redPacketOpened: false,
+			currentRedPacket: {},
+			claimedAmount: '0.00',
+			availableRedPackets: []
 			}
 		},
 		methods: {
@@ -446,11 +490,99 @@
 				newPayPassword: '',
 				confirmPayPassword: ''
 			};
+		},
+		
+		// 检查可领取的红包
+		async checkAvailableRedPacket() {
+			try {
+				const response = await getAvailableRedPackets();
+				if (response.code === 1 && response.data && response.data.length > 0) {
+					this.availableRedPackets = response.data;
+					// 显示第一个可领取的红包
+					this.showRedPacketModal(response.data[0]);
+				}
+			} catch (error) {
+				console.error('检查红包失败：', error);
+			}
+		},
+		
+		// 显示红包领取弹窗
+		showRedPacketModal(redPacketData) {
+			this.currentRedPacket = redPacketData;
+			this.showRedPacket = true;
+			this.redPacketOpened = false;
+			this.claimedAmount = '0.00';
+		},
+		
+		// 关闭红包弹窗
+		closeRedPacket() {
+			this.showRedPacket = false;
+			this.redPacketOpened = false;
+			this.currentRedPacket = {};
+			this.claimedAmount = '0.00';
+		},
+		
+		// 打开红包
+		async openRedPacket() {
+			try {
+				const response = await claimRedPacket(this.currentRedPacket.id);
+				
+				if (response.code === 1) {
+					this.redPacketOpened = true;
+					this.claimedAmount = response.data.amount;
+					
+					// 延迟关闭当前红包并检查下一个
+					setTimeout(() => {
+						this.closeRedPacket();
+						// 刷新用户信息和余额
+						this.loadAgentInfo();
+						
+						// 延迟检查是否还有其他可领取的红包
+						setTimeout(() => {
+							this.checkAvailableRedPacket();
+						}, 1000);
+					}, 3000);
+				} else {
+					uni.showToast({
+						title: response.msg || '领取失败',
+						icon: 'none'
+					});
+				}
+			} catch (error) {
+				if (error && error.msg) {
+					// 服务器返回的业务错误，显示具体错误信息
+					uni.showToast({
+						title: error.msg,
+						icon: 'none',
+						duration: 3000
+					});
+				} else {
+					// 真正的网络错误
+					uni.showToast({
+						title: '领取失败，请重试',
+						icon: 'none',
+						duration: 3000
+					});
+				}
+			}
 		}
 		},
 		onLoad() {
 			// 页面加载时获取代理商信息
 			this.loadAgentInfo();
+		},
+		
+		// 页面显示时检查红包
+		onShow() {
+			this.checkAvailableRedPacket();
+		},
+		
+		// 下拉刷新
+		onPullDownRefresh() {
+			// 重新加载用户信息和统计数据
+			this.loadAgentInfo().finally(() => {
+				uni.stopPullDownRefresh();
+			});
 		}
 	}
 </script>
@@ -706,5 +838,264 @@
 	.blue-button:active {
 		transform: scale(0.95);
 		box-shadow: 0 2rpx 8rpx rgba(0, 122, 255, 0.4);
+	}
+	
+	/* 红包弹窗样式 */
+	.red-packet-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.8);
+		z-index: 996;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		animation: fadeIn 0.3s ease-in-out;
+	}
+	
+	.red-packet-container {
+		width: 600rpx;
+		background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+		border-radius: 20rpx;
+		position: relative;
+		overflow: hidden;
+		animation: slideUp 0.4s ease-out;
+		box-shadow: 0 20rpx 60rpx rgba(255, 107, 107, 0.3);
+	}
+	
+	.red-packet-header {
+		padding: 60rpx 40rpx 40rpx;
+		text-align: center;
+		position: relative;
+	}
+	
+	.red-packet-close {
+		position: absolute;
+		top: 20rpx;
+		right: 30rpx;
+		width: 60rpx;
+		height: 60rpx;
+		color: rgba(255, 255, 255, 0.8);
+		font-size: 40rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		transition: all 0.2s ease;
+	}
+	
+	.red-packet-close:active {
+		background: rgba(255, 255, 255, 0.1);
+		transform: scale(0.9);
+	}
+	
+	.red-packet-avatar {
+		width: 120rpx;
+		height: 120rpx;
+		border-radius: 50%;
+		margin: 0 auto 20rpx;
+		border: 4rpx solid rgba(255, 255, 255, 0.3);
+		overflow: hidden;
+	}
+	
+	.avatar-img {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+	}
+	
+	.red-packet-sender {
+		color: rgba(255, 255, 255, 0.9);
+		font-size: 28rpx;
+		margin-bottom: 10rpx;
+	}
+	
+	.red-packet-title {
+		color: #fff;
+		font-size: 32rpx;
+		font-weight: bold;
+		line-height: 1.4;
+	}
+	
+	.red-packet-body {
+		padding: 40rpx;
+		text-align: center;
+	}
+	
+	.red-packet-envelope {
+		position: relative;
+		width: 300rpx;
+		height: 300rpx;
+		margin: 0 auto;
+		transition: all 0.5s ease;
+	}
+	
+	.envelope-top {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 50%;
+		background: linear-gradient(135deg, #ffd700, #ffb347);
+		border-radius: 150rpx 150rpx 0 0;
+		border: 6rpx solid #fff;
+		box-sizing: border-box;
+		transition: all 0.5s ease;
+	}
+	
+	.envelope-bottom {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 50%;
+		background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+		border-radius: 0 0 150rpx 150rpx;
+		border: 6rpx solid #fff;
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.5s ease;
+	}
+	
+	.red-packet-envelope.opened .envelope-top {
+		transform: translateY(-20rpx) rotateX(-15deg);
+	}
+	
+	.red-packet-envelope.opened .envelope-bottom {
+		transform: translateY(20rpx);
+	}
+	
+	.open-button {
+		width: 120rpx;
+		height: 120rpx;
+		background: linear-gradient(135deg, #ffd700, #ffb347);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 4rpx solid #fff;
+		box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.2);
+		transition: all 0.2s ease;
+		animation: pulse 2s infinite;
+	}
+	
+	.open-button:active {
+		transform: scale(0.95);
+	}
+	
+	.open-text {
+		color: #d4af37;
+		font-size: 48rpx;
+		font-weight: bold;
+		text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+	}
+	
+	.red-packet-amount {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		animation: bounceIn 0.6s ease-out;
+	}
+	
+	.amount-text {
+		color: #ffd700;
+		font-size: 72rpx;
+		font-weight: bold;
+		text-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.2);
+		margin-bottom: 10rpx;
+	}
+	
+	.amount-unit {
+		color: #fff;
+		font-size: 28rpx;
+		opacity: 0.9;
+	}
+	
+	.red-packet-blessing {
+		margin-top: 40rpx;
+		padding: 30rpx;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 15rpx;
+		animation: fadeInUp 0.5s ease-out 0.3s both;
+	}
+	
+	.blessing-text {
+		color: #fff;
+		font-size: 28rpx;
+		line-height: 1.5;
+		opacity: 0.9;
+	}
+	
+	.red-packet-footer {
+		padding: 30rpx;
+		text-align: center;
+		border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+	}
+	
+	.footer-text {
+		color: rgba(255, 255, 255, 0.7);
+		font-size: 24rpx;
+	}
+	
+	/* 动画效果 */
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	
+	@keyframes slideUp {
+		from {
+			transform: translateY(100rpx);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+	
+	@keyframes pulse {
+		0%, 100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.05);
+		}
+	}
+	
+	@keyframes bounceIn {
+		0% {
+			transform: scale(0.3);
+			opacity: 0;
+		}
+		50% {
+			transform: scale(1.05);
+		}
+		70% {
+			transform: scale(0.9);
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+	
+	@keyframes fadeInUp {
+		from {
+			transform: translateY(30rpx);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
 	}
 </style>

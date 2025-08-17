@@ -76,6 +76,25 @@ class RedPacket extends Backend
     }
 
     /**
+     * 获取红包记录
+     */
+    public function record(): void
+    {
+        $id = $this->request->param('red_packet_id');
+        if (!$id) {
+            $this->error('参数错误');
+        }
+
+        try {
+            $redPacketService = new RedPacketService();
+            $records = $redPacketService->getRedPacketRecords($id);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+        $this->success('', $records);
+    }
+
+    /**
      * 编辑（已禁用）
      */
     public function edit(): void

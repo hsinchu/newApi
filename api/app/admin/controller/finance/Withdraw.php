@@ -268,13 +268,26 @@ class Withdraw extends Backend
             $this->error('参数错误');
         }
         
-        $record = WithdrawRecord::find($id);
+        $record = WithdrawRecord::with(['user', 'withdrawAccount'])->find($id);
         if (!$record) {
             $this->error('记录不存在');
         }
         
         if ($record->status !== WithdrawRecord::STATUS_PENDING) {
             $this->error('当前状态不允许此操作');
+        }
+        
+        // 银行卡提现验证逻辑
+        if ($record->withdrawAccount && $record->withdrawAccount->type == WithdrawAccount::TYPE_BANK) {
+            // 检查用户是否已实名认证
+            if ($record->user->is_verified != 1) {
+                $this->error('用户未完成实名认证，无法审核通过银行卡提现');
+            }
+            
+            // 检查持卡人姓名是否与实名信息一致
+            if ($record->withdrawAccount->account_name != $record->user->real_name) {
+                $this->error('持卡人姓名与用户实名信息不一致，无法审核通过');
+            }
         }
         
         Db::startTrans();

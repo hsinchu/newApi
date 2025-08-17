@@ -753,6 +753,17 @@ class Withdraw extends Frontend
                     $this->error('银行名称长度不能超过100个字符');
                 }
                 
+                // 银行卡绑定必须实名认证
+                $user = $this->auth->getUser();
+                if ($user->is_verified != 1) {
+                    $this->error('银行卡绑定需要完成实名认证后才能操作');
+                }
+                
+                // 验证持卡人姓名必须与实名认证姓名一致
+                if ($data['accountName'] != $user->real_name) {
+                    $this->error('持卡人姓名必须与实名认证姓名一致');
+                }
+                
                 // 验证开户行（可选）
                 if (isset($data['bankBranch']) && !empty($data['bankBranch'])) {
                     if (mb_strlen($data['bankBranch']) > 200) {

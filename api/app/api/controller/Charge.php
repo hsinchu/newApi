@@ -92,33 +92,65 @@ class Charge extends Frontend
     }
 
     /**
-     * 获取代理充值赠送活动列表
+     * 获取充值赠送活动列表（包含系统配置和代理商配置）
      */
     public function rechargeGiftList(): void
     {
         try {
-            $agentId = $this->auth->parent_id;
+            $agentId = $this->auth->parent_id ?? 0;
             
-            if (!$agentId) {
-                throw new Exception('您还没有代理商，无法查看充值赠送活动');
-            }
-
-            // 查询该代理的启用状态的充值赠送配置
-            $rechargeGifts = RechargeGift::where('agent_id', $agentId)
+            // 查询系统配置（agent_id = 0）
+            $systemGifts = RechargeGift::where('agent_id', 0)
                 ->where('status', 1)
                 ->order('charge_amount', 'asc')
                 ->select()
                 ->toArray();
 
-            $result = [];
-            foreach ($rechargeGifts as $gift) {
-                $result[] = [
+            // 查询代理商配置（如果用户有代理商）
+            $agentGifts = [];
+            if ($agentId > 0) {
+                $agentGifts = RechargeGift::where('agent_id', $agentId)
+                    ->where('status', 1)
+                    ->order('charge_amount', 'asc')
+                    ->select()
+                    ->toArray();
+            }
+
+            $result = [
+                'system_gifts' => [],
+                'agent_gifts' => []
+            ];
+            
+            // 处理系统配置
+            foreach ($systemGifts as $gift) {
+                $result['system_gifts'][] = [
                     'id' => $gift['id'],
                     'charge_amount' => floatval($gift['charge_amount']),
                     'bonus_amount' => floatval($gift['bonus_amount']),
-                    'display_text' => '充值¥' . $gift['charge_amount'] . '送¥' . $gift['bonus_amount']
+                    'display_text' => '充值¥' . $gift['charge_amount'] . '送¥' . $gift['bonus_amount'] . '（系统）',
+                    'type' => 'system'
                 ];
             }
+            
+            // 处理代理商配置
+            foreach ($agentGifts as $gift) {
+                $result['agent_gifts'][] = [
+                    'id' => $gift['id'],
+                    'charge_amount' => floatval($gift['charge_amount']),
+                    'bonus_amount' => floatval($gift['bonus_amount']),
+                    'display_text' => '充值¥' . $gift['charge_amount'] . '送¥' . $gift['bonus_amount'] . '（代理商）',
+                    'type' => 'agent'
+                ];
+            }
+            
+            // 合并所有配置并按充值金额排序
+            $allGifts = array_merge($result['system_gifts'], $result['agent_gifts']);
+            usort($allGifts, function($a, $b) {
+                return $a['charge_amount'] <=> $b['charge_amount'];
+            });
+            
+            $result['all_gifts'] = $allGifts;
+            
         } catch (Throwable $e) {
             $this->error('获取充值赠送活动失败：' . $e->getMessage());
         }

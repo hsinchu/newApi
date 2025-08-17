@@ -101,7 +101,7 @@
                             content: [
                                 { label: '无条件领取', value: 'NONE' },
                                 { label: '需要当日最低投注额', value: 'MIN_BET' },
-                                // { label: '需要用户等级', value: 'USER_LEVEL' }
+                                { label: '需要用户等级', value: 'USER_LEVEL' }
                             ]
                         }"
                     />

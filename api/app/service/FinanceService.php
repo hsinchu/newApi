@@ -41,9 +41,9 @@ class FinanceService
         // 增加不可提现余额的操作类型
         $freezeIncreaseTypes = [
             'COMMISSION_ADD',        // 佣金收入
-            // 'ADMIN_ADD',             // 管理员充值
+            'ADMIN_ADD',             // 管理员充值
             'RECHARGE_ADD',          // 用户充值
-            'RECHARGE_GIFT_ADD',     // 充值赠送
+            'RECHARGE_GIFT_ADD',     // 充值赠送（旧版本兼容）
             'BET_REFUND_ADD',        // 用户投注退款
             'ACTIVITY_REWARD_ADD',   // 活动奖励
             'PROMOTION_INCOME',      // 推广收入
@@ -82,7 +82,7 @@ class FinanceService
         
         // 如果需要更新gift_money字段
         if ($updateGiftMoney && $amount != 0) {
-            if ($type === 'RECHARGE_GIFT_ADD') {
+            if (in_array($type, ['RECHARGE_GIFT_ADD', 'RECHARGE_GIFT_ADD', 'RECHARGE_GIFT_ADD'])) {
                 // 充值赠送增加gift_money
                 $user->gift_money += $amount;
                 $user->save();

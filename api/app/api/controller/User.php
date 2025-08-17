@@ -354,6 +354,10 @@ class User extends Frontend
         try {
             $userId = $this->auth->id;
             $currentTime = time();
+            
+            // 获取当前用户信息
+            $currentUser = $this->auth->getUser();
+            
             // 1. 获取用户今日投注金额（缓存优化）
             $todayBetAmount = $this->getUserTodayBetAmount($userId);
             
@@ -361,14 +365,22 @@ class User extends Frontend
             $claimedPacketIds = RedPacketRecord::where('user_id', $userId)
                 ->column('red_packet_id');
             
-            // 3. 主查询优化 - 使用复合索引
+            // 3. 根据用户类型设置target_type条件
+            $targetTypes = [0]; // 0=全部
+            if ($currentUser->is_agent == 1) {
+                $targetTypes[] = 1; // 1=代理商
+            } else {
+                $targetTypes[] = 2; // 2=用户
+            }
+            
+            // 4. 主查询优化 - 使用复合索引
             $query = RedPacket::where('status', 'ACTIVE')
                 ->where(function($query) use ($currentTime) {
                     $query->where('expire_time', '>', $currentTime)
                           ->whereOr('expire_time', 0);
                 })
                 ->where('remaining_count', '>', 0)
-                ->where('target_type', 'in', [0, 2]); // 0=全部，2=用户
+                ->where('target_type', 'in', $targetTypes);
             
             // 排除已领取的红包
             if (!empty($claimedPacketIds)) {
@@ -399,7 +411,7 @@ class User extends Frontend
                 }
                 
                 // 计算剩余金额
-                $remainingAmount = bcsub($packet->total_amount, $packet->received_amount, 0);
+                $remainingAmount = $packet->total_amount - $packet->received_amount;
                 
                 $availablePackets[] = [
                     'id' => $packet->id,
@@ -569,6 +581,7 @@ class User extends Frontend
              $record = new RedPacketRecord();
              $record->red_packet_id = $redPacketId;
              $record->user_id = $userId;
+             // 修复：amount需要除以100存储为元值
              $record->amount = bcdiv($amount, 100, 2);
              $record->ip = $this->request->ip();
              $record->user_agent = $this->request->header('user-agent', '');
@@ -580,7 +593,9 @@ class User extends Frontend
              
              // 更新红包统计
              $redPacket->received_count += 1;
-             $redPacket->received_amount = bcadd($redPacket->received_amount, $amount, 0);
+             $currentReceivedAmount = $redPacket->getData('received_amount'); // 获取原始分值
+             // 修复：received_amount需要除以100存储为元值
+             $redPacket->setAttr('received_amount', $currentReceivedAmount + bcdiv($amount, 100, 2));
              
              // 计算剩余数量：检查amount_list中还有多少未使用的红包
              // 直接获取原始数据，避免访问器缓存问题
@@ -606,6 +621,7 @@ class User extends Frontend
              $redPacket->save();
 
              // 使用FinanceService调整用户余额
+             // 修复：amount是分值，需要转换为元值
              $amountInYuan = bcdiv($amount, 100, 2);
              $financeService = new \app\service\FinanceService();
              $financeService->adjustUserBalance(
@@ -626,10 +642,10 @@ class User extends Frontend
          }
 
         $this->success('领取成功', [
-            'amount' => $amountInYuan,
-            'title' => $redPacket->title,
-            'blessing' => $redPacket->blessing
-        ]);
+                 'amount' => $amountInYuan,
+                 'title' => $redPacket->title,
+                 'blessing' => $redPacket->blessing
+             ]);
      }
      
      /**
@@ -638,9 +654,11 @@ class User extends Frontend
      private function calculateRedPacketAmount(RedPacket $redPacket): int
      {
          if ($redPacket->type === 'FIXED') {
-             // 固定红包：平均分配
-             $remainingAmount = bcsub($redPacket->total_amount, $redPacket->received_amount, 0);
-             return intval(bcdiv($remainingAmount, $redPacket->remaining_count, 0));
+             // 固定红包：平均分配（使用原始分值计算）
+             $totalAmountCent = $redPacket->getData('total_amount'); // 获取原始分值
+             $receivedAmountCent = $redPacket->getData('received_amount'); // 获取原始分值
+             $remainingAmount = $totalAmountCent - $receivedAmountCent;
+             return intval($remainingAmount / $redPacket->remaining_count);
          } else {
              // 随机红包：从预设金额列表中按顺序领取
              // 直接从数据库获取最新的amount_list，避免模型访问器缓存问题
@@ -674,7 +692,11 @@ class User extends Frontend
                                      if (isset($doubleCheckAmountList[$index]) && isset($doubleCheckAmountList[$index][$amount]) && $doubleCheckAmountList[$index][$amount] == 0) {
                                          // 标记为当前用户已使用
                                          $doubleCheckAmountList[$index][$amount] = $this->auth->id;
-                                         // 直接更新数据库字段，绕过修改器
+                                         // 直接更新数据库字段，使用原生SQL确保更新成功
+                                         \think\facade\Db::name('red_packet')
+                                             ->where('id', $redPacket->id)
+                                             ->update(['amount_list' => json_encode($doubleCheckAmountList)]);
+                                         // 同时更新模型实例
                                          $doubleCheckRedPacket->setAttr('amount_list', json_encode($doubleCheckAmountList));
                                          $doubleCheckRedPacket->save();
                                          

@@ -97,7 +97,8 @@ class RechargeGift extends Backend
                 // 检查是否已存在相同配置
                 $exists = $this->model->where([
                     'charge_amount' => $data['charge_amount']
-                ])->find();
+                ])->where('agent_id', 0)->find();
+
                 if ($exists) {
                     throw new ValidateException('该充值金额配置已存在');
                 }
@@ -154,7 +155,8 @@ class RechargeGift extends Backend
                 // 检查是否已存在相同配置（排除当前记录）
                 $exists = $this->model->where([
                     'charge_amount' => $data['charge_amount']
-                ])->where('id', '<>', $id)->find();
+                ])->where('agent_id', 0)->where('id', '<>', $id)->find();
+
                 if ($exists) {
                     throw new ValidateException('该充值金额配置已存在');
                 }

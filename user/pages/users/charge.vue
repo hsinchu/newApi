@@ -291,22 +291,22 @@ export default {
 		// 加载代理充值赠送配置
 		async loadRechargeGifts() {
 			try {
-				const response = await getRechargeGiftList();
-				if (response.code === 1 && response.data && response.data.length > 0) {
-					this.rechargeGifts = response.data;
-					// 将充值金额设置为快捷金额
-					this.quickAmounts = this.rechargeGifts.map(gift => gift.charge_amount);
-				} else {
-					// 如果没有代理赠送配置，使用默认快捷金额
-					this.quickAmounts = [10, 50, 100, 200, 500, 1000];
-					this.rechargeGifts = [];
-				}
-			} catch (error) {
-				console.error('获取充值赠送配置失败:', error);
-				// 出错时使用默认快捷金额
+			const response = await getRechargeGiftList();
+			if (response.code === 1 && response.data && response.data.all_gifts && response.data.all_gifts.length > 0) {
+				this.rechargeGifts = response.data.all_gifts;
+				// 将充值金额设置为快捷金额
+				this.quickAmounts = this.rechargeGifts.map(gift => gift.charge_amount);
+			} else {
+				// 如果没有代理赠送配置，使用默认快捷金额
 				this.quickAmounts = [10, 50, 100, 200, 500, 1000];
 				this.rechargeGifts = [];
 			}
+		} catch (error) {
+			console.error('获取充值赠送配置失败:', error);
+			// 出错时使用默认快捷金额
+			this.quickAmounts = [10, 50, 100, 200, 500, 1000];
+			this.rechargeGifts = [];
+		}
 		},
 		
 		// 选择支付方式

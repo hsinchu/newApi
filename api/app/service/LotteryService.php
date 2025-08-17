@@ -170,7 +170,7 @@ class LotteryService
                     $periodNumber = substr($dateStr, 2, 2) . str_pad((string)$usePeriodInfo['current_issue_number'], 2, '0', STR_PAD_LEFT);
                     break;
                 case 'day3d':
-                    $periodNumber = $this->buildPeriodNumber($usePeriodInfo['current_issue_number'], 'day3d', date('ymd', strtotime($targetDate)));
+                    $periodNumber = $this->buildPeriodNumber($usePeriodInfo['current_issue_number'], 'day3d', date('Y', strtotime($targetDate)));
                     break;
             }
             
@@ -346,6 +346,87 @@ class LotteryService
             
             // 生成上一期期号
             $previousPeriodNumber = $this->buildPeriodNumber($previousIssueNumber, $lotteryName, $dateStr);
+            
+            // 查询上一期的时间信息
+            $periodInfo = Db::name('lottery_time')
+                ->where('lottery_name', $lotteryName)
+                ->where('current_issue_number', $previousIssueNumber)
+                ->where('status', 'active')
+                ->find();
+            
+            if (!$periodInfo) {
+                return ['code' => 0, 'msg' => '未找到上一期期号信息'];
+            }
+            
+            $result = [
+                'period_number' => $previousPeriodNumber,
+                'current_issue_number' => $previousIssueNumber,
+                'draw_time_start' => $periodInfo['draw_time_start'],
+                'draw_time_end' => $periodInfo['draw_time_end'],
+                'closing_time' => $periodInfo['closing_time'],
+                'lottery_name' => $lotteryName
+            ];
+            
+            return ['code' => 1, 'msg' => '获取成功', 'data' => $result];
+            
+        } catch (Exception $e) {
+            Log::error('获取上一期期号信息失败: ' . $e->getMessage());
+            return ['code' => 0, 'msg' => '获取上一期期号信息失败：' . $e->getMessage()];
+        }
+    }
+    
+    /**
+     * 获取上一期期号信息【其他彩种】
+     * @param string $lotteryName 彩种名称，默认为day3d
+     * @return array
+     */
+    public function getPreviousPeriodOther(string $lotteryName = 'day3d'): array
+    {
+        try {
+            // 先获取当前期号信息
+            $currentPeriodResult = $this->getCurrentPeriodOther($lotteryName);
+            
+            if ($currentPeriodResult['code'] != 1) {
+                return $currentPeriodResult;
+            }
+            
+            $currentIssueNumber = $currentPeriodResult['data']['current_issue_number'];
+            $previousIssueNumber = $currentIssueNumber - 1;
+            
+            // 如果上一期是0，需要处理跨日情况
+            if ($previousIssueNumber <= 0) {
+                // 获取昨天的最后一期
+                $yesterday = date('Y-m-d', strtotime('-1 day'));
+                
+                // 查询该彩种的最大期数（动态获取）
+                $maxIssue = Db::name('lottery_time')
+                    ->where('lottery_name', $lotteryName)
+                    ->where('status', 'active')
+                    ->max('current_issue_number');
+                
+                $previousIssueNumber = (int)($maxIssue ?: 1); // 如果查询不到则默认为1，强制转换为int
+                $targetDate = $yesterday;
+            } else {
+                $targetDate = date('Y-m-d');
+            }
+            
+            // 生成上一期期号
+            switch($lotteryName){
+                case '3d':
+                    $dateStr = str_replace('-', '', $targetDate);
+                    $previousPeriodNumber = substr($dateStr, 0, 4) . str_pad((string)$previousIssueNumber, 3, '0', STR_PAD_LEFT);
+                    break;
+                case 'pl3':
+                    $dateStr = str_replace('-', '', $targetDate);
+                    $previousPeriodNumber = substr($dateStr, 2, 2) . str_pad((string)$previousIssueNumber, 2, '0', STR_PAD_LEFT);
+                    break;
+                case 'day3d':
+                    $previousPeriodNumber = $this->buildPeriodNumber($previousIssueNumber, 'day3d', date('Y', strtotime($targetDate)));
+                    break;
+                default:
+                    $previousPeriodNumber = $this->buildPeriodNumber($previousIssueNumber, $lotteryName, date('ymd', strtotime($targetDate)));
+                    break;
+            }
             
             // 查询上一期的时间信息
             $periodInfo = Db::name('lottery_time')

@@ -7,6 +7,7 @@ use app\common\model\RechargeGift;
 use app\common\model\RechargeOrder;
 use app\common\model\User;
 use app\service\FinanceService;
+use app\common\library\Email;
 
 use think\Exception;
 use think\facade\Db;
@@ -101,12 +102,11 @@ class PayService
                 }
             }
             
-            // 如果没有代理商赠送，检查系统赠送（agent_id=0）
-            if ($giftAmount == 0) {
-                $systemGift = RechargeGift::getGiftByAmount(0, $amount);
-                if ($systemGift) {
-                    $giftAmount = floatval($systemGift['bonus_amount']);
-                }
+            // 不管代理商有无赠送，都检查系统赠送（agent_id=0）
+            $systemGift = RechargeGift::getGiftByAmount(0, $amount);
+            if ($systemGift) {
+                $systemGiftAmount = floatval($systemGift['bonus_amount']);
+                $giftAmount += $systemGiftAmount; // 累加系统赠送金额
             }
             
             // 生成订单号
@@ -258,65 +258,78 @@ class PayService
                     'RECHARGE_ADD'
                 );
                 
-                // 处理赠送金额
+                // 处理赠送金额 - 分别处理代理商赠送和系统赠送
                 if ($order->gift_amount > 0) {
                     $user = User::find($order->user_id);
                     $agentId = $user->parent_id ?? 0;
                     
-                    // 检查是否为代理商赠送
+                    $agentGiftAmount = 0;
+                    $systemGiftAmount = 0;
+                    
+                    // 分别获取代理商赠送和系统赠送金额
                     if ($agentId) {
                         $agentGift = RechargeGift::getGiftByAmount($agentId, $order->amount);
-                        if ($agentGift && floatval($agentGift['bonus_amount']) == $order->gift_amount) {
-                            // 代理商赠送逻辑
-                            $agent = User::find($agentId);
-                            if ($agent) {
-                                // 检查代理余额是否充足
-                                $agentBalance = $agent->money;
+                        if ($agentGift) {
+                            $agentGiftAmount = floatval($agentGift['bonus_amount']);
+                        }
+                    }
+                    
+                    $systemGift = RechargeGift::getGiftByAmount(0, $order->amount);
+                    if ($systemGift) {
+                        $systemGiftAmount = floatval($systemGift['bonus_amount']);
+                    }
+                    
+                    // 处理代理商赠送
+                    if ($agentGiftAmount > 0) {
+                        $agent = User::find($agentId);
+                        if ($agent) {
+                            // 检查代理余额是否充足
+                            $agentBalance = $agent->money;
+                            
+                            if (bccomp($agentBalance, $agentGiftAmount) >= 0) {
+                                // 代理余额充足，先扣除代理余额
+                                $financeService->adjustUserBalance(
+                                    $agentId,
+                                    -$agentGiftAmount,
+                                    '充值赠送扣款，会员：' . $order->user_id,
+                                    'RECHARGE_GIFT_DEDUCT'
+                                );
                                 
-                                if (bccomp($agentBalance, $order->gift_amount) >= 0) {
-                                    // 代理余额充足，先扣除代理余额
-                                    $financeService->adjustUserBalance(
-                                        $agentId,
-                                        -$order->gift_amount,
-                                        '充值赠送扣款，会员：' . $order->user_id,
-                                        'RECHARGE_GIFT_DEDUCT'
-                                    );
-                                    
-                                    // 再给会员充值赠送
-                                    $financeService->adjustUserBalance(
-                                        $order->user_id,
-                                        $order->gift_amount,
-                                        '充值赠送，订单号：' . $orderNo,
-                                        'RECHARGE_GIFT_ADD',
-                                        true  // 更新gift_money字段
-                                    );
-                                } else {
-                                    // 代理余额不足，关闭该代理所有的充值赠送活动
-                                    RechargeGift::where('agent_id', $agentId)
-                                        ->where('status', RechargeGift::STATUS_ENABLED)
-                                        ->update(['status' => RechargeGift::STATUS_DISABLED]);
-                                    
-                                    Log::warning('代理余额不足，关闭充值赠送活动', [
-                                        'agent_id' => $agentId,
-                                        'order_no' => $orderNo,
-                                        'gift_amount' => $order->gift_amount
-                                    ]);
-                                }
+                                // 再给会员充值赠送
+                                $financeService->adjustUserBalance(
+                                    $order->user_id,
+                                    $agentGiftAmount,
+                                    '代理商充值赠送，订单号：' . $orderNo,
+                                    'RECHARGE_GIFT_ADD',
+                                    true  // 更新gift_money字段
+                                );
+                            } else {
+                                // 代理余额不足，关闭该代理所有的充值赠送活动
+                                RechargeGift::where('agent_id', $agentId)
+                                    ->where('status', RechargeGift::STATUS_ENABLED)
+                                    ->update(['status' => RechargeGift::STATUS_DISABLED]);
+                                
+                                // 发送邮件通知代理余额不足
+                                $this->sendBalanceInsufficientEmail($agent, $agentGiftAmount, $orderNo);
+                                
+                                Log::warning('代理余额不足，关闭充值赠送活动', [
+                                    'agent_id' => $agentId,
+                                    'order_no' => $orderNo,
+                                    'gift_amount' => $agentGiftAmount
+                                ]);
                             }
                         }
-                    } else {
-                        // 检查是否为系统赠送（agent_id=0）
-                        $systemGift = RechargeGift::getGiftByAmount(0, $order->amount);
-                        if ($systemGift && floatval($systemGift['bonus_amount']) == $order->gift_amount) {
-                            // 系统赠送，直接给用户充值赠送
-                            $financeService->adjustUserBalance(
-                                $order->user_id,
-                                $order->gift_amount,
-                                '系统充值赠送，订单号：' . $orderNo,
-                                'SYSTEM_GIFT_ADD',
-                                true  // 更新gift_money字段
-                            );
-                        }
+                    }
+                    
+                    // 处理系统赠送（单独记录账变）
+                    if ($systemGiftAmount > 0) {
+                        $financeService->adjustUserBalance(
+                            $order->user_id,
+                            $systemGiftAmount,
+                            '系统充值赠送，订单号：' . $orderNo,
+                            'RECHARGE_GIFT_ADD',
+                            true  // 更新gift_money字段
+                        );
                     }
                 }
                 
@@ -397,5 +410,57 @@ class PayService
     private function getReturnUrl(): string
     {
         return request()->domain() . '/pay/return';
+    }
+    
+    /**
+     * 发送余额不足邮件通知
+     * @param User $agent 代理用户对象
+     * @param float $giftAmount 赠送金额
+     * @param string $orderNo 订单号
+     * @return void
+     */
+    private function sendBalanceInsufficientEmail(User $agent, float $giftAmount, string $orderNo): void
+    {
+        try {
+            if (empty($agent->email)) {
+                Log::warning('代理邮箱为空，无法发送邮件通知', ['agent_id' => $agent->id]);
+                return;
+            }
+            
+            $mail = new Email();
+            
+            if (!$mail->configured) {
+                Log::warning('邮件服务未配置，无法发送通知');
+                return;
+            }
+            
+            $subject = '余额不足通知 - 充值赠送活动已关闭';
+            $content = "尊敬的代理商，\n\n" .
+                      "您的账户余额不足，无法完成充值赠送。\n" .
+                      "订单号：{$orderNo}\n" .
+                      "所需赠送金额：¥{$giftAmount}\n" .
+                      "当前余额：¥{$agent->money}\n\n" .
+                      "为避免影响业务，系统已自动关闭您的所有充值赠送活动。\n" .
+                      "请及时充值后重新开启赠送活动。\n\n" .
+                      "如有疑问，请联系客服。";
+            
+            // 发送邮件
+            $mail->isSMTP();
+            $mail->addAddress($agent->email);
+            $mail->isHTML(true);
+            $mail->setSubject($subject);
+            $mail->Body = "<p>" . nl2br(htmlspecialchars($content)) . "</p>";
+            $mail->AltBody = $content;
+            
+            $mail->send();
+            Log::info("余额不足邮件发送成功", ['agent_id' => $agent->id, 'email' => $agent->email]);
+            
+        } catch (Exception $e) {
+            Log::error("余额不足邮件发送失败", [
+                'agent_id' => $agent->id,
+                'email' => $agent->email ?? '',
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

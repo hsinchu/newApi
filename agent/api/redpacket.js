@@ -158,46 +158,29 @@ export function getRedPacketStats() {
 	return request.get('/redPacket/stats');
 }
 
-/**
- * 领取红包
- * @param {Object} data 参数
- * @param {number} data.id 红包ID
- * @returns {Promise} API响应
- */
-export function receiveRedPacket(data) {
-	if (!data?.id) {
-		return Promise.reject(new Error('红包ID不能为空'));
-	}
-	return request.post('/redPacket/receive', data);
+
+//获取可领取的红包
+export function getAvailableRedPackets() {
+	return request.get('/user/availableRedPackets');
 }
 
-/**
- * 获取我的红包记录
- * @param {Object} params 查询参数
- * @param {number} [params.page=1] 页码
- * @param {number} [params.limit=10] 每页数量
- * @returns {Promise} API响应
- */
-export function getMyRedPackets(params = {}) {
-	const queryParams = {
-		...DEFAULT_PAGE_PARAMS,
-		...params
-	};
-	
-	return request.get('/redPacket/my', queryParams);
+//领取红包
+export function claimRedPacket(redPacketId) {
+	return request.post('/user/claimRedPacket', {
+		red_packet_id: redPacketId
+	});
 }
 
-/**
- * 批量取消红包
- * @param {Array<number>} ids 红包ID数组
- * @returns {Promise} API响应
- */
-export function batchCancelRedPackets(ids) {
-	if (!Array.isArray(ids) || ids.length === 0) {
-		return Promise.reject(new Error('红包ID数组不能为空'));
-	}
-	return request.post('/redPacket/batchCancel', { ids });
+//获取我的红包记录
+export function myRedPacketRecords(params = {}) {
+	return request.get('/user/myRedPacketRecords', {
+		params: {
+			page: params.page || 1,
+			limit: params.limit || 20
+		}
+	});
 }
+
 
 /**
  * 获取红包状态文本映射

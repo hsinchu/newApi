@@ -541,9 +541,8 @@ class RedPacket extends Frontend
         // 添加代理商ID
         $data['agent_id'] = $this->auth->id;
         
-        // 转换金额为分（如果前端传入的是元）
         if (isset($data['total_amount']) && is_numeric($data['total_amount'])) {
-            $data['total_amount'] = bcmul($data['total_amount'], 100, 0);
+            $data['total_amount'] = $data['total_amount'];
         }
         
         return $data;

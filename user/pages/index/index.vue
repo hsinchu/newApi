@@ -3,7 +3,7 @@
 		<!-- 顶部下载区域 -->
 		<view class="download-banner" v-if="showDownloadBanner">
 			<view class="download-content">
-				<image src="/static/images/logo.png" class="download-logo" mode="aspectFit"></image>
+				<image src="/static/images/logo.jpg" class="download-logo" mode="aspectFit"></image>
 				<text class="download-text">最顶尖的APP 方寸之间 从容...</text>
 				<view class="download-btn" @click="downloadApp">点我下载</view>
 			</view>
@@ -80,6 +80,12 @@
 						<text class="tab-text">BNB<br />直播</text>
 					</view>
 					<view class="tab-item" 
+						:class="{ active: activeTab === 'tiyu' }" 
+						@click="switchTab('tiyu')">
+						<image :src="activeTab === 'tiyu' ? '/static/icon/index/tiyu1.png' : '/static/icon/index/tiyu.png'" mode="aspectFit" class="tab-icon"></image>
+						<text class="tab-text">BNB<br />体育</text>
+					</view>
+					<view class="tab-item" 
 						:class="{ active: activeTab === 'chess' }" 
 						@click="switchTab('chess')">
 						<image :src="activeTab === 'chess' ? '/static/icon/index/qipai1.png' : '/static/icon/index/qipai.png'" mode="aspectFit" class="tab-icon"></image>
@@ -143,26 +149,23 @@
 						</view>
 					</view>
 					
-					<!-- 棋牌彩种 -->
-					<view class="lottery-section" v-if="activeTab === 'chess'">
-						<!-- <view class="section-header">
-							<view class="header-left">
-								<image src="/static/icon/index/qipai1.png" mode="aspectFit" class="tab-icon"></image>
-								<text class="section-title">BNB棋牌</text>
-							</view>
-						</view> -->
-						<view v-if="chessLotteries.length > 0" class="lottery-grid">
-							<view class="lottery-item" v-for="(lottery, index) in chessLotteries" :key="index" @click="onLotteryClick(lottery)">
-								<image class="lottery-icon" :src="lottery.icon" mode="aspectFit"></image>
-								<view class="lottery-info">
-									<text class="lottery-name">{{ lottery.name }}</text>
-									<text class="lottery-type_desc" v-if="lottery.type_desc">{{ lottery.type_desc }}</text>
+					<!-- 体育招商 -->
+					<view class="lottery-section" v-if="activeTab === 'tiyu'">
+						<view class="sports-promotion">
+							<view class="promotion-content">
+								<view class="promotion-icon">
+									<image src="/static/icon/index/tiyu1.png" mode="aspectFit" class="icon-image"></image>
+								</view>
+								<view class="promotion-text">
+									<text class="promotion-title">BNB体育</text>
+									<text class="promotion-subtitle">火爆招商中，更多财富联系在线客服</text>
 								</view>
 							</view>
-						</view>
-						<view v-else class="empty-state">
-							<uv-icon name="empty-data" size="48" color="#ccc"></uv-icon>
-							<text class="empty-text">暂未分配游戏，敬请期待！</text>
+							<view class="promotion-action">
+								<view class="contact-btn" @click="contactService">
+									<text class="btn-text">联系客服</text>
+								</view>
+							</view>
 						</view>
 					</view>
 					
@@ -362,27 +365,35 @@ import { getUserInfo } from '@/api/user.js';
 						if (response.code === 1 && response.data) {
 							this.noticeList = response.data.list || response.data || [];
 							
-							// 每次页面加载都显示公告弹窗
-							if (this.noticeList.length > 0) {
+							// 检查是否需要显示公告弹窗（每天只显示一次）
+							if (this.noticeList.length > 0 && this.shouldShowNoticeToday()) {
 								setTimeout(() => {
 									this.openNoticePopup();
 								}, 1500); // 延迟1.5秒显示
 							}
-						} else {
-							// 为了测试，添加一些模拟数据
-							this.noticeList = [];
-							setTimeout(() => {
-								this.openNoticePopup();
-							}, 1500);
 						}
 					} catch (error) {
-						// 出错时也显示测试数据
-						this.noticeList = [
-						];
-						setTimeout(() => {
-							this.openNoticePopup();
-						}, 1500);
+						console.log('加载公告数据失败：', error);
 					}
+				},
+				
+				// 检查今天是否应该显示公告
+				shouldShowNoticeToday() {
+					const today = new Date().toDateString(); // 获取今天的日期字符串
+					const lastShownDate = uni.getStorageSync('lastNoticeShownDate');
+					
+					// 如果今天还没有显示过公告，则显示
+					if (lastShownDate !== today) {
+						return true;
+					}
+					
+					return false;
+				},
+				
+				// 记录公告已显示
+				markNoticeAsShown() {
+					const today = new Date().toDateString();
+					uni.setStorageSync('lastNoticeShownDate', today);
 				},
 				
 				// 登录
@@ -415,6 +426,8 @@ import { getUserInfo } from '@/api/user.js';
 				// 打开公告弹窗
 				openNoticePopup() {
 					this.$refs.noticePopup.open('center');
+					// 记录公告已显示
+					this.markNoticeAsShown();
 				},
 				
 				// 关闭公告弹窗
@@ -612,8 +625,8 @@ import { getUserInfo } from '@/api/user.js';
 						console.log('切换到直播tab');
 						break;
 					case 'chess':
-						// 棋牌tab逻辑
-						console.log('切换到棋牌tab');
+						// 体育tab逻辑
+						console.log('切换到体育tab');
 						break;
 					case 'person':
 						// 电子tab逻辑
@@ -667,7 +680,7 @@ import { getUserInfo } from '@/api/user.js';
 						data: this.liveLotteries
 					},
 					chess: {
-						name: 'BNB棋牌',
+						name: 'BNB体育',
 						icon: 'coupon',
 						color: '#2196F3',
 						data: this.chessLotteries
@@ -1183,5 +1196,74 @@ import { getUserInfo } from '@/api/user.js';
 	.notice-footer uv-button {
 		width: 100%;
 		max-width: 400rpx;
+	}
+	
+	// 体育招商样式
+	.sports-promotion {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		border-radius: 16rpx;
+		padding: 40rpx;
+		margin: 20rpx 0;
+		box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
+	}
+	
+	.promotion-content {
+		display: flex;
+		align-items: center;
+		margin-bottom: 30rpx;
+	}
+	
+	.promotion-icon {
+		margin-right: 24rpx;
+	}
+	
+	.icon-image {
+		width: 80rpx;
+		height: 80rpx;
+		filter: brightness(0) invert(1);
+	}
+	
+	.promotion-text {
+		flex: 1;
+	}
+	
+	.promotion-title {
+		font-size: 36rpx;
+		font-weight: bold;
+		color: #fff;
+		display: block;
+		margin-bottom: 12rpx;
+	}
+	
+	.promotion-subtitle {
+		font-size: 28rpx;
+		color: rgba(255, 255, 255, 0.9);
+		line-height: 1.5;
+		display: block;
+	}
+	
+	.promotion-action {
+		display: flex;
+		justify-content: center;
+	}
+	
+	.contact-btn {
+		background: rgba(255, 255, 255, 0.2);
+		border: 2rpx solid rgba(255, 255, 255, 0.3);
+		border-radius: 50rpx;
+		padding: 20rpx 60rpx;
+		backdrop-filter: blur(10rpx);
+		transition: all 0.3s ease;
+	}
+	
+	.contact-btn:active {
+		transform: scale(0.95);
+		background: rgba(255, 255, 255, 0.3);
+	}
+	
+	.btn-text {
+		color: #fff;
+		font-size: 30rpx;
+		font-weight: 600;
 	}
 </style>
