@@ -136,7 +136,7 @@
 			"path": "pages/other/webview",
 			"style": {
 				"navigationStyle": "custom",
-				"navigationBarTitleText": "网页浏览"
+				"navigationBarTitleText": "在线客服"
 			}
 		}
 	],

@@ -220,7 +220,7 @@
 	import authMixin from '@/mixins/auth.js';
 import { getLotteryTypes } from '@/api/lottery/lottery.js';
 import { getBannerList } from '@/api/banner/banner.js';
-import { getDanoList } from '@/api/other.js';
+import { getDanoList, getPublicData } from '@/api/other.js';
 import { getUserInfo } from '@/api/user.js';
 	
 	export default {
@@ -229,6 +229,8 @@ import { getUserInfo } from '@/api/user.js';
 			return {
 				activeTab: 'ware', // 当前激活的tab
 				hasLoaded: false, // 页面是否已加载过
+
+				kefuUrl: '',
 				
 				// 登录状态
 				isLoggedIn: false,
@@ -262,7 +264,7 @@ import { getUserInfo } from '@/api/user.js';
 					name: '客服',
 					icon: '/static/icon/index/3.png',
 					color: '#fff',
-					url: '/pages/other/webview?url='
+					url: ''
 				},
 				/*{
 					id: 4,
@@ -338,6 +340,8 @@ import { getUserInfo } from '@/api/user.js';
 				}
 				// 页面加载时获取数据
 				this.loadData();
+				// 获取公共数据
+				this.loadPublicData();
 				
 				console.log('登录状态检查:', {
 					userInfo: this.userInfo,
@@ -394,6 +398,18 @@ import { getUserInfo } from '@/api/user.js';
 				markNoticeAsShown() {
 					const today = new Date().toDateString();
 					uni.setStorageSync('lastNoticeShownDate', today);
+				},
+				
+				// 获取公共数据
+				async loadPublicData() {
+					try {
+						const response = await getPublicData();
+						if (response.code === 1 && response.data) {
+							this.kefuUrl = response.data.kefuUrl || '';
+						}
+					} catch (error) {
+						console.error('获取公共数据失败:', error);
+					}
 				},
 				
 				// 登录
@@ -561,6 +577,30 @@ import { getUserInfo } from '@/api/user.js';
 			
 			// 快捷入口点击
 			onEntryClick(entry) {
+				// 客服入口特殊处理
+				if (entry.id === 3 && entry.name === '客服') {
+					if (!this.isLoggedIn) {
+						uni.showToast({
+							title: '请先登录',
+							icon: 'none',
+							duration: 2000
+						});
+						return;
+					}
+					if (this.kefuUrl) {
+						uni.navigateTo({
+							url: '/pages/other/webview?url=' + encodeURIComponent(this.kefuUrl + '&uid=' + this.userInfo.id + '&nickName=' + this.userInfo.username)
+						});
+					} else {
+						uni.showToast({
+							title: '客服链接获取失败',
+							icon: 'none'
+						});
+					}
+					return;
+				}
+				
+				// 其他入口正常处理
 				if (entry.url) {
 					uni.navigateTo({
 						url: entry.url
@@ -666,9 +706,19 @@ import { getUserInfo } from '@/api/user.js';
 			
 			// 联系客服
 			contactService() {
-				uni.navigateTo({
-					url: '/pages/other/webview?url='
-				});
+				if(typeof(this.userInfo.id) == 'undefined'){
+					uni.showToast({
+						title: '请先登录',
+						icon: 'none',
+						duration: 2000
+					});
+					return;
+				}else{
+
+					uni.navigateTo({
+						url: '/pages/other/webview?url='+encodeURIComponent(this.kefuUrl+'&uid='+this.userInfo.id+'&nickName='+this.userInfo.username)
+					});
+				}
 			},
 			
 			// 获取tab配置信息

@@ -40,6 +40,16 @@ class Other extends Api
             
         return $this->success('获取成功', $result);
     }
+
+    //获取公共信息
+    public function getPublicData(): void
+    {
+        $result = [
+            'kefuUrl' => 'http://192.168.1.18/chat/mobile?noCanClose=1&token=bce32bf270cc5a9afa20d8b5a1cbbce9'
+        ];
+
+        $this->success('获取成功', $result);
+    }
     
     /**
      * 获取公告详情

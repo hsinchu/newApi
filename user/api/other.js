@@ -7,3 +7,8 @@ import request from '@/utils/request.js';
 export function getDanoList() {
 	return request.get('/other/danoList');
 }
+
+//获取公共信息
+export function getPublicData() {
+	return request.get('/other/getPublicData');
+}

@@ -122,7 +122,8 @@
 
 <script>
 	import { getUserInfo } from '@/api/user.js';
-	import { getAvailableRedPackets, claimRedPacket } from '@/api/redpacket.js';
+import { getAvailableRedPackets, claimRedPacket } from '@/api/redpacket.js';
+import { getPublicData } from '@/api/other.js';
 	export default {
 		data() {
 			return {
@@ -179,7 +180,9 @@
 			redPacketOpened: false,
 			currentRedPacket: {},
 			claimedAmount: '0.00',
-			availableRedPackets: []
+			availableRedPackets: [],
+			// 客服链接
+			kefuUrl: ''
 			}
 		},
 		methods: {
@@ -200,11 +203,18 @@
 					});
 					break;
 					case 2:
-					// 在线客服
+				// 在线客服
+				if (this.kefuUrl) {
 					uni.navigateTo({
-						url: '/pages/other/webview?url=' + encodeURIComponent('http://192.168.1.18/chat/mobile?noCanClose=1&token=bce32bf270cc5a9afa20d8b5a1cbbce9&uid=' + this.userInfo.id + '&avatar=http://192.168.1.18/statics/images/avatar.jpg&nickName=' + this.userInfo.username + '&title=' + encodeURIComponent('在线客服'))
+						url: '/pages/other/webview?url=' + encodeURIComponent(this.kefuUrl + '&uid=' + this.userInfo.id + '&nickName=' + this.userInfo.username)
 					});
-					break;
+				} else {
+					uni.showToast({
+						title: '客服链接获取失败',
+						icon: 'none'
+					});
+				}
+				break;
 					case 3:
 						uni.navigateTo({
 							url: '/pages/users/moneylog'
@@ -272,6 +282,16 @@
 					{ count: agentInfoResponse.data.money || '0.00', label: '余额' },
 					{ count: '0.00', label: '返佣' }
 				];
+			}
+			
+			// 获取公共数据
+			try {
+				const publicDataResponse = await getPublicData();
+				if (publicDataResponse.code === 1 && publicDataResponse.data) {
+					this.kefuUrl = publicDataResponse.data.kefuUrl || '';
+				}
+			} catch (error) {
+				console.error('获取公共数据失败:', error);
 			}
 		},
 		
