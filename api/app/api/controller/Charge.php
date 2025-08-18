@@ -134,6 +134,23 @@ class Charge extends Frontend
             
             // 处理代理商配置
             foreach ($agentGifts as $gift) {
+                // 实时检查代理商余额是否足够支付赠送金额
+                if ($agentId > 0) {
+                    $agent = \app\common\model\User::find($agentId);
+                    if ($agent) {
+                        $agentBalance = $agent->money; // 转换为元
+                        $bonusAmount = floatval($gift['bonus_amount']);
+                        
+                        // 如果代理商余额不足，自动关闭该赠送活动
+                        if (bccomp($agentBalance, $bonusAmount, 2) < 0) {
+                            RechargeGift::where('id', $gift['id'])
+                                ->update(['status' => 0]);
+                            
+                            continue; // 跳过这个赠送活动
+                        }
+                    }
+                }
+                
                 $result['agent_gifts'][] = [
                     'id' => $gift['id'],
                     'charge_amount' => floatval($gift['charge_amount']),

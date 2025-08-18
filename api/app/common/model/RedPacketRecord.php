@@ -23,21 +23,7 @@ class RedPacketRecord extends Model
         'user_nickname'
     ];
 
-    /**
-     * 金额访问器 - 分转元
-     */
-    public function getAmountAttr($value): string
-    {
-        return bcdiv($value, 100, 2);
-    }
 
-    /**
-     * 金额修改器 - 元转分
-     */
-    public function setAmountAttr($value): string
-    {
-        return bcmul($value, 100, 0);
-    }
 
     /**
      * 关联红包
@@ -74,12 +60,12 @@ class RedPacketRecord extends Model
         $totalCount = count($records);
         
         foreach ($records as $record) {
-            $totalAmount = bcadd($totalAmount, $record->getAttr('amount'), 0);
+            $totalAmount = bcadd($totalAmount, $record->amount, 2);
         }
         
         return [
             'total_count' => $totalCount,
-            'total_amount' => bcdiv($totalAmount, 100, 2)
+            'total_amount' => $totalAmount
         ];
     }
 
@@ -98,7 +84,7 @@ class RedPacketRecord extends Model
      */
     public function getAmountTextAttr($value, $data): string
     {
-        return bcdiv($data['amount'], 100, 2) . '元';
+        return $data['amount'] . '元';
     }
     
     /**
@@ -184,10 +170,10 @@ class RedPacketRecord extends Model
         
         return [
             'total_count' => $stats['total_count'] ?? 0,
-            'total_amount' => bcdiv($stats['total_amount'] ?? 0, 100, 2),
-            'avg_amount' => bcdiv($stats['avg_amount'] ?? 0, 100, 2),
-            'max_amount' => bcdiv($stats['max_amount'] ?? 0, 100, 2),
-            'min_amount' => bcdiv($stats['min_amount'] ?? 0, 100, 2)
+            'total_amount' => $stats['total_amount'] ?? 0,
+            'avg_amount' => $stats['avg_amount'] ?? 0,
+            'max_amount' => $stats['max_amount'] ?? 0,
+            'min_amount' => $stats['min_amount'] ?? 0
         ];
     }
     

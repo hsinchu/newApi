@@ -8,9 +8,6 @@
 					<!-- 卡片头部 -->
 					<view class="card-header">
 						<view class="header-content">
-							<view class="redpacket-icon">
-								<uv-icon name="gift" color="#fff" size="40"></uv-icon>
-							</view>
 							<view class="title-section">
 								<text class="redpacket-title">{{redpacketInfo.title}}</text>
 								<text class="redpacket-type">{{getTypeText(redpacketInfo.type)}}</text>
@@ -150,13 +147,6 @@
 				<view class="record-list" v-if="recordList.length > 0">
 					<view class="record-item" v-for="(record, index) in recordList" :key="record.id">
 						<view class="record-info">
-							<uv-avatar 
-								:src="record.user_avatar || '/static/images/default-avatar.png'" 
-								:text="(record.user_nickname || record.username || '').charAt(0)" 
-								size="35" 
-								shape="circle" 
-								bgColor="#252525"
-							></uv-avatar>
 							<view class="record-details">
 								<text class="record-name">{{record.user_nickname || record.username || '用户' + record.user_id}}</text>
 								<text class="record-time">{{formatTime(record.create_time)}}</text>
@@ -831,7 +821,6 @@ export default {
 	background-color: #fff;
 	border-radius: 30rpx;
 	padding: 30rpx;
-	border: 1px solid #333;
 	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
 }
 

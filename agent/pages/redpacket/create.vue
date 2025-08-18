@@ -263,8 +263,8 @@ export default {
 					}
 					break;
 				case 'totalCount':
-					if (!this.formData.totalCount || parseInt(this.formData.totalCount) <= 0) {
-						this.$set(this.errors, 'totalCount', '请输入有效的红包个数');
+					if (!this.formData.totalCount || parseInt(this.formData.totalCount) < 2) {
+						this.$set(this.errors, 'totalCount', '红包个数最少2个');
 					} else if (parseInt(this.formData.totalCount) > 200) {
 						this.$set(this.errors, 'totalCount', '红包个数不能超过200个');
 					}
@@ -311,6 +311,14 @@ export default {
 						icon: 'none'
 					});
 				}
+				return false;
+			}
+			
+			if (parseInt(this.formData.totalCount) < 2) {
+				uni.showToast({
+					title: '红包个数最少2个',
+					icon: 'none'
+				});
 				return false;
 			}
 			

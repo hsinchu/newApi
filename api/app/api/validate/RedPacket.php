@@ -11,7 +11,7 @@ class RedPacket extends Validate
         'blessing' => 'require|max:100',
         'type' => 'require|in:RANDOM,FIXED',
         'total_amount' => 'require|float|gt:0',
-        'total_count' => 'require|integer|gt:0',
+        'total_count' => 'require|integer|gte:2',
         'target_type' => 'require|in:0,1,2',
         'condition_type' => 'require|in:NONE,MIN_BET,USER_LEVEL',
         'condition_value' => 'requireIf:condition_type,MIN_BET,USER_LEVEL',
@@ -30,7 +30,7 @@ class RedPacket extends Validate
         'total_amount.gt' => '总金额必须大于0',
         'total_count.require' => '红包个数不能为空',
         'total_count.integer' => '红包个数必须是整数',
-        'total_count.gt' => '红包个数必须大于0',
+        'total_count.gte' => '红包个数最少2个',
         'target_type.require' => '发送对象不能为空',
         'target_type.in' => '发送对象类型错误',
         'condition_type.require' => '领取条件类型不能为空',
@@ -68,6 +68,14 @@ class RedPacket extends Validate
         if ($value <= time()) {
             return '过期时间不能早于当前时间';
         }
+        
+        // 检查时间戳是否超出数据库字段范围 (bigint unsigned 最大值约为 9223372036854775807)
+        // 对应的最大日期约为 2038年，这里限制为 2037年底
+        $maxTimestamp = 2145916800; // 2038-01-01 00:00:00 的时间戳
+        if ($value > $maxTimestamp) {
+            return '过期时间不能超过2037年12月31日';
+        }
+        
         return true;
     }
 

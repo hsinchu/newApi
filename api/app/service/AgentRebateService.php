@@ -95,18 +95,18 @@ class AgentRebateService
             
             // 根据返水类型计算返水金额
             if ($config->rebate_type === 'profit') {
-                // 盈利返水：只有盈利时才有返水
+                // 盈利模式：按盈利金额计算两种返水，只有盈利时才计算
                 if ($profitLoss > 0) {
-                    $noWinRebateAmount = $noWinAmount * ($noWinRate / 100);
-                    $betRebateAmount = $betAmount * ($betRate / 100);
+                    $noWinRebateAmount = $profitLoss * ($noWinRate / 100);
+                    $betRebateAmount = $profitLoss * ($betRate / 100);
                 }
-            } else {
-                // 投注返水：不需要盈利也有返水
-                $noWinRebateAmount = $noWinAmount * ($noWinRate / 100);
+            } elseif ($config->rebate_type === 'bet') {
+                // 投注模式：按投注金额计算两种返水
+                $noWinRebateAmount = $betAmount * ($noWinRate / 100);
                 $betRebateAmount = $betAmount * ($betRate / 100);
             }
             
-            // 总返水金额 = 未中奖返水 + 投注返水
+            // 总返水金额
             $rebateAmount = $noWinRebateAmount + $betRebateAmount;
             
             $categoryStats[] = [

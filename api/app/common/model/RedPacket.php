@@ -31,37 +31,7 @@ class RedPacket extends Model
     const CONDITION_MIN_BET = 'MIN_BET';
     const CONDITION_USER_LEVEL = 'USER_LEVEL';
 
-    /**
-     * 金额访问器 - 分转元
-     */
-    public function getTotalAmountAttr($value): string
-    {
-        return bcdiv($value, 100, 2);
-    }
 
-    /**
-     * 金额修改器 - 元转分
-     */
-    public function setTotalAmountAttr($value): string
-    {
-        return bcmul($value, 100, 0);
-    }
-
-    /**
-     * 已领取金额访问器 - 分转元
-     */
-    public function getReceivedAmountAttr($value): string
-    {
-        return bcdiv($value, 100, 2);
-    }
-
-    /**
-     * 已领取金额修改器 - 元转分
-     */
-    public function setReceivedAmountAttr($value): string
-    {
-        return bcmul($value, 100, 0);
-    }
 
     /**
      * 金额分配访问器 - JSON转数组
@@ -170,8 +140,7 @@ class RedPacket extends Model
      */
     public function getRemainingAmount(): string
     {
-        $remaining = bcsub($this->getAttr('total_amount'), $this->getAttr('received_amount'), 0);
-        return bcdiv($remaining, 100, 2);
+        return bcsub($this->total_amount, $this->received_amount, 2);
     }
     
     /**
@@ -214,8 +183,7 @@ class RedPacket extends Model
      */
     public function getRemainingAmountAttr($value, $data): string
     {
-        $remaining = $data['total_amount'] - $data['received_amount'];
-        return bcdiv($remaining, 100, 2);
+        return bcsub($data['total_amount'], $data['received_amount'], 2);
     }
     
     /**
@@ -231,7 +199,7 @@ class RedPacket extends Model
      */
     public function generateAmountList(): array
     {
-        $totalAmount = $this->getData('total_amount');
+        $totalAmount = bcmul($this->total_amount, 100, 0); // 转为分进行计算
         $totalCount = $this->total_count;
         $amountList = [];
         
@@ -320,7 +288,7 @@ class RedPacket extends Model
         
         // 更新红包统计
         $this->received_count += 1;
-        $this->received_amount += $amount;
+        $this->received_amount = bcadd($this->received_amount, bcdiv($amount, 100, 2), 2);
         
         // 检查是否已完成
         if ($this->received_count >= $this->total_count) {
@@ -382,11 +350,11 @@ class RedPacket extends Model
         
         return [
             'total_count' => $stats['total_count'] ?? 0,
-            'total_amount' => bcdiv($stats['total_amount'] ?? 0, 100, 2),
-            'received_amount' => bcdiv($stats['received_amount'] ?? 0, 100, 2),
+            'total_amount' => $stats['total_amount'] ?? 0,
+            'received_amount' => $stats['received_amount'] ?? 0,
             'total_packets' => $stats['total_packets'] ?? 0,
             'received_packets' => $stats['received_packets'] ?? 0,
-            'remaining_amount' => bcdiv(($stats['total_amount'] ?? 0) - ($stats['received_amount'] ?? 0), 100, 2)
+            'remaining_amount' => bcsub($stats['total_amount'] ?? 0, $stats['received_amount'] ?? 0, 2)
         ];
     }
 }

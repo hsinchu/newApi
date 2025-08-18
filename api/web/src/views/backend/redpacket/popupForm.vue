@@ -98,24 +98,20 @@
                         v-model="baTable.form.items!.condition_type"
                         prop="condition_type"
                         :input-attr="{
-                            content: [
-                                { label: '无条件领取', value: 'NONE' },
-                                { label: '需要当日最低投注额', value: 'MIN_BET' },
-                                { label: '需要用户等级', value: 'USER_LEVEL' }
-                            ]
+                            content: getConditionOptions()
                         }"
                     />
                     <FormItem
                         v-if="baTable.form.items!.condition_type !== 'NONE'"
-                        :label="baTable.form.items!.condition_type === 'MIN_BET' ? '最低投注金额' : '最低用户等级'"
+                        :label="baTable.form.items!.condition_type === 'USER_LEVEL' ? '最低用户等级' : '最低投注金额'"
                         type="number"
                         v-model="baTable.form.items!.condition_value"
                         prop="condition_value"
-                        :placeholder="baTable.form.items!.condition_type === 'MIN_BET' ? '输入金额，如：100' : '输入等级，如：3'"
+                        :placeholder="baTable.form.items!.condition_type === 'USER_LEVEL' ? '输入等级，如：3' : '输入金额，如：100'"
                         :input-attr="{
-                            min: baTable.form.items!.condition_type === 'MIN_BET' ? 1 : 1,
-                            step: baTable.form.items!.condition_type === 'MIN_BET' ? 1 : 1,
-                            precision: baTable.form.items!.condition_type === 'MIN_BET' ? 2 : 0,
+                            min: baTable.form.items!.condition_type === 'USER_LEVEL' ? 1 : 1,
+                            step: baTable.form.items!.condition_type === 'USER_LEVEL' ? 1 : 1,
+                            precision: baTable.form.items!.condition_type === 'USER_LEVEL' ? 0 : 2,
                             'controls-position': 'right'
                         }"
                     >
@@ -186,8 +182,8 @@ const rules: Partial<Record<string, FormItemRule[]>> = reactive({
         buildValidatorData({ name: 'integer', title: '红包总个数' }),
         {
             validator: (rule: any, value: any, callback: any) => {
-                if (value <= 0) {
-                    callback(new Error('红包个数必须大于0'))
+                if (value < 2) {
+                    callback(new Error('红包个数最少2个'))
                 } else if (value > 1000) {
                     callback(new Error('红包个数不能超过1000个'))
                 } else {
@@ -202,7 +198,7 @@ const rules: Partial<Record<string, FormItemRule[]>> = reactive({
         {
             validator: (rule: any, value: any, callback: any) => {
                 if (baTable.form.items!.condition_type !== 'NONE' && !value) {
-                    const fieldName = baTable.form.items!.condition_type === 'MIN_BET' ? '最低投注金额' : '最低用户等级'
+                    const fieldName = baTable.form.items!.condition_type === 'USER_LEVEL' ? '最低用户等级' : '最低投注金额'
                     callback(new Error(`请输入${fieldName}`))
                 } else {
                     callback()
@@ -212,6 +208,21 @@ const rules: Partial<Record<string, FormItemRule[]>> = reactive({
         }
     ]
 })
+
+// 获取条件选项（根据发放对象类型）
+const getConditionOptions = () => {
+    const baseOptions = [{ label: '无条件领取', value: 'NONE' }]
+    
+    // 只有当发放对象为用户(值为'2')时，才显示额外的条件选项
+    if (baTable.form.items!.target_type === '2') {
+        baseOptions.push(
+            { label: '需要当日最低投注额', value: 'MIN_BET' },
+            // { label: '需要用户等级', value: 'USER_LEVEL' }
+        )
+    }
+    
+    return baseOptions
+}
 
 // 计算平均金额提示
 const avgAmountTip = computed(() => {

@@ -195,7 +195,7 @@ class AutoPaid extends Command
             $financeService->adjustUserBalance(
                 $order->user_id,
                 $winAmountInYuan,
-                "派奖奖金",
+                "派奖奖金，订单号：" . $order->order_no,
                 'PRIZE_ADD'
             );
             

@@ -160,10 +160,10 @@
 				title: '平台公告',
 				key: 'dano'
 			},
-			// {
-			// 	title: '领取佣金',
-			// 	key: 'my_bonus'
-			// },
+			{
+				title: '我的红包',
+				key: 'my_red'
+			},
 			{
 				title: '在线客服',
 				key: 'service'
@@ -268,6 +268,12 @@
 					// 跳转到充值活动页面
 					uni.navigateTo({
 						url: '/pages/activity/charge'
+					});
+					break;
+				case 'my_red':
+					// 跳转到我的红包页面
+					uni.navigateTo({
+						url: '/pages/users/redpacket'
 					});
 					break;
 				case 'service':

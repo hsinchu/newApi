@@ -211,8 +211,7 @@ class AgentRebate extends Backend
         // 获取该代理商下级用户的投注数据
         $categoryStats = AgentRebateService::getBetStatsByCategory($agentId, $startTime, $config);
         
-        // 获取该代理商已发放的佣金金额
-        $totalCommissionAmount = AgentRebateService::getCommissionAmount($agentId, $startTime);
+        // 删除已发放佣金相关逻辑
         
         // 计算总返水金额和分类返水金额
         $totalRebate = 0;
@@ -237,77 +236,49 @@ class AgentRebate extends Backend
             $noWinAmount = $stat['no_win_amount'];
             $profitLoss = $stat['profit_loss'];
             
-            // 根据返水类型计算未中奖返水金额
+            // 根据返水类型计算返水金额
             $noWinRebateAmount = 0;
-            if ($config->rebate_type === 'profit') {
-                // 盈利返水：只有盈利时才有返水
-                if ($profitLoss > 0) {
-                    switch ($category) {
-                        case 'SPORTS':
-                            $noWinRebateAmount = $noWinAmount * ($config->sports_no_win_rate / 100);
-                            break;
-                        case 'WELFARE':
-                            $noWinRebateAmount = $noWinAmount * ($config->welfare_no_win_rate / 100);
-                            break;
-                        case 'SPORTS_SINGLE':
-                            $noWinRebateAmount = $noWinAmount * ($config->sports_single_no_win_rate / 100);
-                            break;
-                        case 'QUICK':
-                            $noWinRebateAmount = $noWinAmount * ($config->quick_no_win_rate / 100);
-                            break;
-                    }
-                }
-            } else {
-                // 投注返水：不需要盈利也有返水
-                switch ($category) {
-                    case 'SPORTS':
-                        $noWinRebateAmount = $noWinAmount * ($config->sports_no_win_rate / 100);
-                        break;
-                    case 'WELFARE':
-                        $noWinRebateAmount = $noWinAmount * ($config->welfare_no_win_rate / 100);
-                        break;
-                    case 'SPORTS_SINGLE':
-                        $noWinRebateAmount = $noWinAmount * ($config->sports_single_no_win_rate / 100);
-                        break;
-                    case 'QUICK':
-                        $noWinRebateAmount = $noWinAmount * ($config->quick_no_win_rate / 100);
-                        break;
-                }
-            }
-            
-            // 根据返水类型计算投注返水金额
             $betRebateAmount = 0;
+            
             if ($config->rebate_type === 'profit') {
-                // 盈利返水：只有盈利时才有返水
+                // 盈利模式：按盈利金额计算两种返水，只有盈利时才计算
                 if ($profitLoss > 0) {
                     switch ($category) {
                         case 'SPORTS':
-                            $betRebateAmount = $betAmount * ($config->sports_bet_rate / 100);
+                            $noWinRebateAmount = $profitLoss * ($config->sports_no_win_rate / 100);
+                            $betRebateAmount = $profitLoss * ($config->sports_bet_rate / 100);
                             break;
                         case 'WELFARE':
-                            $betRebateAmount = $betAmount * ($config->welfare_bet_rate / 100);
+                            $noWinRebateAmount = $profitLoss * ($config->welfare_no_win_rate / 100);
+                            $betRebateAmount = $profitLoss * ($config->welfare_bet_rate / 100);
                             break;
                         case 'SPORTS_SINGLE':
-                            $betRebateAmount = $betAmount * ($config->sports_single_bet_rate / 100);
+                            $noWinRebateAmount = $profitLoss * ($config->sports_single_no_win_rate / 100);
+                            $betRebateAmount = $profitLoss * ($config->sports_single_bet_rate / 100);
                             break;
                         case 'QUICK':
-                            $betRebateAmount = $betAmount * ($config->quick_bet_rate / 100);
+                            $noWinRebateAmount = $profitLoss * ($config->quick_no_win_rate / 100);
+                            $betRebateAmount = $profitLoss * ($config->quick_bet_rate / 100);
                             break;
                     }
                 }
-            } else {
-                // 投注返水：不需要盈利也有返水
+            } elseif ($config->rebate_type === 'bet') {
+                // 投注模式：按投注金额计算两种返水
                 switch ($category) {
                     case 'SPORTS':
+                        $noWinRebateAmount = $betAmount * ($config->sports_no_win_rate / 100);
                         $betRebateAmount = $betAmount * ($config->sports_bet_rate / 100);
                         break;
                     case 'WELFARE':
+                        $noWinRebateAmount = $betAmount * ($config->welfare_no_win_rate / 100);
                         $betRebateAmount = $betAmount * ($config->welfare_bet_rate / 100);
                         break;
                     case 'SPORTS_SINGLE':
+                        $noWinRebateAmount = $betAmount * ($config->sports_single_no_win_rate / 100);
                         $betRebateAmount = $betAmount * ($config->sports_single_bet_rate / 100);
                         break;
                     case 'QUICK':
+                        $noWinRebateAmount = $betAmount * ($config->quick_no_win_rate / 100);
                         $betRebateAmount = $betAmount * ($config->quick_bet_rate / 100);
                         break;
                 }
@@ -316,7 +287,7 @@ class AgentRebate extends Backend
             $totalNoWinRebate += $noWinRebateAmount;
             $totalBetRebate += $betRebateAmount;
             
-            // 总返水金额 = 未中奖返水 + 投注返水
+            // 总返水金额
             $totalRebate += ($noWinRebateAmount + $betRebateAmount);
             
             // 添加到统计数据中
@@ -325,8 +296,8 @@ class AgentRebate extends Backend
             $stat['rebate_amount'] = $noWinRebateAmount + $betRebateAmount;
         }
 
-        // 计算可结算金额（总返水金额 - 已发放佣金金额）
-        $settlableAmount = $totalRebate - $totalCommissionAmount;
+        // 可结算金额即为总返水金额
+        $settlableAmount = $totalRebate;
         
         $this->success('', [
             'config' => $config,
@@ -334,7 +305,6 @@ class AgentRebate extends Backend
             'totalRebate' => round($totalRebate / 100, 2), // 转换为元
             'totalNoWinRebate' => round($totalNoWinRebate / 100, 2), // 未中奖返水总额
             'totalBetRebate' => round($totalBetRebate / 100, 2), // 投注返水总额
-            'totalCommissionAmount' => round($totalCommissionAmount / 100, 2), // 已发放佣金金额
             'settlableAmount' => round($settlableAmount / 100, 2), // 可结算金额
             'totalBetAmount' => round($totalBetAmount / 100, 2),
             'totalWinAmount' => round($totalWinAmount / 100, 2),
@@ -382,8 +352,7 @@ class AgentRebate extends Backend
         // 获取该代理商下级用户的投注数据
         $categoryStats = AgentRebateService::getBetStatsByCategory($agentId, $startTime, $config);
         
-        // 获取该代理商已发放的佣金金额
-        $totalCommissionAmount = AgentRebateService::getCommissionAmount($agentId, $startTime);
+        // 删除已发放佣金相关逻辑
         
         if (empty($categoryStats)) {
             $this->error('没有待发放的返水记录');
@@ -430,11 +399,7 @@ class AgentRebate extends Backend
                 $noWinRate = $stat['no_win_rate'];
                 $betRate = $stat['bet_rate'];
                 
-                // 计算该分类的佣金金额（从已发放佣金中按比例分配）
-                $categoryCommissionAmount = 0;
-                if ($totalRebateAmount > 0) {
-                    $categoryCommissionAmount = round(($stat['rebate_amount'] / $totalRebateAmount) * $totalCommissionAmount);
-                }
+                // 删除佣金计算逻辑
                 
                 // 创建返水记录
                 $rebateRecords[] = [
@@ -445,7 +410,7 @@ class AgentRebate extends Backend
                     'no_win_amount' => $stat['no_win_amount'],
                     'profit_loss' => $stat['profit_loss'],
                     'rebate_amount' => $stat['rebate_amount'],
-                    'commission_amount' => $categoryCommissionAmount,
+
                     'no_win_rebate_amount' => $noWinRebateAmount,
                     'no_win_rate' => $noWinRate,
                     'bet_rebate_amount' => $betRebateAmount,
@@ -459,12 +424,9 @@ class AgentRebate extends Backend
                 ];
             }
             
-            // 计算净返水金额（总返水减去已发佣金）
-            $netRebateAmount = $totalRebateAmount - $totalCommissionAmount;
-            
-            // 检查是否有可发放的净返水金额
-            if ($netRebateAmount <= 0) {
-                $this->error('没有可发放的净返水金额（总返水：' . round($totalRebateAmount / 100, 2) . '元，已发佣金：' . round($totalCommissionAmount / 100, 2) . '元）');
+            // 检查是否有可发放的返水金额
+            if ($totalRebateAmount <= 0) {
+                $this->error('没有可发放的返水金额');
             }
 
             // 批量创建返水记录
@@ -480,8 +442,7 @@ class AgentRebate extends Backend
                 'total_bet_amount' => $totalBetAmount,
                 'total_win_amount' => $totalWinAmount,
                 'total_profit_loss' => $totalBetAmount - $totalWinAmount,
-                'total_rebate_amount' => $netRebateAmount,
-                'commission_amount' => $totalCommissionAmount,
+                'total_rebate_amount' => $totalRebateAmount,
                 'settlement_status' => AgentRebateSettlement::STATUS_COMPLETED,
                 'settlement_time' => time(),
                 'operator_id' => $this->auth->id,
@@ -491,11 +452,11 @@ class AgentRebate extends Backend
             
             AgentRebateSettlement::create($settlementData);
 
-            // 使用FinanceService调整代理商余额和记录账变（使用净返水金额）
+            // 使用FinanceService调整代理商余额和记录账变
             $financeService = new FinanceService();
             $financeService->adjustUserBalance(
                 $agentId,
-                $netRebateAmount / 100, // 转换为元
+                $totalRebateAmount / 100, // 转换为元
                 '代理返水发放' . ($remark ? '：' . $remark : ''),
                 'COMMISSION_ADD'
             );
@@ -511,7 +472,7 @@ class AgentRebate extends Backend
             
             $this->error('返水发放失败：' . $e->getMessage());
         }
-        $this->success('返水发放成功，共发放 ' . round($netRebateAmount / 100, 2) . ' 元（总返水：' . round($totalRebateAmount / 100, 2) . '元，扣除佣金：' . round($totalCommissionAmount / 100, 2) . '元）');
+        $this->success('返水发放成功，共发放 ' . round($totalRebateAmount / 100, 2) . ' 元');
     }
 
     /**

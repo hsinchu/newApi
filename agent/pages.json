@@ -41,7 +41,6 @@
 		{
 			"path": "pages/other/webview",
 			"style": {
-				"navigationStyle": "custom",
 				"navigationBarTitleText": "网页浏览"
 			}
 		},
@@ -115,6 +114,13 @@
 				"navigationBarTitleText": "公告"
 			}
 		},
+		{
+			"path": "pages/users/redpacket",
+			"style": {
+				"navigationBarTitleText": "我的红包"
+			}
+		},
+		
 		{
 			"path": "pages/users/charge",
 			"style": {

@@ -280,7 +280,7 @@ class RedPacket extends Frontend
             foreach ($records->items() as $item) {
                 $list[] = [
                 'id' => $item['id'],
-                'amount' => $item['amount'], // 保持分为单位
+                'amount' => $item['amount'], // 数据库已是元单位
                 'create_time' => $item['create_time'],
                 'username' => $item['username'],
                 'nickname' => $item['nickname'],
@@ -321,11 +321,11 @@ class RedPacket extends Frontend
                 ->where('status', 'FINISHED')
                 ->count();
             
-            // 总发放金额（保持分为单位）
+            // 总发放金额（数据库已是元单位）
             $totalAmount = RedPacketModel::where('agent_id', $agentId)
                 ->sum('total_amount');
             
-            // 已领取金额（保持分为单位）
+            // 已领取金额（数据库已是元单位）
             $receivedAmount = RedPacketModel::where('agent_id', $agentId)
                 ->sum('received_amount');
             
@@ -406,7 +406,7 @@ class RedPacket extends Frontend
             $list = $records->items();
             // 金额保持分为单位，前端处理显示
             
-            // 统计总领取金额（保持分为单位）
+            // 统计总领取金额（数据库已是元单位）
             $totalAmount = RedPacketRecord::where('user_id', $userId)
                 ->sum('amount');
         } catch (Exception $e) {
@@ -565,8 +565,8 @@ class RedPacket extends Frontend
             throw new ValidateException('今日创建红包数量已达上限');
         }
         
-        // 检查金额限制
-        $totalAmount = bcdiv($data['total_amount'], 100, 2);
+        // 检查金额限制（数据库已是元单位）
+        $totalAmount = $data['total_amount'];
         if (bccomp($totalAmount, '10000', 2) > 0) { // 假设单个红包最大10000元
             throw new ValidateException('红包金额不能超过10000元');
         }

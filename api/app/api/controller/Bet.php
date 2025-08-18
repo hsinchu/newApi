@@ -156,7 +156,8 @@ class Bet extends Frontend
                 
                 // 记录资金变动（扣除投注金额）
                 $financeService = new FinanceService();
-                $financeService->adjustUserBalance($user->id, -$totalAmount, '投注扣款', 'BET_DEDUCT');
+                $orderNoList = implode(',', $orderNos);
+                $financeService->adjustUserBalance($user->id, -$totalAmount, '投注扣款，订单号：' . $orderNoList, 'BET_DEDUCT');
                 
                 // 处理投注返佣
                 BetOrderService::processBetRebate($user->id, $totalAmount, $orderNos);

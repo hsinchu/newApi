@@ -101,28 +101,11 @@
                         </el-col>
                     </el-row>
                     <el-row :gutter="20" class="summary-row">
-                        <el-col :span="6">
-                            <div class="summary-item">
-                                <div class="summary-label">已发放佣金</div>
-                                <div class="summary-value text-warning">¥{{ formatMoney(state.pendingRebate.totalCommissionAmount) }}</div>
-                            </div>
-                        </el-col>
-                        <el-col :span="6">
-                            <div class="summary-item">
-                                <div class="summary-label">净返水金额</div>
-                                <div class="summary-value text-primary">¥{{ formatMoney(getNetRebateAmount()) }}</div>
-                            </div>
-                        </el-col>
-                        <el-col :span="6">
+
+                        <el-col :span="12">
                             <div class="summary-item">
                                 <div class="summary-label">可结算金额</div>
                                 <div class="summary-value text-primary font-bold">¥{{ formatMoney(state.pendingRebate.settlableAmount) }}</div>
-                            </div>
-                        </el-col>
-                        <el-col :span="6">
-                            <div class="summary-item">
-                                <div class="summary-label">结算说明</div>
-                                <div class="summary-desc">净返水 - 已发佣金</div>
                             </div>
                         </el-col>
                     </el-row>
@@ -199,7 +182,7 @@
                     <p>• 发放后将直接增加代理账户余额</p>
                     <p>• 发放记录将被标记为已结算状态</p>
                     <p>• 发放操作不可撤销，请确认无误后操作</p>
-                    <p>• 可结算金额 = 净返水金额 - 已发放佣金</p>
+                    <p>• 可结算金额 = 总返水金额</p>
                 </template>
             </el-alert>
         </div>
@@ -266,7 +249,6 @@ interface PendingRebate {
     totalRebateAmount: number
     totalNoWinRebate: number
     totalBetRebate: number
-    totalCommissionAmount: number
     settlableAmount: number
     categoryDetails: CategoryDetail[]
 }
@@ -285,7 +267,6 @@ const state = reactive({
         totalRebateAmount: 0,
         totalNoWinRebate: 0,
         totalBetRebate: 0,
-        totalCommissionAmount: 0,
         settlableAmount: 0,
         categoryDetails: [],
     } as PendingRebate
@@ -317,7 +298,6 @@ const loadPendingRebate = async () => {
                 totalRebateAmount: res.data.totalRebate || 0,
                 totalNoWinRebate: res.data.totalNoWinRebate || 0,
                 totalBetRebate: res.data.totalBetRebate || 0,
-                totalCommissionAmount: res.data.totalCommissionAmount || 0,
                 settlableAmount: res.data.settlableAmount || 0,
                 categoryDetails: (res.data.categoryStats || []).filter(item => item.category !== null).map(item => ({
                     category: item.category,
@@ -352,10 +332,7 @@ const loadPendingRebate = async () => {
     }
 }
 
-// 计算净返水金额（总返水 - 已发放佣金）
-const getNetRebateAmount = () => {
-    return (state.pendingRebate.totalRebateAmount || 0) - (state.pendingRebate.totalCommissionAmount || 0)
-}
+// 删除净返水金额计算函数
 
 const distributeRebate = async () => {
     if (state.pendingRebate.settlableAmount <= 0) {

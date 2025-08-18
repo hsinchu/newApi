@@ -229,7 +229,8 @@ class RedPacketService
             
             // 更新红包统计
             $redPacket->received_count += 1;
-            $redPacket->received_amount = bcadd($redPacket->getAttr('received_amount'), $amount, 0);
+            $currentReceivedAmount = $redPacket->getData('received_amount'); 
+            $redPacket->setAttr('received_amount', bcadd($currentReceivedAmount, $amount, 0));
             
             // 检查是否领完
             if ($redPacket->received_count >= $redPacket->total_count) {

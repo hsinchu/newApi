@@ -24,9 +24,9 @@
                 <el-descriptions :column="2" border class="mb-4">
                     <el-descriptions-item label="红包总金额">{{ statsDialog.data.total_amount }}元</el-descriptions-item>
                     <el-descriptions-item label="红包总个数">{{ statsDialog.data.total_count }}个</el-descriptions-item>
-                    <el-descriptions-item label="已领取金额">{{ statsDialog.data.received_amount }}元</el-descriptions-item>
+                    <el-descriptions-item label="已领取金额">{{ (statsDialog.data.received_amount / 100).toFixed(2) }}元</el-descriptions-item>
                     <el-descriptions-item label="已领取个数">{{ statsDialog.data.received_count }}个</el-descriptions-item>
-                    <el-descriptions-item label="剩余金额">{{ statsDialog.data.total_amount - statsDialog.data.received_amount }}元</el-descriptions-item>
+                    <el-descriptions-item label="剩余金额">{{ ((statsDialog.data.total_amount - statsDialog.data.received_amount) / 100).toFixed(2) }}元</el-descriptions-item>
                     <el-descriptions-item label="剩余个数">{{ statsDialog.data.remaining_count }}个</el-descriptions-item>
                     <el-descriptions-item label="领取条件" :span="2">
                         <el-tag type="info">{{ getConditionText(statsDialog.data.condition_type, statsDialog.data.condition_value) }}</el-tag>

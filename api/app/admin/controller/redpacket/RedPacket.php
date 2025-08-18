@@ -192,15 +192,15 @@ class RedPacket extends Backend
             throw new Exception('红包总金额必须大于0');
         }
         
-        if (empty($data['total_count']) || $data['total_count'] <= 0) {
-            throw new Exception('红包总个数必须大于0');
+        if (empty($data['total_count']) || $data['total_count'] < 2) {
+            throw new Exception('红包个数最少2个');
         }
         
         if ($data['total_count'] > 100) {
             throw new Exception('红包个数不能超过100个');
         }
         
-        // 检查平均金额是否太小
+        // 检查平均金额是否太小（数据库已是元单位）
         $avgAmount = bcdiv($data['total_amount'], $data['total_count'], 2);
         if (bccomp($avgAmount, '0.01', 2) < 0) {
             throw new Exception('平均红包金额不能小于0.01元');

@@ -215,6 +215,7 @@ class User extends Frontend
                     'id' => $log->id,
                     'type' => $frontendType,
                     'amount' => floatval($log->money), // 模型已经处理了除以100的转换
+                    'after' => floatval($log->after), // 模型已经处理了除以100的转换
                     'remark' => $log->memo,
                     'createtime' => date('Y-m-d H:i:s', $log->create_time)
                 ];
@@ -394,6 +395,11 @@ class User extends Frontend
             // 4. 过滤条件检查和数据格式化
             $availablePackets = [];
             foreach ($redPackets as $packet) {
+                // 为代理商用户强制设置condition_type为NONE
+                if ($currentUser->is_agent == 1) {
+                    $packet->condition_type = 'NONE';
+                }
+                
                 // 检查投注条件
                 if ($packet->condition_type === 'MIN_BET') {
                     $minBetAmount = floatval($packet->condition_value);
@@ -416,6 +422,7 @@ class User extends Frontend
                 $availablePackets[] = [
                     'id' => $packet->id,
                     'title' => $packet->title,
+                    'agent_id' => $packet->agent_id,
                     'blessing' => $packet->blessing,
                     'type' => $packet->type,
                     'total_amount' => $packet->total_amount,
@@ -581,7 +588,7 @@ class User extends Frontend
              $record = new RedPacketRecord();
              $record->red_packet_id = $redPacketId;
              $record->user_id = $userId;
-             // 修复：amount需要除以100存储为元值
+           
              $record->amount = bcdiv($amount, 100, 2);
              $record->ip = $this->request->ip();
              $record->user_agent = $this->request->header('user-agent', '');
@@ -593,9 +600,8 @@ class User extends Frontend
              
              // 更新红包统计
              $redPacket->received_count += 1;
-             $currentReceivedAmount = $redPacket->getData('received_amount'); // 获取原始分值
-             // 修复：received_amount需要除以100存储为元值
-             $redPacket->setAttr('received_amount', $currentReceivedAmount + bcdiv($amount, 100, 2));
+             // 直接累加元单位的金额
+             $redPacket->received_amount = bcadd($redPacket->received_amount, bcdiv($amount, 100, 2), 2);
              
              // 计算剩余数量：检查amount_list中还有多少未使用的红包
              // 直接获取原始数据，避免访问器缓存问题
@@ -604,7 +610,7 @@ class User extends Frontend
              $remainingCount = 0;
              if (!empty($amountList)) {
                  foreach ($amountList as $amountData) {
-                     foreach ($amountData as $amount_val => $user_id) {
+                     foreach ($amountData as $user_id) {
                          if ($user_id == 0) {
                              $remainingCount++;
                          }
@@ -620,8 +626,6 @@ class User extends Frontend
              
              $redPacket->save();
 
-             // 使用FinanceService调整用户余额
-             // 修复：amount是分值，需要转换为元值
              $amountInYuan = bcdiv($amount, 100, 2);
              $financeService = new \app\service\FinanceService();
              $financeService->adjustUserBalance(
@@ -654,10 +658,16 @@ class User extends Frontend
      private function calculateRedPacketAmount(RedPacket $redPacket): int
      {
          if ($redPacket->type === 'FIXED') {
-             // 固定红包：平均分配（使用原始分值计算）
-             $totalAmountCent = $redPacket->getData('total_amount'); // 获取原始分值
-             $receivedAmountCent = $redPacket->getData('received_amount'); // 获取原始分值
+             // 固定红包：平均分配（数据库已是元单位，需转为分进行计算）
+             $totalAmountCent = bcmul($redPacket->total_amount, 100, 0);
+             $receivedAmountCent = bcmul($redPacket->received_amount, 100, 0);
              $remainingAmount = $totalAmountCent - $receivedAmountCent;
+             
+             // 防止除零错误
+             if ($redPacket->remaining_count <= 0) {
+                 return 0;
+             }
+             
              return intval($remainingAmount / $redPacket->remaining_count);
          } else {
              // 随机红包：从预设金额列表中按顺序领取
@@ -758,7 +768,7 @@ class User extends Frontend
              foreach ($records->items() as $record) {
                  $list[] = [
                      'id' => $record->id,
-                     'amount' => $record->amount, // 转换为元
+                     'amount' => $record->amount, // 数据库已是元单位
                      'time' => date('n月j日 H:i', $record->create_time),
                      'title' => $record->redPacket ? $record->redPacket->title : '红包已删除',
                      'blessing' => $record->redPacket ? $record->redPacket->blessing : '',
@@ -775,7 +785,7 @@ class User extends Frontend
                      ->find();
                  
                  $stats = [
-                     'totalAmount' => bcdiv($totalStats->total_amount ?: 0, 100, 2),
+                     'totalAmount' => $totalStats->total_amount ?: 0,
                      'totalCount' => $totalStats->total_count ?: 0
                  ];
              }

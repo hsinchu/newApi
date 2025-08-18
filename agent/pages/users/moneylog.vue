@@ -39,6 +39,9 @@
 									<view class="log-info">
 										<text class="log-title">{{ item.remark || getLogTypeName(item.type) }}</text>
 										<text class="log-time">{{ formatTime(item.createtime) }}</text>
+										<text class="log-amount after">
+											变动后金额：{{ formatAmount(Math.abs(item.after)) }}
+										</text>
 									</view>
 									<text class="log-amount" :class="item.amount >= 0 ? 'income' : 'expense'">
 										{{ item.amount >= 0 ? '+' : '' }}{{ formatAmount(Math.abs(item.amount)) }}
@@ -468,6 +471,9 @@
 	font-size: 25rpx;
 	color: #333;
 	font-weight: 400;
+	word-wrap: break-word;
+	word-break: break-all;
+	white-space: normal;
 }
 
 .log-time {
@@ -488,4 +494,6 @@
 		color: #FF6B6B;
 	}
 }
+
+.log-amount.after{color:#777;}
 </style>
