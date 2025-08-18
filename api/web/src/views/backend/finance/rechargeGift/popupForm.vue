@@ -49,6 +49,28 @@
               }"
             />
             <FormItem
+              label="生效开始时间"
+              type="datetime"
+              v-model="baTable.form.items!.start_time"
+              prop="start_time"
+              :input-attr="{
+                placeholder: '请选择生效开始时间',
+                format: 'YYYY-MM-DD HH:mm:ss',
+                'value-format': 'YYYY-MM-DD HH:mm:ss',
+              }"
+            />
+            <FormItem
+              label="生效结束时间"
+              type="datetime"
+              v-model="baTable.form.items!.end_time"
+              prop="end_time"
+              :input-attr="{
+                placeholder: '请选择生效结束时间',
+                format: 'YYYY-MM-DD HH:mm:ss',
+                'value-format': 'YYYY-MM-DD HH:mm:ss',
+              }"
+            />
+            <FormItem
               label="是否启用"
               type="radio"
               v-model="baTable.form.items!.status"
@@ -106,6 +128,30 @@ const rules: Partial<Record<string, FormItemRule[]>> = reactive({
       validator: (rule: any, value: any, callback: any) => {
         if (value < 0) {
           callback(new Error('赠送金额不能小于0'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  start_time: [
+    {
+      validator: (rule: any, value: any, callback: any) => {
+        if (value && baTable.form.items!.end_time && new Date(value) >= new Date(baTable.form.items!.end_time)) {
+          callback(new Error('开始时间必须小于结束时间'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  end_time: [
+    {
+      validator: (rule: any, value: any, callback: any) => {
+        if (value && baTable.form.items!.start_time && new Date(value) <= new Date(baTable.form.items!.start_time)) {
+          callback(new Error('结束时间必须大于开始时间'))
         } else {
           callback()
         }

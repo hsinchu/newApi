@@ -15,6 +15,8 @@ class RechargeGift extends Model
         'charge_amount' => 'decimal',
         'bonus_amount'  => 'decimal',
         'status'        => 'int',
+        'start_time'    => 'int',
+        'end_time'      => 'int',
         'create_time'   => 'int',
         'update_time'   => 'int',
     ];
@@ -71,9 +73,19 @@ class RechargeGift extends Model
      */
     public static function getGiftByAmount($agentId, $chargeAmount)
     {
+        $currentTime = time();
+        
         return self::where('agent_id', $agentId)
             ->where('status', self::STATUS_ENABLED)
             ->where('charge_amount', '<=', $chargeAmount)
+            ->where(function($query) use ($currentTime) {
+                $query->where('start_time', 0)
+                      ->whereOr('start_time', '<=', $currentTime);
+            })
+            ->where(function($query) use ($currentTime) {
+                $query->where('end_time', 0)
+                      ->whereOr('end_time', '>=', $currentTime);
+            })
             ->order('charge_amount', 'desc')
             ->find();
     }

@@ -1071,6 +1071,8 @@ class Agent extends Frontend
                 
                 $existConfig->charge_amount = $chargeAmount;
                 $existConfig->bonus_amount = $bonusAmount;
+                $existConfig->start_time = time();
+                $existConfig->end_time = time() + 3600 * 24 * 30;
                 $existConfig->status = $status;
                 $result = $existConfig->save();
                     

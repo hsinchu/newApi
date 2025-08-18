@@ -106,6 +106,43 @@ const baTable = new baTableClass(
           1: 'success',
         },
       },
+      { 
+        label: '生效开始时间', 
+        prop: 'start_time_text', 
+        align: 'center', 
+        operator: false, 
+        sortable: false, 
+        width: 160,
+        render: 'slot',
+        slotName: 'start_time'
+      },
+      { 
+        label: '生效结束时间', 
+        prop: 'end_time_text', 
+        align: 'center', 
+        operator: false, 
+        sortable: false, 
+        width: 160,
+        render: 'slot',
+        slotName: 'end_time'
+      },
+      {
+        label: '时间状态',
+        prop: 'is_active',
+        align: 'center',
+        render: 'tag',
+        operator: false,
+        sortable: false,
+        width: 100,
+        replaceValue: {
+          false: '已过期',
+          true: '有效',
+        },
+        custom: {
+          false: 'danger',
+          true: 'success',
+        },
+      },
       { label: '创建时间', prop: 'create_time', align: 'center', render: 'datetime', operator: 'RANGE', sortable: 'custom', width: 160, timeFormat: 'yyyy-mm-dd hh:MM:ss' },
       {
         label: '操作',

@@ -99,9 +99,19 @@ class Charge extends Frontend
         try {
             $agentId = $this->auth->parent_id ?? 0;
             
+            $currentTime = time();
+            
             // 查询系统配置（agent_id = 0）
             $systemGifts = RechargeGift::where('agent_id', 0)
                 ->where('status', 1)
+                ->where(function($query) use ($currentTime) {
+                    $query->where('start_time', 0)
+                          ->whereOr('start_time', '<=', $currentTime);
+                })
+                ->where(function($query) use ($currentTime) {
+                    $query->where('end_time', 0)
+                          ->whereOr('end_time', '>=', $currentTime);
+                })
                 ->order('charge_amount', 'asc')
                 ->select()
                 ->toArray();
@@ -111,6 +121,14 @@ class Charge extends Frontend
             if ($agentId > 0) {
                 $agentGifts = RechargeGift::where('agent_id', $agentId)
                     ->where('status', 1)
+                    ->where(function($query) use ($currentTime) {
+                        $query->where('start_time', 0)
+                              ->whereOr('start_time', '<=', $currentTime);
+                    })
+                    ->where(function($query) use ($currentTime) {
+                        $query->where('end_time', 0)
+                              ->whereOr('end_time', '>=', $currentTime);
+                    })
                     ->order('charge_amount', 'asc')
                     ->select()
                     ->toArray();

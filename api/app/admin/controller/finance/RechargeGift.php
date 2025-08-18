@@ -58,6 +58,11 @@ class RechargeGift extends Backend
                 'bonus_amount' => $item['bonus_amount'],
                 'status' => $item['status'],
                 'status_text' => $this->getStatusText($item['status']),
+                'start_time' => $item['start_time'],
+                'end_time' => $item['end_time'],
+                'start_time_text' => $item['start_time'] ? date('Y-m-d H:i:s', $item['start_time']) : '',
+                'end_time_text' => $item['end_time'] ? date('Y-m-d H:i:s', $item['end_time']) : '',
+                'is_active' => $this->isTimeActive($item['start_time'], $item['end_time']),
                 'create_time' => $item['create_time'],
                 'update_time' => $item['update_time'],
             ];
@@ -92,6 +97,19 @@ class RechargeGift extends Backend
                 }
                 if ($data['bonus_amount'] < 0) {
                     throw new ValidateException('赠送金额不能小于0');
+                }
+
+                // 处理时间字段
+                if (isset($data['start_time']) && $data['start_time']) {
+                    $data['start_time'] = strtotime($data['start_time']);
+                }
+                if (isset($data['end_time']) && $data['end_time']) {
+                    $data['end_time'] = strtotime($data['end_time']);
+                }
+
+                // 验证时间区间
+                if ($data['start_time'] && $data['end_time'] && $data['start_time'] >= $data['end_time']) {
+                    throw new ValidateException('开始时间必须小于结束时间');
                 }
 
                 // 检查是否已存在相同配置
@@ -152,6 +170,19 @@ class RechargeGift extends Backend
                     throw new ValidateException('赠送金额不能小于0');
                 }
 
+                // 处理时间字段
+                if (isset($data['start_time']) && $data['start_time']) {
+                    $data['start_time'] = strtotime($data['start_time']);
+                }
+                if (isset($data['end_time']) && $data['end_time']) {
+                    $data['end_time'] = strtotime($data['end_time']);
+                }
+
+                // 验证时间区间
+                if ($data['start_time'] && $data['end_time'] && $data['start_time'] >= $data['end_time']) {
+                    throw new ValidateException('开始时间必须小于结束时间');
+                }
+
                 // 检查是否已存在相同配置（排除当前记录）
                 $exists = $this->model->where([
                     'charge_amount' => $data['charge_amount']
@@ -174,6 +205,14 @@ class RechargeGift extends Backend
             } else {
                 $this->error(__('No rows updated'));
             }
+        }
+
+        // 格式化时间字段供前端显示
+        if ($row['start_time']) {
+            $row['start_time'] = date('Y-m-d H:i:s', $row['start_time']);
+        }
+        if ($row['end_time']) {
+            $row['end_time'] = date('Y-m-d H:i:s', $row['end_time']);
         }
 
         $this->success('', [
@@ -222,6 +261,30 @@ class RechargeGift extends Backend
             1 => '启用',
         ];
         return $statusMap[$status] ?? '未知';
+    }
+
+    /**
+     * 判断时间区间是否有效
+     */
+    private function isTimeActive($start_time, $end_time)
+    {
+        $current_time = time();
+        
+        // 如果没有设置时间区间，默认为有效
+        if (!$start_time && !$end_time) {
+            return true;
+        }
+        
+        // 检查当前时间是否在有效区间内
+        if ($start_time && $current_time < $start_time) {
+            return false; // 还未开始
+        }
+        
+        if ($end_time && $current_time > $end_time) {
+            return false; // 已过期
+        }
+        
+        return true;
     }
 
 

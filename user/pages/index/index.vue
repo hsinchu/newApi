@@ -11,8 +11,7 @@
 				<text class="close-icon">×</text>
 			</view>
 		</view>
-		
-		<view class="scroll-container">
+		<view class="scroll-container" :class="{ 'no-banner': !showDownloadBanner }">
 			
 			<!-- 轮播图 -->
 			<view class="banner-section">
@@ -27,6 +26,11 @@
 						<image class="banner-image" :src="banner.image" mode="aspectFill" @click="onBannerClick(banner)"></image>
 					</swiper-item>
 				</swiper>
+			</view>
+
+			<!-- 服务器时间显示 -->
+			<view class="server-time">
+				当前服务器时间：<text class="time-text">{{ serverTime }}</text>
 			</view>
 
 			<!-- 登录注册和快捷入口区域 -->
@@ -239,6 +243,10 @@ import { getUserInfo } from '@/api/user.js';
 				// 下载横幅
 				showDownloadBanner: true,
 				
+				// 服务器时间
+				serverTime: '',
+				timeTimer: null,
+				
 				// 公告弹窗
 				noticeList: [],
 				
@@ -300,6 +308,10 @@ import { getUserInfo } from '@/api/user.js';
 		onLoad() {
 			// 加载公告数据并显示弹窗
 			this.loadNoticeData();
+			// 初始化服务器时间
+			this.updateServerTime();
+			// 启动时间更新定时器
+			this.startTimeUpdate();
 		},
 		
 		// 页面显示时检查登录状态（仅在从其他页面返回时）
@@ -309,6 +321,14 @@ import { getUserInfo } from '@/api/user.js';
 				this.checkLoginStatus();
 			}
 			this.hasLoaded = true;
+		},
+		
+		onUnload() {
+			// 清理定时器
+			if (this.timeTimer) {
+				clearInterval(this.timeTimer);
+				this.timeTimer = null;
+			}
 		},
 		
 		methods: {
@@ -427,9 +447,9 @@ import { getUserInfo } from '@/api/user.js';
 				},
 				
 				// 关闭下载横幅
-				closeDownloadBanner() {
-					this.showDownloadBanner = false;
-				},
+			closeDownloadBanner() {
+				this.showDownloadBanner = false;
+			},
 				
 				// 下载APP
 				downloadApp() {
@@ -722,34 +742,54 @@ import { getUserInfo } from '@/api/user.js';
 			},
 			
 			// 获取tab配置信息
-			getTabConfig() {
-				return {
-					ware: {
-						name: 'BNB彩票',
-						icon: 'integral',
-						color: '#ff6b35',
-						data: this.wareLotteries
-					},
-					live: {
-						name: 'BNB直播',
-						icon: 'play-circle',
-						color: '#E91E63',
-						data: this.liveLotteries
-					},
-					chess: {
-						name: 'BNB体育',
-						icon: 'coupon',
-						color: '#2196F3',
-						data: this.chessLotteries
-					},
-					person: {
-						name: 'BNB电子',
-						icon: 'play-circle',
-						color: '#4CAF50',
-						data: this.personLotteries
-					}
-				};
-			}
+				getTabConfig() {
+					return {
+						ware: {
+							name: 'BNB彩票',
+							icon: 'integral',
+							color: '#ff6b35',
+							data: this.wareLotteries
+						},
+						live: {
+							name: 'BNB直播',
+							icon: 'play-circle',
+							color: '#E91E63',
+							data: this.liveLotteries
+						},
+						chess: {
+							name: 'BNB体育',
+							icon: 'coupon',
+							color: '#2196F3',
+							data: this.chessLotteries
+						},
+						person: {
+							name: 'BNB电子',
+							icon: 'play-circle',
+							color: '#4CAF50',
+							data: this.personLotteries
+						}
+					};
+				},
+				
+				// 更新服务器时间
+				updateServerTime() {
+					const now = new Date();
+					const year = now.getFullYear();
+					const month = String(now.getMonth() + 1).padStart(2, '0');
+					const day = String(now.getDate()).padStart(2, '0');
+					const hours = String(now.getHours()).padStart(2, '0');
+					const minutes = String(now.getMinutes()).padStart(2, '0');
+					const seconds = String(now.getSeconds()).padStart(2, '0');
+					
+					this.serverTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+				},
+				
+				// 启动时间更新定时器
+				startTimeUpdate() {
+					this.timeTimer = setInterval(() => {
+						this.updateServerTime();
+					}, 1000);
+				}
 		}
 	}
 </script>
@@ -767,7 +807,31 @@ import { getUserInfo } from '@/api/user.js';
 		box-sizing: border-box;
 	}
 	
-	// 主要内容区域
+	.scroll-container.no-banner {
+		padding-top: 0rpx;
+	}
+	
+	/* 服务器时间样式 */
+	.server-time {
+		background: linear-gradient(135deg, #88c5ff 0%, #50a9ff 100%);
+		padding: 15rpx 20rpx;
+		margin-bottom:15rpx;
+		font-size:23rpx;
+		display: flex;
+		align-items: flex-start;
+		justify-content: left;
+		color:#fff;
+		border-radius: 20rpx;
+		box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+	}
+	
+	.time-text {
+		color: #fff;
+		font-size: 24rpx;
+		font-weight: bold;
+	}
+	
+	/* 主要内容区域 */
 	.main-content {
 		display: flex;
 		gap: 20rpx;
@@ -833,7 +897,7 @@ import { getUserInfo } from '@/api/user.js';
 	
 	// 轮播图区域
 	.banner-section {
-		margin-bottom: 30rpx;
+		margin-bottom: 22rpx;
 	}
 	
 	.banner-swiper {
